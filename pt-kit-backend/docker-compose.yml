@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_USER: ptkit_user
+      POSTGRES_PASSWORD: pt154
+      POSTGRES_DB: ptkit_db
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  web:
+    build: .
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://ptkit_user:pt154@db:5432/ptkit_db
+      DB_HOST: db
+      POSTGRES_DB: ptkit_db
+      POSTGRES_USER: ptkit_user
+      POSTGRES_PASSWORD: pt154
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8081:8080  # Kita pakai Port 8081 di luar, 8080 di dalam

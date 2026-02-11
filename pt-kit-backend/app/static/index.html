@@ -1,0 +1,688 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Live - PT Kit</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Roboto', sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+    .dashboard-grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; max-width: 1200px; margin: auto; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .card-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #2c3e50; display:flex; justify-content:space-between; align-items:center; }
+    
+    .status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+    .stat-box { background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #eee; margin-bottom:0; }
+    .stat-val { font-size: 1.5rem; font-weight: bold; color: #333; }
+    .stat-label { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+    
+    .c-ir { color: #007bff; } .c-tc { color: #dc3545; } .c-rate { color: #28a745; }
+    
+    .form-group { margin-bottom: 12px; }
+    label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; }
+    input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+    
+    .btn-start { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-stop { width: 100%; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; display: none; }
+    
+    .btn-download { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; display: block; text-decoration: none; text-align: center; }
+    .btn-reset { width: 100%; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
+
+    .btn-history { display:block; text-align:center; margin-top:15px; color: #666; text-decoration:none; font-size:0.9rem; }
+
+    .chart-container { position: relative; height: 350px; width: 100%; }
+    .zoom-hint { font-size: 0.75rem; color: #999; font-style: italic; margin-top: 5px; text-align: right; }
+    .badge { padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; color: white; font-weight: bold; }
+    .bg-idle { background: #6c757d; } .bg-preheat { background: #ff9800; } .bg-heat { background: #f44336; } .bg-cool { background: #2196f3; } .bg-stabil { background: #9c27b0; } .bg-done { background: #007bff; } .bg-run { background: #28a745; box-shadow: 0 0 10px rgba(40, 167, 69, 0.4); }
+    
+    .state-indicator { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 5px; background: #f8f9fa; border-radius: 6px; }
+    .state-dot { width: 12px; height: 12px; border-radius: 50%; margin: 0 2px; opacity: 0.3; }
+    .state-active { opacity: 1; box-shadow: 0 0 5px currentColor; }
+    .state-dot.idle { background: #6c757d; }
+    .state-dot.preheat { background: #ff9800; }
+    .state-dot.heat { background: #f44336; }
+    .state-dot.cool { background: #2196f3; }
+    .state-dot.stabil { background: #9c27b0; }
+    .state-dot.done { background: #007bff; }
+
+    table.cycle-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    table.cycle-table th, table.cycle-table td { padding: 8px 5px; border-bottom: 1px solid #eee; text-align: center; }
+    table.cycle-table th { background: #f1f3f5; color: #555; }
+    table.cycle-table tfoot { font-weight: bold; background: #e9ecef; }
+    .err-val { font-size: 0.75rem; color: #999; } 
+
+    @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } .status-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="dashboard-grid">
+    <div class="left-col">
+        <div class="status-grid">
+            <div class="card stat-box">
+                <div class="stat-label">IR Temp</div>
+                <div class="stat-val c-ir" id="valIR">-- °C</div>
+            </div>
+            <div class="card stat-box">
+                <div class="stat-label">TC Temp</div>
+                <div class="stat-val c-tc" id="valTC">-- °C</div>
+            </div>
+            <div class="card stat-box">
+                <div class="stat-label">Heating Rate (IR)</div>
+                <div class="stat-val c-rate" style="font-size:1.2rem;" id="rateIR">0.00 <small>°C/s</small></div>
+            </div>
+            <div class="card stat-box">
+                <div class="stat-label">Heating Rate (TC)</div>
+                <div class="stat-val c-rate" style="font-size:1.2rem;" id="rateTC">0.00 <small>°C/s</small></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span>📈 Live Monitoring</span>
+                <div>
+                    <span id="cycleInfo" style="margin-right:15px; font-weight:normal; color:#555;">Cycle: - | Phase: -</span>
+                    <span id="connStatus" style="font-size:0.8rem; color:#ccc;">Connecting...</span>
+                </div>
+            </div>
+            
+            <!-- State Indicator Bar -->
+            <div class="state-indicator">
+                <div class="state-dot idle state-active" title="IDLE"></div>
+                <div class="state-dot preheat" title="PRE_HEAT"></div>
+                <div class="state-dot heat" title="HEATING"></div>
+                <div class="state-dot cool" title="COOLING"></div>
+                <div class="state-dot stabil" title="STABILIZING"></div>
+                <div class="state-dot done" title="DONE"></div>
+            </div>
+            
+            <div class="chart-container"><canvas id="liveChart" ondblclick="resetZoom()"></canvas></div>
+            <div class="zoom-hint">🖱️ Tahan <b>Ctrl + Scroll</b> untuk Zoom • Drag Geser • Double Click Reset</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">📊 Cycle Performance History (Heating Phase)</div>
+            <table class="cycle-table">
+                <thead>
+                    <tr>
+                        <th>Cycle</th>
+                        <th>Rate IR (°C/s)</th>
+                        <th>Rate TC (°C/s)</th>
+                        <th>Duration</th>
+                        <th>Peak Temp</th>
+                    </tr>
+                </thead>
+                <tbody id="cycleTableBody">
+                    <tr><td colspan="5" style="color:#999; font-style:italic;">Menunggu siklus pertama selesai...</td></tr>
+                </tbody>
+                <tfoot id="cycleTableFoot" style="display:none;">
+                    <tr>
+                        <td>AVG</td>
+                        <td id="avgRateIR">--</td>
+                        <td id="avgRateTC">--</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="right-col">
+        <div class="card">
+            <div class="card-title">⚙️ Control Panel <span id="statusBadge" class="badge bg-idle">IDLE</span></div>
+            
+            <div id="setupForm">
+                <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" value="Gerald"></div>
+                <div class="form-group"><label>Sample Name</label><input type="text" id="sampleName" placeholder="Contoh: MOF-Batch-1"></div>
+                <div class="form-group"><label>Target Duration (sec/cycle)</label><input type="number" id="duration" value="60"></div>
+                <div class="form-group"><label>Total Cycles</label><input type="number" id="cycles" value="5"></div>
+                <div class="form-group"><label>Max Temp (°C)</label><input type="number" id="maxTemp" value="100"></div>
+                <div class="form-group"><label>Logging Interval (sec)</label><input type="number" id="interval" value="1" min="1"></div>
+                <button class="btn-start" onclick="startExperiment()">🚀 START EXPERIMENT</button>
+            </div>
+
+            <button id="stopBtn" class="btn-stop" onclick="stopExperiment()">⛔ EMERGENCY STOP</button>
+
+            <div id="finishedPanel" style="display:none;">
+                <div style="text-align:center; margin-bottom:15px; color:#28a745; font-weight:bold;">✅ Eksperimen Selesai!</div>
+                <a id="downloadLink" href="#" target="_blank" class="btn-download">📥 DOWNLOAD CSV DATA</a>
+                <button class="btn-reset" onclick="resetUI()">🔄 NEW EXPERIMENT</button>
+            </div>
+
+            <div style="margin-top:20px; text-align:center;">
+                <div class="stat-label">Total Time</div>
+                <div class="stat-val" style="font-size:1.2rem; color:#666;" id="valTime">00:00</div>
+            </div>
+            <a href="/history" class="btn-history">📂 Buka Data Archive (History)</a>
+        </div>
+        <div class="card">
+            <div class="card-title" style="font-size:0.9rem;">ℹ️ System Log</div>
+            <div id="sysLog" style="height:150px; overflow-y:auto; font-size:0.8rem; color:#555; font-family:monospace;">System Ready...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+var chart;
+var isRunning = false;
+var currentExpId = null;
+
+// [VARIABEL PENTING] 
+var isProcessingStart = false; // "Satpam" untuk memblokir update saat proses Start
+var startWaitData = false;     // Penanda kita sedang menunggu data reset (detik 0) dari server
+var isWaitingReset = false;    // Menunggu Arduino/ESP32 reset ke IDLE setelah DONE
+
+var lastPlottedTime = -1;
+var lastState = 0; // Track previous state to detect phase changes
+var heatingDataIR = []; 
+var heatingDataTC = [];
+var cycleHistory = [];
+
+// Real-time heating rate buffers (accumulate points during heating phase)
+var liveHeatingBufferIR = [];
+var liveHeatingBufferTC = [];
+var heatingStartTime = 0; 
+
+// State mapping sesuai enum Arduino
+var stateMap = {
+    0: "IDLE",
+    1: "PRE_HEAT", 
+    2: "HEATING",
+    3: "COOLING",
+    4: "STABILIZING",
+    5: "DONE"
+};
+
+var stateClassMap = {
+    0: "idle",
+    1: "preheat",
+    2: "heat",
+    3: "cool",
+    4: "stabil",
+    5: "done"
+};
+
+function initChart() {
+    var ctx = document.getElementById('liveChart').getContext('2d');
+    chart = new Chart(ctx, {
+        type: 'line', 
+        data: {
+            labels: [],
+            datasets: [
+                { label: 'IR Temp', borderColor: '#007bff', backgroundColor: 'rgba(0, 123, 255, 0.1)', borderWidth: 2, data: [], pointRadius: 0, tension: 0.3 },
+                { label: 'TC Temp', borderColor: '#dc3545', backgroundColor: 'transparent', borderWidth: 2, borderDash: [5, 5], data: [], pointRadius: 0, tension: 0.3 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, animation: false, 
+            scales: { x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Time (s)' } }, y: { title: { display: true, text: 'Temperature (°C)' }, suggestedMin: 25, suggestedMax: 100 } },
+            plugins: { zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, pinch: { enabled: true }, mode: 'x' } }, tooltip: { mode: 'index', intersect: false } }
+        }
+    });
+}
+function resetZoom() { if(chart) chart.resetZoom(); }
+function log(msg) { var box = document.getElementById('sysLog'); var t = new Date().toLocaleTimeString(); box.innerHTML += `<div>[${t}] ${msg}</div>`; box.scrollTop = box.scrollHeight; }
+
+function calculateSlopeAndError(dataPoints) {
+    var n = dataPoints.length;
+    if (n < 3) return { slope: 0, error: 0, r2: 0 }; 
+    var sumX=0, sumY=0, sumXY=0, sumXX=0, sumYY=0;
+    dataPoints.forEach(p => { 
+        sumX+=p.x; 
+        sumY+=p.y; 
+        sumXY+=(p.x*p.y); 
+        sumXX+=(p.x*p.x); 
+        sumYY+=(p.y*p.y);
+    });
+    
+    var slope = (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX);
+    var intercept = (sumY - slope*sumX) / n;
+    
+    // Calculate standard error of slope
+    var residualsSum = 0; var xMean = sumX / n; var Sxx = 0;
+    dataPoints.forEach(p => {
+        var yPred = slope * p.x + intercept;
+        residualsSum += Math.pow(p.y - yPred, 2);
+        Sxx += Math.pow(p.x - xMean, 2);
+    });
+    var varRes = residualsSum / (n - 2);
+    var stdErrorSlope = Math.sqrt(varRes / Sxx);
+    
+    // Calculate R² (coefficient of determination)
+    var r2 = Math.pow((n * sumXY - sumX * sumY), 2) / 
+             ((n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY));
+    
+    return { slope: slope, error: stdErrorSlope, r2: r2 };
+}
+
+function updateLiveRate(ir, tc, time, stateCode) {
+    // ONLY CALCULATE DURING HEATING PHASE (state 2)
+    if (stateCode != 2) {
+         // Not in heating phase - reset everything and show 0
+         document.getElementById('rateIR').innerHTML = "0.00 <small>°C/s</small>";
+         document.getElementById('rateTC').innerHTML = "0.00 <small>°C/s</small>";
+         document.getElementById('rateIR').className = "stat-val c-tc";
+         document.getElementById('rateTC').className = "stat-val c-tc";
+         liveHeatingBufferIR = [];
+         liveHeatingBufferTC = [];
+         heatingStartTime = 0;
+         return;
+    }
+
+    // Initialize heating start time
+    if (liveHeatingBufferIR.length === 0) {
+        heatingStartTime = time;
+    }
+
+    // Accumulate heating phase data with relative time
+    var relTime = time - heatingStartTime;
+    liveHeatingBufferIR.push({x: relTime, y: ir});
+    liveHeatingBufferTC.push({x: relTime, y: tc});
+
+    // Calculate using LINEAR REGRESSION (same as history.html)
+    if (liveHeatingBufferIR.length >= 3) {
+        var regIR = calculateRegressionLive(liveHeatingBufferIR);
+        var regTC = calculateRegressionLive(liveHeatingBufferTC);
+        
+        // Display slope with R² quality indicator
+        var r2ClassIR = regIR.r2 > 0.95 ? 'c-rate' : (regIR.r2 > 0.90 ? 'c-rate' : 'c-tc');
+        var r2ClassTC = regTC.r2 > 0.95 ? 'c-rate' : (regTC.r2 > 0.90 ? 'c-rate' : 'c-tc');
+        
+        document.getElementById('rateIR').innerHTML = regIR.slope.toFixed(3) + " <small>°C/s • R²=" + regIR.r2.toFixed(3) + "</small>";
+        document.getElementById('rateTC').innerHTML = regTC.slope.toFixed(3) + " <small>°C/s • R²=" + regTC.r2.toFixed(3) + "</small>";
+        document.getElementById('rateIR').className = "stat-val " + r2ClassIR;
+        document.getElementById('rateTC').className = "stat-val " + r2ClassTC;
+    }
+}
+
+function calculateRegressionLive(dataPoints) {
+    // Linear Regression: Same formula as history.html
+    var n = dataPoints.length;
+    if (n < 2) return { slope: 0, r2: 0 };
+    
+    var sumX=0, sumY=0, sumXY=0, sumXX=0, sumYY=0;
+    dataPoints.forEach(p => { 
+        sumX += p.x; 
+        sumY += p.y; 
+        sumXY += (p.x * p.y); 
+        sumXX += (p.x * p.x); 
+        sumYY += (p.y * p.y);
+    });
+    
+    var slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    var intercept = (sumY - slope * sumX) / n;
+    
+    // Calculate R² (coefficient of determination)
+    var r2 = 0;
+    if (n > 2) {
+        r2 = Math.pow((n * sumXY - sumX * sumY), 2) / 
+             ((n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY));
+    }
+    
+    return { slope: slope, intercept: intercept, r2: r2 };
+}
+
+function checkCycleLogic(stateCode, cycle, time, ir, tc) {
+    if (stateCode == 2) { // Hanya HEATING (state 2)
+        heatingDataIR.push({x: time, y: ir});
+        heatingDataTC.push({x: time, y: tc});
+    }
+    
+    // Jika fase berubah dari HEATING ke lainnya
+    if (stateCode != 2 && heatingDataIR.length > 0) {
+        var resIR = calculateSlopeAndError(heatingDataIR);
+        var resTC = calculateSlopeAndError(heatingDataTC);
+        var duration = heatingDataIR[heatingDataIR.length-1].x - heatingDataIR[0].x;
+        
+        // Simpan hanya jika data cukup banyak (durasi > 2 detik)
+        if (duration > 2) {
+            addCycleToTable(cycle, resIR, resTC, duration, ir);
+        }
+        heatingDataIR = []; heatingDataTC = [];
+    }
+}
+
+function addCycleToTable(cycle, rIR, rTC, dur, endTemp) {
+    var tbody = document.getElementById('cycleTableBody');
+    var tfoot = document.getElementById('cycleTableFoot');
+
+    var existingRow = document.getElementById('row-cycle-' + cycle);
+
+    if (existingRow) {
+        existingRow.cells[1].innerHTML = `<b>${rIR.slope.toFixed(3)}</b> <span class="err-val">±${rIR.error.toFixed(3)} • R²=${rIR.r2.toFixed(3)}</span>`;
+        existingRow.cells[2].innerHTML = `<b>${rTC.slope.toFixed(3)}</b> <span class="err-val">±${rTC.error.toFixed(3)} • R²=${rTC.r2.toFixed(3)}</span>`;
+        existingRow.cells[3].innerText = dur + "s";
+        existingRow.cells[4].innerText = endTemp.toFixed(1) + "°C";
+
+        var idx = cycle - 1;
+        if(cycleHistory[idx]) {
+            cycleHistory[idx] = {ir: rIR.slope, tc: rTC.slope};
+        }
+    } else {
+        if (cycleHistory.length === 0) tbody.innerHTML = ""; 
+
+        cycleHistory.push({ir: rIR.slope, tc: rTC.slope});
+
+        var row = `<tr id="row-cycle-${cycle}">
+            <td><b>#${cycle}</b></td>
+            <td><b>${rIR.slope.toFixed(3)}</b> <span class="err-val">±${rIR.error.toFixed(3)} • R²=${rIR.r2.toFixed(3)}</span></td>
+            <td><b>${rTC.slope.toFixed(3)}</b> <span class="err-val">±${rTC.error.toFixed(3)} • R²=${rTC.r2.toFixed(3)}</span></td>
+            <td>${dur}s</td>
+            <td>${endTemp.toFixed(1)}°C</td>
+        </tr>`;
+        tbody.innerHTML += row;
+    }
+
+    tfoot.style.display = "table-footer-group";
+    if (cycleHistory.length > 0) {
+        var sumIR = cycleHistory.reduce((a,b)=>a+b.ir, 0);
+        var sumTC = cycleHistory.reduce((a,b)=>a+b.tc, 0);
+        document.getElementById('avgRateIR').innerText = (sumIR / cycleHistory.length).toFixed(3);
+        document.getElementById('avgRateTC').innerText = (sumTC / cycleHistory.length).toFixed(3);
+    }
+}
+
+function updateStateIndicator(stateCode) {
+    // Reset semua state dot
+    document.querySelectorAll('.state-dot').forEach(dot => {
+        dot.classList.remove('state-active');
+    });
+    
+    // Aktifkan state yang sesuai
+    var stateClass = stateClassMap[stateCode] || 'idle';
+    document.querySelector('.state-dot.' + stateClass).classList.add('state-active');
+}
+
+// --- UPDATE STATUS UTAMA ---
+function updateStatus() {
+    // 1. SATPAM: Blokir jika sedang proses Start (tunggu server clear data)
+    if (isProcessingStart) return; 
+
+    fetch('/api/current_status').then(r => r.json()).then(data => {
+        var exp = data.active_experiment;
+        var dataList = data.recent_data; 
+        
+        document.getElementById('connStatus').innerText = "🟢 Connected";
+
+        // Logic Auto-Sync (Jika user lain start eksperimen)
+        if (exp && exp.status === 'WAITING' && !isRunning) {
+             currentExpId = exp.id;
+             setUIState('RUNNING');
+        } 
+        else if ((!exp || exp.status !== 'WAITING') && isRunning && document.getElementById('finishedPanel').style.display === 'none') {
+             log("Syncing: Stopped remotely.");
+             setUIState('IDLE');
+        }
+
+        if (dataList && dataList.length > 0) {
+            var latest = dataList[dataList.length - 1];
+
+            // UPDATE ANGKA (Selalu Update, baik IDLE maupun RUNNING)
+            document.getElementById('valIR').innerText = latest.ir_temp.toFixed(1) + " °C";
+            document.getElementById('valTC').innerText = latest.tc_temp.toFixed(1) + " °C";
+            
+            // Format waktu menjadi MM:SS
+            var totalSecs = latest.total_time || 0;
+            var mins = Math.floor(totalSecs / 60);
+            var secs = totalSecs % 60;
+            document.getElementById('valTime').innerText = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+            
+            // Update cycle info dengan state yang sesuai
+            var stateCode = latest.state_code || 0;
+            var stateLabel = stateMap[stateCode] || "UNKNOWN";
+            document.getElementById('cycleInfo').innerText = `Cycle: ${latest.cycle_num} | Phase: ${stateLabel}`;
+            
+            // Update state indicator
+            updateStateIndicator(stateCode);
+            
+            // Update badge color sesuai state
+            var badge = document.getElementById('statusBadge');
+            if (isRunning) {
+                badge.className = 'badge bg-run';
+                badge.innerText = "RUNNING";
+            } else {
+                badge.className = 'badge ' + (stateCode == 5 ? 'bg-done' : 'bg-idle');
+                badge.innerText = stateLabel;
+            }
+
+            // Deteksi jika DONE dan kita sedang RUNNING
+            if (isRunning && stateCode == 5) { // State 5 = DONE
+                experimentFinished();
+            }
+            
+            // Deteksi transisi dari DONE ke IDLE (Arduino/ESP32 reset)
+            if (isWaitingReset && stateCode == 0) { // Kembali ke IDLE
+                log("Arduino/ESP32 reset detected. Clearing experiment data...");
+                isWaitingReset = false;
+                resetChartData(); // Bersihkan grafik
+                // Resume IDLE monitoring mode
+            }
+
+            // === CORE LOGIC GRAFIK ===
+            
+            // A. MODE IDLE (MONITORING / CCTV)
+            if (!isRunning && !isWaitingReset) {
+                // Gambar data terbaru saja (efek CCTV/Scrolling)
+                if (chart) {
+                    chart.data.labels.push(totalSecs); 
+                    chart.data.datasets[0].data.push(latest.ir_temp);
+                    chart.data.datasets[1].data.push(latest.tc_temp);
+                    
+                    // Batasi hanya 60 data terakhir agar grafik bergerak
+                    if (chart.data.labels.length > 60) {
+                        chart.data.labels.shift();
+                        chart.data.datasets[0].data.shift();
+                        chart.data.datasets[1].data.shift();
+                    }
+                    chart.update('none');
+                }
+                // Di mode IDLE, rate kita nol-kan saja biar bersih
+                updateLiveRate(0, 0, 0, 0); 
+            } 
+            
+            // B. MODE WAITING RESET (Transitioning from DONE to IDLE)
+            else if (isWaitingReset) {
+                // Don't plot anything during transition
+                // Just wait for IDLE state detection above
+                return;
+            }
+            
+            // C. MODE RUNNING (RECORDING)
+            else {
+                // [PENTING] FILTER RESET: Detect new data stream from ESP32
+                // Works for both: ESP32 that resets total_time to 0, AND cumulative timers
+                if (startWaitData) {
+                    var timeDropped = (lastPlottedTime > 0 && totalSecs < lastPlottedTime);
+                    var timeIsSmall = (totalSecs < 5);
+                    var stateChanged = (latest.state_code || 0) >= 1; // Any non-IDLE state = experiment started
+                    
+                    if (timeIsSmall || timeDropped || stateChanged) {
+                        startWaitData = false;
+                        lastPlottedTime = -1; // Reset so all new data gets plotted
+                        log("New data stream detected. Recording Started.");
+                    } else {
+                        return; // Still waiting for ESP32 to acknowledge new experiment
+                    }
+                }
+
+                // Loop buffer data untuk plotting
+                dataList.forEach(sensor => {
+                    // Logic anti-double plot: Hanya gambar jika waktu maju
+                    if (sensor.total_time > lastPlottedTime) {
+                        
+                        // Update live rate with time parameter for regression calculation
+                        updateLiveRate(sensor.ir_temp, sensor.tc_temp, sensor.total_time, sensor.state_code || 0);
+                        
+                        checkCycleLogic(sensor.state_code || 0, sensor.cycle_num, sensor.total_time, sensor.ir_temp, sensor.tc_temp);
+
+                        if (chart) {
+                            chart.data.labels.push(sensor.total_time);
+                            chart.data.datasets[0].data.push({x: sensor.total_time, y: sensor.ir_temp});
+                            chart.data.datasets[1].data.push({x: sensor.total_time, y: sensor.tc_temp});
+                            
+                            // Batasi Max Point agar browser tidak berat (opsional)
+                            var maxPoints = 2000; 
+                            if (chart.data.datasets[0].data.length > maxPoints) {
+                                chart.data.labels.shift();
+                                chart.data.datasets[0].data.shift();
+                                chart.data.datasets[1].data.shift();
+                            }
+                        }
+                        lastPlottedTime = sensor.total_time;
+                    }
+                });
+                if(chart) chart.update('none');
+            }
+        }
+    }).catch(e => { document.getElementById('connStatus').innerText = "🔴 Disconnected"; });
+}
+
+function startExperiment() {
+    var op = document.getElementById('operatorName').value, 
+        name = document.getElementById('sampleName').value,
+        duration = parseInt(document.getElementById('duration').value),
+        cycles = parseInt(document.getElementById('cycles').value),
+        maxTemp = parseFloat(document.getElementById('maxTemp').value),
+        interval = parseInt(document.getElementById('interval').value);
+    
+    if(!name || !op) return alert("Operator & Nama Sampel wajib diisi!");
+    if(duration <= 0) return alert("Durasi harus > 0 detik!");
+    if(cycles <= 0) return alert("Jumlah siklus harus > 0!");
+    if(maxTemp < 50) return alert("Max temp minimal 50°C!");
+    if(interval < 1) return alert("Interval minimal 1 detik!");
+    
+    log("Starting experiment. Clearing IDLE data...");
+    
+    // 1. Blokir update sementara & Set Flag Tunggu Data Reset
+    isProcessingStart = true;
+    startWaitData = true;
+    isWaitingReset = false; // Clear any waiting reset flag
+    
+    // 2. Bersihkan Grafik Total - Clear ALL IDLE data immediately
+    resetChartData();
+
+    var p = { 
+        operator_name: op, 
+        sample_name: name, 
+        duration: duration, 
+        cycles: cycles,
+        max_temp: maxTemp, 
+        interval: interval  // Ditambahkan sesuai Arduino
+    };
+    
+    fetch('/api/start_experiment', { 
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify(p) 
+    }).then(r => r.json()).then(d => {
+        if(d.status === 'success') { 
+            log("Experiment started! ID: " + d.id + " - Waiting for Arduino reset..."); 
+            currentExpId = d.id;
+            setUIState('RUNNING'); 
+            
+            // Buka gerbang update, tapi grafik masih nunggu data reset (startWaitData)
+            setTimeout(() => { isProcessingStart = false; }, 1000); 
+        } else {
+            isProcessingStart = false;
+            log("Failed to start: " + (d.message || "Unknown error"));
+        }
+    }).catch(err => {
+        isProcessingStart = false;
+        log("Error starting experiment: " + err);
+    });
+}
+
+function stopExperiment() { 
+    if(!confirm("YAKIN MAU STOP EKSPERIMEN INI?")) return; 
+    fetch('/api/stop_experiment', {method: 'POST'}).then(r=>r.json()).then(d=>{ 
+        log("Stopped by User. Waiting for reset..."); 
+        currentExpId = null; // [FIX] Putus hubungan dengan ID lama
+        isWaitingReset = true; // Set flag untuk menunggu Arduino reset
+        setUIState('IDLE'); 
+    }); 
+}
+
+function experimentFinished() {
+    log("Experiment Completed! Waiting for Arduino/ESP32 reset...");
+    setUIState('DONE');
+    isWaitingReset = true; // Set flag untuk menunggu reset ke IDLE
+    if(currentExpId) {
+        document.getElementById('downloadLink').href = "/api/export/" + currentExpId;
+    }
+}
+
+function resetUI() {
+    currentExpId = null; // [FIX] Putus hubungan dengan ID lama
+    isWaitingReset = false; // Clear waiting flag
+    setUIState('IDLE'); 
+    resetChartData(); 
+    log("UI Reset. Ready for new experiment.");
+}
+
+function resetChartData() {
+    // 1. Musnahkan Chart Lama
+    if(chart) {
+        chart.destroy();
+        chart = null;
+    }
+
+    // 2. Bangun Ulang Chart Baru
+    initChart();
+    
+    // 3. Reset ALL variables and logic
+    cycleHistory=[]; 
+    heatingDataIR=[]; 
+    heatingDataTC=[];
+    liveHeatingBufferIR=[]; 
+    liveHeatingBufferTC=[];
+    heatingStartTime = 0;
+    lastPlottedTime = -1; 
+    lastState = 0;
+    
+    // Clear transition flags
+    isProcessingStart = false;
+    startWaitData = false;
+    isWaitingReset = false; 
+    
+    // Reset Tampilan Angka
+    document.getElementById('valTime').innerText = "00:00"; 
+    document.getElementById('rateIR').innerHTML = "0.00 <small>°C/s</small>";
+    document.getElementById('rateTC').innerHTML = "0.00 <small>°C/s</small>";
+    
+    document.getElementById('cycleTableBody').innerHTML = '<tr><td colspan="5" style="color:#999; font-style:italic;">Menunggu siklus pertama selesai...</td></tr>';
+    document.getElementById('cycleTableFoot').style.display = 'none';
+    
+    // Reset state indicator
+    updateStateIndicator(0);
+}
+
+function setUIState(state) {
+    var form = document.getElementById('setupForm');
+    var stop = document.getElementById('stopBtn');
+    var done = document.getElementById('finishedPanel');
+    var badge = document.getElementById('statusBadge');
+
+    if (state === 'IDLE') {
+        isRunning = false;
+        form.style.display = 'block'; stop.style.display = 'none'; done.style.display = 'none';
+        badge.className = 'badge bg-idle'; badge.innerText = "IDLE";
+    } else if (state === 'RUNNING') {
+        isRunning = true;
+        form.style.display = 'none'; stop.style.display = 'block'; done.style.display = 'none';
+        badge.className = 'badge bg-run'; badge.innerText = "RUNNING";
+    } else if (state === 'DONE') {
+        isRunning = false; 
+        form.style.display = 'none'; stop.style.display = 'none'; done.style.display = 'block';
+        badge.className = 'badge bg-done'; badge.innerText = "COMPLETED";
+    }
+}
+
+initChart(); setInterval(updateStatus, 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data Archive - PT Kit</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.6/dist/jstat.min.js"></script>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Roboto', sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+    .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 1100px; margin: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
+    h2 { margin: 0; color: #2c3e50; }
+    
+    .control-panel { display: grid; grid-template-columns: 300px 1fr; gap: 20px; margin-bottom: 20px; }
+    .panel-box { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; background: #fff; height: 380px; display: flex; flex-direction: column; }
+    .panel-title { font-weight: bold; color: #007bff; margin-bottom: 10px; display: block; }
+
+    select, input { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+    .scroll-list { flex-grow: 1; overflow-y: auto; border: 1px solid #eee; background: #fafafa; padding: 5px; }
+    .list-item { padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; display: block; font-size: 0.9rem; }
+    .list-item:hover { background: #e3f2fd; }
+    
+    .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+    .btn { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; font-size: 13px; }
+    .btn-compare { background: #007bff; } .btn-exp { background: #6f42c1; } .btn-dl { background: #28a745; }
+    .btn-back { background: #6c757d; text-decoration: none; padding: 8px 15px; border-radius: 5px; color: white;}
+
+    .analysis-tools { display: none; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    .tool-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .toggle-btn { background: white; border: 1px solid #6f42c1; color: #6f42c1; padding: 6px 15px; cursor: pointer; border-radius: 20px; margin-right: 5px; font-size: 0.85rem; transition: 0.2s; }
+    .toggle-btn:hover { background: #f3e5f5; } .toggle-btn.active { background: #6f42c1; color: white; }
+    .zoom-hint { font-size: 0.8rem; color: #888; font-style: italic; background: #f8f9fa; padding: 5px 10px; border-radius: 15px; border: 1px solid #ddd; }
+    
+    #statsBox { display: none; background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 10px 15px; border-radius: 6px; margin-bottom: 10px; font-size: 0.9rem; line-height: 1.6; }
+    #compareStatsBox { display: none; background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; padding: 10px 15px; border-radius: 6px; margin-bottom: 10px; font-size: 0.9rem; }
+    
+    .badge-sig { background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+    .badge-insig { background: #6c757d; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+
+    #loading { display: none; text-align: center; color: #666; margin: 20px; }
+    .chart-container { position: relative; height: 450px; width: 100%; }
+    #debugBox { margin-top: 20px; padding: 10px; background: #1e1e1e; color: #0f0; font-family: monospace; font-size: 11px; border-radius: 5px; display: none; height: 150px; overflow-y: auto; border: 1px solid #555; }
+    @media (max-width: 768px) { .control-panel { grid-template-columns: 1fr; } .tool-row { flex-direction: column; gap: 10px; align-items: start; } }
+  </style>
+</head>
+<body>
+<div class="card">
+    <div class="header"><a href="/" class="btn-back">⬅ Dashboard</a><h2>📂 Data Archive</h2></div>
+    <div class="control-panel">
+        <div class="panel-box">
+            <span class="panel-title">🔍 1. Filter</span>
+            <select id="operatorSelect" onchange="filterSamples()"><option value="all">-- Semua Operator --</option></select>
+            <input type="text" id="searchBox" placeholder="Cari sampel..." onkeyup="filterSamples()">
+        </div>
+        <div class="panel-box">
+            <span class="panel-title">☑️ 2. Pilih Data</span>
+            <div id="sampleList" class="scroll-list"><div style="padding:10px;">Loading...</div></div>
+            <div class="btn-group">
+                <button class="btn btn-compare" onclick="loadCompare()">📈 Compare</button>
+                <button class="btn btn-exp" onclick="loadExpAnalysis()">🔬 Experiment Analysis</button>
+                <button class="btn btn-dl" onclick="downloadSelected()">⬇ CSV</button>
+            </div>
+        </div>
+    </div>
+    <div id="loading">Sedang memproses data...</div>
+    <div class="analysis-tools" id="analysisTools">
+        <div class="tool-row">
+            <div>
+                <b>Mode:</b>
+                <button class="toggle-btn active" id="btnExpanded" onclick="switchView('expanded')">↔ Expanded</button>
+                <button class="toggle-btn" id="btnOverlay" onclick="switchView('overlay')">📚 Overlay</button>
+                <button class="toggle-btn" id="btnAdvanced" onclick="switchView('advanced')">🧠 Advanced (Regresi)</button>
+            </div>
+            <div><span class="zoom-hint">🖱️ Tahan <b>Ctrl + Scroll</b> Zoom • Drag Geser • Double Click Reset</span></div>
+        </div>
+        <div id="statsBox">Calculating Stats...</div>
+    </div>
+    <div id="compareStatsBox">Calculating Compare Stats...</div>
+    <div class="chart-container"><canvas id="analysisChart" ondblclick="resetZoom()"></canvas></div>
+    <div style="text-align:right;"><button onclick="toggleDebug()" style="background:none; border:none; color:#999; font-size:10px; cursor:pointer;">Show Debug Log</button></div>
+    <div id="debugBox">System Ready...</div>
+</div>
+<script>
+var allExperiments = []; var chartInstance = null; var currentData = null; var currentExpName = '';
+const COLORS = ['#007bff', '#dc3545', '#28a745', '#fd7e14', '#6610f2', '#17a2b8', '#e83e8c'];
+function log(msg) { var out = document.getElementById('debugBox'); var t = new Date().toLocaleTimeString(); out.innerHTML += `<div>[${t}] ${msg}</div>`; out.scrollTop = out.scrollHeight; }
+function toggleDebug() { var x = document.getElementById('debugBox'); x.style.display = x.style.display==='none'?'block':'none'; }
+fetch('/api/experiments').then(r => r.json()).then(d => { allExperiments = d; populateOperators(); renderList(d); }).catch(e => log("❌ ERROR Fetch: " + e));
+function populateOperators() { var ops = [...new Set(allExperiments.map(e => e.operator_name || "Unknown"))]; var s = document.getElementById('operatorSelect'); ops.forEach(op => { var o = document.createElement('option'); o.value=op; o.innerText=op; s.appendChild(o); }); }
+function filterSamples() { var op = document.getElementById('operatorSelect').value; var k = document.getElementById('searchBox').value.toLowerCase(); var r = allExperiments.filter(e => (op === 'all' || e.operator_name === op) && e.sample_name.toLowerCase().includes(k)); renderList(r); }
+function renderList(l) { var d = document.getElementById('sampleList'); d.innerHTML = ""; if(l.length===0) { d.innerHTML="<div style='padding:10px'>Kosong.</div>"; return; } l.forEach(e => { d.innerHTML += `<label class="list-item"><input type="checkbox" class="chk" value="${e.id}" data-name="${e.sample_name}"> <b>[#${e.id}]</b> ${e.sample_name}<br><small>${e.operator_name||'Anon'} | ${new Date(e.started_at).toLocaleString()}</small></label>`; }); }
+function getSelected() { var c = document.querySelectorAll('.chk:checked'); var r = []; c.forEach(i => r.push({id: i.value, name: i.getAttribute('data-name')})); return r; }
+function getColumnName(r, p) { for (var i = 0; i < p.length; i++) { if (r[p[i]] !== undefined) return p[i]; } return null; }
+
+function loadExpAnalysis() {
+    var sel = getSelected(); if(sel.length !== 1) return alert("Pilih TEPAT 1 sampel!");
+    document.getElementById('loading').style.display = 'block'; document.getElementById('analysisTools').style.display = 'block'; document.getElementById('compareStatsBox').style.display = 'none';
+    currentExpName = sel[0].name;
+    fetch(`/api/experiment/${sel[0].id}`).then(r => r.json()).then(d => {
+        document.getElementById('loading').style.display = 'none'; if (!d || d.length === 0) return alert("Data kosong!"); currentData = d; switchView('expanded'); 
+    }).catch(e => { document.getElementById('loading').style.display = 'none'; log(`❌ Error: ${e}`); });
+}
+
+function switchView(mode) {
+    try {
+        ['btnExpanded', 'btnOverlay', 'btnAdvanced'].forEach(id => { document.getElementById(id).className = 'toggle-btn'; });
+        var btnMap = {'expanded': 'btnExpanded', 'overlay': 'btnOverlay', 'advanced': 'btnAdvanced'};
+        document.getElementById(btnMap[mode]).className = 'toggle-btn active';
+        document.getElementById('statsBox').style.display = (mode === 'advanced') ? 'block' : 'none';
+        
+        var kIR = getColumnName(currentData[0], ['ir_temp', 'IR_Temp', 'ir']);
+        var kTC = getColumnName(currentData[0], ['tc_temp', 'TC_Temp', 'tc']);
+        var kCyc = getColumnName(currentData[0], ['cycle_num', 'Cycle', 'cycle']);
+        var kTime = getColumnName(currentData[0], ['total_time', 'TotalTime', 'time']);
+        var kState = getColumnName(currentData[0], ['state_label', 'State', 'state']);
+
+        var ds = []; var xLabel = 'Waktu Total (s)'; var title = '';
+
+        if (mode === 'expanded') {
+            var irData = currentData.map(d => ({x: d[kTime], y: parseFloat(d[kIR])}));
+            var tcData = currentData.map(d => ({x: d[kTime], y: parseFloat(d[kTC])}));
+            ds.push({ label: 'IR Temp', data: irData, borderColor: '#007bff', backgroundColor: '#007bff', pointRadius: 0, tension: 0.3 });
+            ds.push({ label: 'TC Temp', data: tcData, borderColor: '#dc3545', backgroundColor: '#dc3545', borderDash: [5,5], pointRadius: 0, tension: 0.3 });
+            title = `Expanded: ${currentExpName}`;
+        } else if (mode === 'overlay') {
+            var cycles = groupDataByCycle(currentData, kCyc); xLabel = 'Waktu Relatif (s)'; title = `Overlay: ${Object.keys(cycles).length} Cycles`;
+            Object.keys(cycles).forEach(cNum => {
+                var cData = cycles[cNum]; 
+                
+                // EXCLUDE PRE_HEAT: Only stack HEATING, COOLING, STABILIZING
+                var filteredData = kState ? cData.filter(d => {
+                    var state = d[kState];
+                    if (!state) return true; // Keep if no state info
+                    var stateUpper = state.toUpperCase();
+                    // Exclude PRE_HEAT, keep HEATING, COOLING, STABILIZING
+                    return !stateUpper.includes('PRE') && !stateUpper.includes('IDLE') && !stateUpper.includes('DONE');
+                }) : cData;
+                
+                if (filteredData.length === 0) return; // Skip if no data after filtering
+                
+                var startT = filteredData[0][kTime]; // Use filtered data start time
+                ds.push({ label: `C${cNum} IR`, data: filteredData.map(d => ({x: d[kTime]-startT, y: parseFloat(d[kIR])})), borderColor: 'rgba(0,123,255,0.4)', borderWidth: 1.5, pointRadius: 0, tension: 0.3 });
+                ds.push({ label: `C${cNum} TC`, data: filteredData.map(d => ({x: d[kTime]-startT, y: parseFloat(d[kTC])})), borderColor: 'rgba(220,53,69,0.4)', borderWidth: 1.5, borderDash:[2,2], pointRadius: 0, tension: 0.3 });
+            });
+        } else if (mode === 'advanced') {
+            xLabel = 'Waktu Relatif (s)'; title = `Statistics & Regression Model (Heating Phase)`;
+            var stats = calculateStatistics(currentData, kCyc, kTime, kIR, kTC, kState);
+            
+            // --- IR DATA ---
+            ds.push({ label: 'IR Low', data: stats.ir.lower, borderColor: 'transparent', pointRadius: 0, fill: false });
+            ds.push({ label: 'IR High', data: stats.ir.upper, borderColor: 'transparent', backgroundColor: 'rgba(0,123,255,0.2)', pointRadius: 0, fill: '-1' });
+            ds.push({ label: 'IR Mean', data: stats.ir.mean, borderColor: '#007bff', borderWidth: 2.5, pointRadius:0, tension: 0.3 });
+            
+            // --- TC DATA (DITAMBAHKAN LAGI) ---
+            ds.push({ label: 'TC Low', data: stats.tc.lower, borderColor: 'transparent', pointRadius: 0, fill: false });
+            ds.push({ label: 'TC High', data: stats.tc.upper, borderColor: 'transparent', backgroundColor: 'rgba(220,53,69,0.2)', pointRadius: 0, fill: '-1' });
+            ds.push({ label: 'TC Mean', data: stats.tc.mean, borderColor: '#dc3545', borderWidth: 2.5, borderDash: [5,5], pointRadius:0, tension: 0.3 });
+
+            // CALCULATE REGRESSION & STATS FOR BOTH
+            var statsIR = calculateSlopeStats(currentData, kCyc, kState, kTime, kIR);
+            var statsTC = calculateSlopeStats(currentData, kCyc, kState, kTime, kTC);
+            var regIR = calculateLinearRegression(currentData, kCyc, kState, kTime, kIR);
+            var regTC = calculateLinearRegression(currentData, kCyc, kState, kTime, kTC);
+
+            if (regIR.points.length > 0) ds.push({ label: `Reg IR`, data: regIR.points, borderColor: '#28a745', borderWidth: 2, borderDash: [2, 4], pointRadius: 0, showLine: true });
+            if (regTC.points.length > 0) ds.push({ label: `Reg TC`, data: regTC.points, borderColor: '#fd7e14', borderWidth: 2, borderDash: [2, 4], pointRadius: 0, showLine: true });
+
+            document.getElementById('statsBox').innerHTML = `
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; text-align:center;">
+                    <div style="border-right:1px solid #ddd;">
+                        <b style="color:#007bff">IR SENSOR STATS:</b><br>
+                        Mean Slope: <b>${statsIR.mean.toFixed(4)} °C/s</b><br>
+                        SD (Consistency): <b>± ${statsIR.sd.toFixed(4)}</b><br>
+                        R² (Linearity): <b>${regIR.r2.toFixed(4)}</b>
+                    </div>
+                    <div>
+                        <b style="color:#dc3545">TC SENSOR STATS:</b><br>
+                        Mean Slope: <b>${statsTC.mean.toFixed(4)} °C/s</b><br>
+                        SD (Consistency): <b>± ${statsTC.sd.toFixed(4)}</b><br>
+                        R² (Linearity): <b>${regTC.r2.toFixed(4)}</b>
+                    </div>
+                </div>
+            `;
+        }
+        drawChart(ds, title, xLabel);
+    } catch (err) { log(`❌ Error: ${err.message}`); }
+}
+
+function calculateSlopeStats(data, kCyc, kState, kTime, kTemp) {
+    var cycles = groupDataByCycle(data, kCyc);
+    var slopes = [];
+    Object.values(cycles).forEach(cData => {
+        // ONLY HEATING PHASE (exact match, exclude PRE_HEAT)
+        var heatingData = kState ? cData.filter(d => {
+            var state = d[kState];
+            if (!state) return false;
+            var stateUpper = state.toUpperCase();
+            // Match HEATING but NOT PRE_HEAT
+            return stateUpper === 'HEATING' || (stateUpper.includes('HEAT') && !stateUpper.includes('PRE'));
+        }) : cData;
+        
+        if (heatingData.length > 2) {
+            var n = heatingData.length, sumX=0, sumY=0, sumXY=0, sumXX=0;
+            var startT = cData[0][kTime];
+            heatingData.forEach(d => { var x = d[kTime]-startT; var y = parseFloat(d[kTemp]); sumX+=x; sumY+=y; sumXY+=(x*y); sumXX+=(x*x); });
+            var slope = (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX);
+            slopes.push(slope);
+        }
+    });
+    var n = slopes.length;
+    var mean = n > 0 ? slopes.reduce((a,b)=>a+b,0)/n : 0;
+    var variance = n > 1 ? slopes.reduce((a,b)=>a+Math.pow(b-mean,2),0)/(n-1) : 0;
+    return { mean: mean, sd: Math.sqrt(variance), n: n, slopes: slopes };
+}
+
+function calculateLinearRegression(data, kCyc, kState, kTime, kTemp) {
+    var cycles = groupDataByCycle(data, kCyc); var allPoints = [];
+    Object.values(cycles).forEach(cData => {
+        var startT = cData[0][kTime];
+        // ONLY HEATING PHASE (exact match, exclude PRE_HEAT)
+        var heatingData = kState ? cData.filter(d => {
+            var state = d[kState];
+            if (!state) return false;
+            var stateUpper = state.toUpperCase();
+            // Match HEATING but NOT PRE_HEAT
+            return stateUpper === 'HEATING' || (stateUpper.includes('HEAT') && !stateUpper.includes('PRE'));
+        }) : cData;
+        heatingData.forEach(d => allPoints.push({ x: d[kTime] - startT, y: parseFloat(d[kTemp]) }));
+    });
+    if (allPoints.length < 2) return { slope: 0, intercept: 0, r2: 0, points: [], count: 0 };
+    var n = allPoints.length, sumX=0, sumY=0, sumXY=0, sumXX=0, sumYY=0;
+    allPoints.forEach(p => { sumX+=p.x; sumY+=p.y; sumXY+=(p.x*p.y); sumXX+=(p.x*p.x); sumYY+=(p.y*p.y); });
+    var slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    var intercept = (sumY - slope * sumX) / n;
+    var r2 = Math.pow((n * sumXY - sumX * sumY), 2) / ((n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY));
+    var minX = Math.min(...allPoints.map(p => p.x)); var maxX = Math.max(...allPoints.map(p => p.x));
+    return { slope: slope, intercept: intercept, r2: r2, points: [{ x: minX, y: slope * minX + intercept }, { x: maxX, y: slope * maxX + intercept }], count: Object.keys(cycles).length };
+}
+
+function loadCompare() {
+    var sel = getSelected(); if(sel.length < 1) return alert("Pilih minimal 1 sampel!");
+    document.getElementById('analysisTools').style.display = 'none'; document.getElementById('loading').style.display = 'block'; document.getElementById('compareStatsBox').style.display = 'none';
+    Promise.all(sel.map(s => fetch(`/api/experiment/${s.id}`).then(r => r.json()))).then(results => {
+        document.getElementById('loading').style.display = 'none';
+        var ds = []; var compareData = [];
+        results.forEach((data, idx) => {
+            if(!data || data.length===0) return;
+            var kIR = getColumnName(data[0], ['ir_temp', 'IR_Temp', 'ir']);
+            var kTC = getColumnName(data[0], ['tc_temp', 'TC_Temp', 'tc']);
+            var kCyc = getColumnName(data[0], ['cycle_num', 'Cycle', 'cycle']);
+            var kState = getColumnName(data[0], ['state_label', 'State', 'state']);
+            var kTime = getColumnName(data[0], ['total_time', 'TotalTime', 'time']);
+            var col = COLORS[idx % COLORS.length];
+            ds.push({ label: sel[idx].name + ' (IR)', borderColor: col, backgroundColor: col, data: data.map((d, i) => ({x: i, y: parseFloat(d[kIR])})), pointRadius: 0, tension: 0.3 });
+            var stats = calculateSlopeStats(data, kCyc, kState, kTime, kIR);
+            compareData.push({ name: sel[idx].name, stats: stats });
+        });
+        if (compareData.length === 2) {
+            var A = compareData[0].stats.slopes; var B = compareData[1].stats.slopes;
+            var pVal = jStat.ttest(A, B, 2);
+            var sig = pVal < 0.05 ? '<span class="badge-sig">SIGNIFICANT</span>' : '<span class="badge-insig">NOT SIGNIFICANT</span>';
+            var box = document.getElementById('compareStatsBox'); box.style.display = 'block';
+            box.innerHTML = `<b>⚖️ Statistical Significance Test (T-Test):</b><br>Sample A (${compareData[0].name}): Mean Slope = <b>${compareData[0].stats.mean.toFixed(4)}</b><br>Sample B (${compareData[1].name}): Mean Slope = <b>${compareData[1].stats.mean.toFixed(4)}</b><br>P-Value = <b>${pVal.toFixed(4)}</b> (${sig})`;
+        }
+        drawChart(ds, "Compare Samples", "Data Index");
+    });
+}
+
+function groupDataByCycle(data, keyCycle) { var c = {}; data.forEach(d => { var k = d[keyCycle]; if(k!==undefined) { if(!c[k]) c[k]=[]; c[k].push(d); }}); return c; }
+function calculateStatistics(data, kCyc, kTime, kIR, kTC, kState) {
+    var bIR = {}, bTC = {}; var c = groupDataByCycle(data, kCyc);
+    Object.values(c).forEach(cD => { 
+        // EXCLUDE PRE_HEAT: Only include HEATING, COOLING, STABILIZING
+        var filteredData = kState ? cD.filter(d => {
+            var state = d[kState];
+            if (!state) return true; // Keep if no state info
+            var stateUpper = state.toUpperCase();
+            // Exclude PRE_HEAT, IDLE, DONE
+            return !stateUpper.includes('PRE') && !stateUpper.includes('IDLE') && !stateUpper.includes('DONE');
+        }) : cD;
+        
+        if (filteredData.length === 0) return; // Skip empty cycles
+        
+        var sT = filteredData[0][kTime]; 
+        filteredData.forEach(d => { 
+            var rT = d[kTime]-sT; 
+            if(!bIR[rT]) bIR[rT]=[]; 
+            if(!bTC[rT]) bTC[rT]=[]; 
+            bIR[rT].push(parseFloat(d[kIR])); 
+            bTC[rT].push(parseFloat(d[kTC])); 
+        }); 
+    });
+    function gS(b) { var m=[], u=[], l=[]; var ts = Object.keys(b).map(Number).sort((a,b)=>a-b); ts.forEach(t => { var v = b[t]; if(v.length<1) return; var s = v.reduce((a,b)=>a+b,0); var av = s/v.length; var sd = Math.sqrt(v.reduce((a,b)=>a+Math.pow(b-av,2),0)/v.length); m.push({x:t, y:av}); u.push({x:t, y:av+sd}); l.push({x:t, y:av-sd}); }); return {mean:m, upper:u, lower:l}; }
+    return { ir: gS(bIR), tc: gS(bTC) };
+}
+function drawChart(ds, t, xl) {
+    var ctx = document.getElementById('analysisChart').getContext('2d');
+    if(chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, { type: 'line', data: { datasets: ds }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', position: 'bottom', title: {display:true, text:xl} }, y: { title: {display:true, text:'Temperature (°C)'} } }, plugins: { title: { display: true, text: t, font: {size:16} }, zoom: { pan: { enabled: true, mode: 'xy' }, zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, pinch: { enabled: true }, mode: 'xy' } }, legend: { labels: { filter: function(i) { return !i.text.includes('Low') && !i.text.includes('High'); } } } } } });
+}
+function resetZoom() { if(chartInstance) chartInstance.resetZoom(); }
+function downloadSelected() { var s = getSelected(); if(s.length===0) return alert("Pilih data!"); s.forEach(i => window.open(`/api/export/${i.id}`)); }
+</script>
+</body>
+</html>
