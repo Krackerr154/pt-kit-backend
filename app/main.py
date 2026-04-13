@@ -50,7 +50,7 @@ class ExperimentConfig(BaseModel):
     cycles: int = 5
     max_temp: float = 80.0
     interval: int = 1
-    target_lux: float = 5000.0
+    target_lux: float = 38000.0
 
 class EspSensorData(BaseModel):
     csv_line: str 

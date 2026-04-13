@@ -14,6 +14,9 @@
     .btn-calib { background: #ffbc00; color: #000; border: none; padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 20px; transition: 0.3s; }
     .btn-calib:hover { background: #e0a600; }
     .btn-calib:disabled { background: #ccc; cursor: not-allowed; }
+    .btn-stop { background: #dc3545; color: white; margin-left: 10px; }
+    .btn-stop:hover { background: #c82333; }
+    .btn-stop:disabled { background: #e6a8ad; color: #fff; cursor: not-allowed; }
     .chart-container { position: relative; height: 400px; width: 100%; margin-top: 30px; }
     h1 { margin-top: 0; }
     .status-text { margin-top: 15px; font-style: italic; color: #666; }
@@ -30,8 +33,10 @@
         <p>Run this calibration to find the maximum stable light output of the AOD4184 & Lamp setup.<br>The system will turn the lamp to 100% PWM and wait for the LED droop to stabilize.</p>
         
         <div class="lux-display" id="luxVal">-- lx</div>
+        <div id="stopwatch" style="font-size: 2rem; font-weight: bold; color: #555; margin-bottom: 20px;">00:00</div>
         
         <button id="startBtn" class="btn-calib" onclick="startCalibration()">START CALIBRATION</button>
+        <button id="stopBtn" class="btn-calib btn-stop" onclick="stopCalibration()" disabled>STOP CALIBRATION</button>
         <div id="statusMsg" class="status-text">Ready. Press Start.</div>
 
         <div class="chart-container">
@@ -76,7 +81,9 @@ function startCalibration() {
     if(!confirm("Peringatan: Lampu akan menyala 100%! Pastikan chamber tertutup.")) return;
     
     document.getElementById('startBtn').disabled = true;
+    document.getElementById('stopBtn').disabled = false;
     document.getElementById('statusMsg').innerText = "Triggering hardware... Please wait.";
+    document.getElementById('stopwatch').innerText = "00:00";
     
     // Reset Chart
     chart.data.labels = [];
@@ -106,6 +113,10 @@ function pollData() {
             
             if (isCalibrating) {
                 var elapsed = Math.floor((Date.now() - startTime) / 1000);
+                var mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                var secs = String(elapsed % 60).padStart(2, '0');
+                document.getElementById('stopwatch').innerText = mins + ":" + secs;
+                
                 chart.data.labels.push(elapsed);
                 chart.data.datasets[0].data.push(lux);
                 chart.update('none');
@@ -119,21 +130,36 @@ function pollData() {
     });
 }
 
-function finishCalibration() {
+function finishCalibration(isStopped = false) {
     isCalibrating = false;
     clearInterval(pollInterval);
     
-    // Fetch newly saved value
-    fetch('/api/get_config').then(r => r.json()).then(conf => {
-        if (conf && conf.max_hardware_lux) {
-            document.getElementById('statusMsg').innerText = "Sukses! Max stable Lux is: " + conf.max_hardware_lux + " lx";
-        } else {
-            document.getElementById('statusMsg').innerText = "Kalibrasi selesai, tapi gagal membaca config DB.";
-        }
-    });
+    if (isStopped) {
+        document.getElementById('statusMsg').innerText = "Kalibrasi dihentikan manual.";
+    } else {
+        // Fetch newly saved value
+        fetch('/api/get_config').then(r => r.json()).then(conf => {
+            if (conf && conf.max_hardware_lux) {
+                document.getElementById('statusMsg').innerText = "Sukses! Max stable Lux is: " + conf.max_hardware_lux + " lx";
+            } else {
+                document.getElementById('statusMsg').innerText = "Kalibrasi selesai, tapi gagal membaca config DB.";
+            }
+        });
+    }
     
     document.getElementById('startBtn').disabled = false;
+    document.getElementById('stopBtn').disabled = true;
     document.getElementById('startBtn').innerText = "RECALIBRATE";
+}
+
+function stopCalibration() {
+    if(!confirm("Hentikan kalibrasi sekarang?")) return;
+    
+    fetch('/api/stop_experiment', { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            finishCalibration(true);
+        });
 }
 
 initChart();

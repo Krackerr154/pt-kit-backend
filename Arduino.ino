@@ -60,7 +60,7 @@ float tempIR = 0.0, tempTC = 0.0;
 float rawLux = 0.0, smoothedLux = 0.0;
 float userMaxTemp = 100.0;       
 int   userInterval = 1;          
-float targetLux = 5000.0;
+float targetLux = 38000.0;
 
 // Lux Control Vars
 int lampPWM = 0;
