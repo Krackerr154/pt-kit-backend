@@ -12,7 +12,7 @@
 const char* ssid = "ITB Hotspot"; 
 const char* eap_identity = "20525011@mahasiswa.itb.ac.id";
 const char* eap_username = "20525011@mahasiswa.itb.ac.id";
-const char* eap_password = "mhsITB#204012"; 
+const char* eap_password = "Kracker_154"; 
 
 // Target BSSID Router Terkuat (Channel 6)
 const uint8_t target_bssid[] = {0xC8, 0x84, 0x8C, 0x6E, 0x46, 0xE0};
@@ -25,7 +25,7 @@ String baseUrl = "https://pt-kit.g-labs.my.id/api";
 #define RXD2 16  
 #define TXD2 17  
 #define QUEUE_SIZE 50 
-#define MSG_SIZE 64
+#define MSG_SIZE 128
 
 typedef struct { char csvLine[MSG_SIZE]; } DataPaket;
 QueueHandle_t dataQueue;

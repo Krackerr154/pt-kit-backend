@@ -1,0 +1,144 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lux Calibration - PT Kit</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body { font-family: 'Roboto', sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+    .container { max-width: 900px; margin: auto; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; }
+    .btn-calib { background: #ffbc00; color: #000; border: none; padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 20px; transition: 0.3s; }
+    .btn-calib:hover { background: #e0a600; }
+    .btn-calib:disabled { background: #ccc; cursor: not-allowed; }
+    .chart-container { position: relative; height: 400px; width: 100%; margin-top: 30px; }
+    h1 { margin-top: 0; }
+    .status-text { margin-top: 15px; font-style: italic; color: #666; }
+    .lux-display { font-size: 3rem; font-weight: bold; color: #ffbc00; margin: 20px 0; }
+    .nav-link { display: inline-block; margin-bottom: 20px; text-decoration: none; color: #007bff; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="/" class="nav-link">← Back to Dashboard</a>
+    <div class="card">
+        <h1>🔧 Absolute Max Lux Calibration</h1>
+        <p>Run this calibration to find the maximum stable light output of the AOD4184 & Lamp setup.<br>The system will turn the lamp to 100% PWM and wait for the LED droop to stabilize.</p>
+        
+        <div class="lux-display" id="luxVal">-- lx</div>
+        
+        <button id="startBtn" class="btn-calib" onclick="startCalibration()">START CALIBRATION</button>
+        <div id="statusMsg" class="status-text">Ready. Press Start.</div>
+
+        <div class="chart-container">
+            <canvas id="calibChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+var chart;
+var isCalibrating = false;
+var pollInterval;
+var startTime;
+
+function initChart() {
+    var ctx = document.getElementById('calibChart').getContext('2d');
+    chart = new Chart(ctx, {
+        type: 'line', 
+        data: {
+            labels: [],
+            datasets: [{ 
+                label: 'Light Intensity (Lux)', 
+                borderColor: '#ffbc00', 
+                backgroundColor: 'rgba(255, 188, 0, 0.2)', 
+                borderWidth: 3, 
+                data: [], 
+                fill: true,
+                tension: 0.1 
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, animation: false, 
+            scales: { 
+                x: { title: { display: true, text: 'Time (s)' } }, 
+                y: { title: { display: true, text: 'Lux (lx)' }, suggestedMin: 0 } 
+            }
+        }
+    });
+}
+
+function startCalibration() {
+    if(!confirm("Peringatan: Lampu akan menyala 100%! Pastikan chamber tertutup.")) return;
+    
+    document.getElementById('startBtn').disabled = true;
+    document.getElementById('statusMsg').innerText = "Triggering hardware... Please wait.";
+    
+    // Reset Chart
+    chart.data.labels = [];
+    chart.data.datasets[0].data = [];
+    chart.update();
+    startTime = Date.now();
+
+    fetch('/api/calibrate_lux', { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            isCalibrating = true;
+            document.getElementById('statusMsg').innerText = "Lamp ON. Monitoring LED drooping to find absolute stabilization point...";
+            pollInterval = setInterval(pollData, 1000);
+            
+            // Remove premature checkMaxLuxInterval();
+        });
+}
+
+function pollData() {
+    fetch('/api/current_status').then(r => r.json()).then(data => {
+        var dataList = data.recent_data;
+        if (dataList && dataList.length > 0) {
+            var latest = dataList[dataList.length - 1];
+            
+            var lux = latest.current_lux || 0;
+            document.getElementById('luxVal').innerText = lux.toFixed(0) + " lx";
+            
+            if (isCalibrating) {
+                var elapsed = Math.floor((Date.now() - startTime) / 1000);
+                chart.data.labels.push(elapsed);
+                chart.data.datasets[0].data.push(lux);
+                chart.update('none');
+                
+                // Jika state kembali ke IDLE (0), Arduino selesai kalibrasi
+                if (latest.state_code === 0 && elapsed > 5) {
+                    finishCalibration();
+                }
+            }
+        }
+    });
+}
+
+function finishCalibration() {
+    isCalibrating = false;
+    clearInterval(pollInterval);
+    
+    // Fetch newly saved value
+    fetch('/api/get_config').then(r => r.json()).then(conf => {
+        if (conf && conf.max_hardware_lux) {
+            document.getElementById('statusMsg').innerText = "Sukses! Max stable Lux is: " + conf.max_hardware_lux + " lx";
+        } else {
+            document.getElementById('statusMsg').innerText = "Kalibrasi selesai, tapi gagal membaca config DB.";
+        }
+    });
+    
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('startBtn').innerText = "RECALIBRATE";
+}
+
+initChart();
+setInterval(() => { if(!isCalibrating) pollData(); }, 1000);
+</script>
+
+</body>
+</html>

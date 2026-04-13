@@ -15,12 +15,12 @@
     .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
     .card-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #2c3e50; display:flex; justify-content:space-between; align-items:center; }
     
-    .status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+    .status-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
     .stat-box { background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #eee; margin-bottom:0; }
     .stat-val { font-size: 1.5rem; font-weight: bold; color: #333; }
     .stat-label { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
     
-    .c-ir { color: #007bff; } .c-tc { color: #dc3545; } .c-rate { color: #28a745; }
+    .c-ir { color: #007bff; } .c-tc { color: #dc3545; } .c-rate { color: #28a745; } .c-lux { color: #ffbc00; }
     
     .form-group { margin-bottom: 12px; }
     label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; }
@@ -78,6 +78,10 @@
             <div class="card stat-box">
                 <div class="stat-label">Heating Rate (TC)</div>
                 <div class="stat-val c-rate" style="font-size:1.2rem;" id="rateTC">0.00 <small>°C/s</small></div>
+            </div>
+            <div class="card stat-box">
+                <div class="stat-label">Current Lux</div>
+                <div class="stat-val c-lux" id="valLux">-- lx</div>
             </div>
         </div>
 
@@ -142,6 +146,7 @@
                 <div class="form-group"><label>Target Duration (sec/cycle)</label><input type="number" id="duration" value="60"></div>
                 <div class="form-group"><label>Total Cycles</label><input type="number" id="cycles" value="5"></div>
                 <div class="form-group"><label>Max Temp (°C)</label><input type="number" id="maxTemp" value="100"></div>
+                <div class="form-group"><label>Target Lux (lx)</label><input type="number" id="targetLux" value="5000"></div>
                 <div class="form-group"><label>Logging Interval (sec)</label><input type="number" id="interval" value="1" min="1"></div>
                 <button class="btn-start" onclick="startExperiment()">🚀 START EXPERIMENT</button>
             </div>
@@ -159,6 +164,7 @@
                 <div class="stat-val" style="font-size:1.2rem; color:#666;" id="valTime">00:00</div>
             </div>
             <a href="/history" class="btn-history">📂 Buka Data Archive (History)</a>
+            <a href="/static/calibration.html" class="btn-history" style="margin-top: 5px;">🔧 Calibrate Max Lux Limits</a>
         </div>
         <div class="card">
             <div class="card-title" style="font-size:0.9rem;">ℹ️ System Log</div>
@@ -425,6 +431,9 @@ function updateStatus() {
             // UPDATE ANGKA (Selalu Update, baik IDLE maupun RUNNING)
             document.getElementById('valIR').innerText = latest.ir_temp.toFixed(1) + " °C";
             document.getElementById('valTC').innerText = latest.tc_temp.toFixed(1) + " °C";
+            if (latest.current_lux !== undefined) {
+                document.getElementById('valLux').innerText = latest.current_lux.toFixed(0) + " lx";
+            }
             
             // Format waktu menjadi MM:SS
             var totalSecs = latest.total_time || 0;
@@ -548,12 +557,14 @@ function startExperiment() {
         duration = parseInt(document.getElementById('duration').value),
         cycles = parseInt(document.getElementById('cycles').value),
         maxTemp = parseFloat(document.getElementById('maxTemp').value),
+        targetLux = parseFloat(document.getElementById('targetLux').value),
         interval = parseInt(document.getElementById('interval').value);
     
     if(!name || !op) return alert("Operator & Nama Sampel wajib diisi!");
     if(duration <= 0) return alert("Durasi harus > 0 detik!");
     if(cycles <= 0) return alert("Jumlah siklus harus > 0!");
     if(maxTemp < 50) return alert("Max temp minimal 50°C!");
+    if(targetLux < 0) return alert("Target lux harus > 0!");
     if(interval < 1) return alert("Interval minimal 1 detik!");
     
     log("Starting experiment. Clearing IDLE data...");
@@ -572,6 +583,7 @@ function startExperiment() {
         duration: duration, 
         cycles: cycles,
         max_temp: maxTemp, 
+        target_lux: targetLux,
         interval: interval  // Ditambahkan sesuai Arduino
     };
     

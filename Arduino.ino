@@ -14,10 +14,12 @@
 #include <Adafruit_MLX90614.h>
 #include <SoftwareSerial.h>
 #include <max6675.h>
+#include <BH1750.h>
+#include <EEPROM.h>
 
 
 // --- PIN MAPPING ---
-#define PIN_RELAY       2
+#define PIN_LAMP        5
 #define PIN_FAN         3 
 #define PIN_TC_CLK      6
 #define PIN_TC_CS       7
@@ -43,10 +45,11 @@ SoftwareSerial comm(PIN_ESP_RX, PIN_ESP_TX);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 MAX6675 thermocouple(PIN_TC_CLK, PIN_TC_CS, PIN_TC_DO);
+BH1750 lightMeter;
 
 
 // Status Mesin
-enum State { IDLE, PRE_HEAT, HEATING, COOLING, STABILIZING, DONE };
+enum State { IDLE, PRE_HEAT, HEATING, COOLING, STABILIZING, DONE, CALIBRATING };
 State currentState = IDLE;
 
 
@@ -54,8 +57,17 @@ State currentState = IDLE;
 String espIP = "";
 bool wifiConnected = false;
 float tempIR = 0.0, tempTC = 0.0;
+float rawLux = 0.0, smoothedLux = 0.0;
 float userMaxTemp = 100.0;       
 int   userInterval = 1;          
+float targetLux = 5000.0;
+
+// Lux Control Vars
+int lampPWM = 0;
+float maxHardwareLux = 10000.0; // default, will be overridden by EEPROM
+const float KP = 0.05;
+const float LUX_TOLERANCE = 50.0;
+const float EMA_ALPHA = 0.2;
 
 
 unsigned long currentSec = 0;       
@@ -82,13 +94,18 @@ void setup() {
   Serial.begin(9600);
   comm.begin(9600); 
    
-  pinMode(PIN_RELAY, OUTPUT);
+  pinMode(PIN_LAMP, OUTPUT);
   pinMode(PIN_FAN, OUTPUT);
-  digitalWrite(PIN_RELAY, LOW);
+  analogWrite(PIN_LAMP, 0);
   analogWrite(PIN_FAN, 0);
 
   lcd.init(); lcd.backlight();
   mlx.begin();
+  lightMeter.begin();
+
+  // Load maxHardwareLux from EEPROM (address 0)
+  EEPROM.get(0, maxHardwareLux);
+  if(isnan(maxHardwareLux) || maxHardwareLux <= 0) maxHardwareLux = 10000.0;
   
   // [DEBUG STARTUP] - Fitur dari kode pertama
   lcd.clear();
@@ -120,28 +137,37 @@ void loop() {
     }
     else if (data.startsWith("SET:")) {
       // === PARSING BARU (METODE POTONG KUE) ===
-      // Format: SET:Durasi:Siklus:MaxTemp:Interval
-      // Contoh: SET:60:5:80.0:1
+      // Format: SET:Durasi:Siklus:MaxTemp:Interval:TargetLux
+      // Contoh: SET:60:5:80.0:1:5000
       
       String raw = data; 
-      raw.remove(0, 4); // Buang "SET:" -> sisa "60:5:80.0:1"
+      raw.remove(0, 4); // Buang "SET:" -> sisa "60:5:80.0:1:5000"
       
       // Ambil Durasi
       int firstDiv = raw.indexOf(':');
       targetSec = raw.substring(0, firstDiv).toInt();
       
-      // Potong lagi -> sisa "5:80.0:1"
+      // Potong lagi -> sisa "5:80.0:1:5000"
       raw = raw.substring(firstDiv + 1);
       int secondDiv = raw.indexOf(':');
       targetCycles = raw.substring(0, secondDiv).toInt();
       
-      // Potong lagi -> sisa "80.0:1"
+      // Potong lagi -> sisa "80.0:1:5000"
       raw = raw.substring(secondDiv + 1);
       int thirdDiv = raw.indexOf(':');
       userMaxTemp = raw.substring(0, thirdDiv).toFloat();
       
-      // Sisanya adalah Interval -> "1"
-      userInterval = raw.substring(thirdDiv + 1).toInt();
+      // Potong lagi -> sisa "1:5000"
+      raw = raw.substring(thirdDiv + 1);
+      int fourthDiv = raw.indexOf(':');
+      
+      if(fourthDiv == -1) {
+          userInterval = raw.toInt();
+          targetLux = maxHardwareLux; // fallback
+      } else {
+          userInterval = raw.substring(0, fourthDiv).toInt();
+          targetLux = raw.substring(fourthDiv + 1).toFloat();
+      }
       
       // Validasi Safety - dari kode pertama
       if(userMaxTemp < 50) userMaxTemp = 100.0; 
@@ -160,8 +186,17 @@ void loop() {
       currentSec = 0; 
       currentCycleNum = 1;
       lastLogTime = millis(); 
+      lampPWM = constrain((targetLux / maxHardwareLux) * 255.0, 0, 255); // open loop start
       currentState = PRE_HEAT; 
       lcd.clear();
+    }
+    else if (data == "CAL_LUX") {
+      currentState = CALIBRATING;
+      currentSec = 0;
+      lampPWM = 255;
+      analogWrite(PIN_LAMP, lampPWM);
+      lcd.clear();
+      lcd.setCursor(0,0); lcd.print("CALIBRATING...");
     }
   }
 
@@ -209,9 +244,12 @@ void loop() {
       totalMasterSec = 0;
       lcd.clear();
     } 
+    else if (currentState == CALIBRATING) {
+      runCalibrationLogic();
+    }
     else {
       // MODE IDLE
-      digitalWrite(PIN_RELAY, LOW); analogWrite(PIN_FAN, 0); 
+      analogWrite(PIN_LAMP, 0); analogWrite(PIN_FAN, 0); 
     }
     
     sendDataToESP();
@@ -235,7 +273,7 @@ void runExperimentLogic() {
   switch (currentState) {
     case PRE_HEAT:
       currentSec++;
-      digitalWrite(PIN_RELAY, HIGH); analogWrite(PIN_FAN, 0);
+      analogWrite(PIN_LAMP, lampPWM); analogWrite(PIN_FAN, 0);
       updateLCD("PRE-HEAT");
       if (tempTC >= 30.0 && tempIR >= 30.0) { // Tetap pakai kedua sensor
          currentState = HEATING; currentSec=0; lcd.clear();
@@ -243,16 +281,24 @@ void runExperimentLogic() {
       break;
     case HEATING:
       currentSec++;
-      digitalWrite(PIN_RELAY, HIGH); analogWrite(PIN_FAN, 0);
+      
+      // Closed Loop Lux Control with Deadband
+      float luxError = targetLux - smoothedLux;
+      if (abs(luxError) > LUX_TOLERANCE) {
+          lampPWM += (luxError * KP);
+          lampPWM = constrain(lampPWM, 0, 255);
+      }
+      analogWrite(PIN_LAMP, lampPWM); analogWrite(PIN_FAN, 0);
+      
       updateLCD("HEAT"); // Format: HEAT 5/60
       // Matikan lampu TEPAT WAKTU sesuai targetSec
       if (currentSec >= targetSec) {
-        digitalWrite(PIN_RELAY, LOW); currentState = COOLING; currentSec=0; lcd.clear();
+        analogWrite(PIN_LAMP, 0); currentState = COOLING; currentSec=0; lcd.clear();
       }
       break;
     case COOLING:
       currentSec++; 
-      digitalWrite(PIN_RELAY, LOW); analogWrite(PIN_FAN, 255); 
+      analogWrite(PIN_LAMP, 0); analogWrite(PIN_FAN, 255); 
       updateLCD("COOL");
       // Tetap pakai kedua sensor seperti kode pertama
       if (tempTC <= (MAIN_TARGET - UNDERSHOOT) && tempIR <= (MAIN_TARGET - UNDERSHOOT)) {
@@ -261,7 +307,7 @@ void runExperimentLogic() {
       break;
     case STABILIZING:
       currentSec++;
-      digitalWrite(PIN_RELAY, LOW); analogWrite(PIN_FAN, 150); 
+      analogWrite(PIN_LAMP, 0); analogWrite(PIN_FAN, 150); 
       stableCounter++;
       updateLCD("STABIL");
       if (tempTC > (MAIN_TARGET + HYSTERESIS)) { 
@@ -276,6 +322,36 @@ void runExperimentLogic() {
   }
 }
 
+// Sliding Window vars for Calibration
+float luxWindow[10];
+
+void runCalibrationLogic() {
+  currentSec++;
+  analogWrite(PIN_LAMP, 255); // 100% PWM
+  
+  // Fill sliding window
+  luxWindow[(currentSec - 1) % 10] = smoothedLux;
+  
+  if (currentSec > 10) {
+    // Check if the difference between oldest and newest is within tolerance (stable droop)
+    float oldest = luxWindow[currentSec % 10];
+    float diffPercent = abs(oldest - smoothedLux) / oldest;
+    
+    if (diffPercent < 0.01) { // 1% deviation over 10 seconds = stable
+        maxHardwareLux = smoothedLux;
+        EEPROM.put(0, maxHardwareLux);
+        
+        // Let ESP know we got the value
+        comm.println("MAXLUX:" + String(maxHardwareLux));
+        delay(500); 
+        comm.println("MAXLUX:" + String(maxHardwareLux)); // send twice for redundancy
+        
+        forceStop("CALIB_DONE");
+    }
+  }
+}
+
+
 
 void sendDataToESP() {
     int saveFlag = 0;
@@ -289,6 +365,7 @@ void sendDataToESP() {
     comm.print(currentState); comm.print(",");
     comm.print(tempIR, 1); comm.print(",");
     comm.print(tempTC, 1); comm.print(",");
+    comm.print(smoothedLux, 1); comm.print(",");
     comm.println(saveFlag);
 }
 
@@ -312,6 +389,13 @@ void showScrollingStandby() {
 void readSensors() {
   tempIR = mlx.readObjectTempC(); if(isnan(tempIR)) tempIR = 0.0;
   tempTC = thermocouple.readCelsius(); if(isnan(tempTC)) tempTC = 0.0;
+  
+  rawLux = lightMeter.readLightLevel();
+  if(isnan(rawLux)) rawLux = 0.0;
+  // EMA Filter
+  smoothedLux = (EMA_ALPHA * rawLux) + ((1.0 - EMA_ALPHA) * smoothedLux);
+  // Optional: if smoothed is 0 initially, set to raw
+  if (smoothedLux < 1.0 && rawLux > 1.0) smoothedLux = rawLux;
 }
 
 void forceStop(String reason) { 
@@ -321,13 +405,14 @@ void forceStop(String reason) {
   currentSec = 0;
   totalMasterSec = 0;
   stableCounter = 0;
-  digitalWrite(PIN_RELAY, LOW); 
+  lampPWM = 0;
+  analogWrite(PIN_LAMP, 0); 
   analogWrite(PIN_FAN, 0);
   lcd.clear(); 
 }
 
 void showDone() { 
-  digitalWrite(PIN_RELAY, LOW); 
+  analogWrite(PIN_LAMP, 0); 
   analogWrite(PIN_FAN, 0);
   lcd.setCursor(0,0); lcd.print("DONE! Saving..."); 
 }

@@ -35,11 +35,12 @@
 
 1. **Operator** configures experiment parameters (duration, cycles, max temperature, etc.) via the web dashboard.
 2. **Server** issues a command to the ESP32 microcontroller.
-3. **Arduino** reads IR and thermocouple (TC) sensor data in real-time.
+3. **Arduino** reads IR, thermocouple (TC), and ambient light (Lux) sensor data in real-time while actively maintaining PWM duty cycles.
 4. **ESP32** transmits CSV-formatted sensor lines to the server via HTTP.
 5. **Server** stores valid data in PostgreSQL and broadcasts live readings to the dashboard.
-6. **Dashboard** renders real-time charts, heating rate calculations, cycle performance tables, and state indicators.
+6. **Dashboard** renders real-time charts, heating rate calculations, lux readings, and state indicators.
 7. **History/Archive** page allows post-experiment analysis with overlay, regression, and statistical comparison (T-Test) between samples.
+8. **Calibration Page** maps hardware constraints like Absolute Max Lux by analyzing temperature-induced LED drooping in real-time.
 
 ---
 
@@ -55,9 +56,9 @@
 │   │            │             │            │                   │        │
 │   │ • IR Temp  │             │ Polls:     │                   ▼        │
 │   │ • TC Temp  │             │ /api/check │          ┌───────────────┐ │
-│   │ • State    │             │  _command  │          │  FastAPI      │ │
-│   │ • Cycle    │             │            │          │  Server       │ │
-│   └────────────┘             │ Sends:     │          │  (Uvicorn)    │ │
+│   │ • Lux      │             │  _command  │          │  FastAPI      │ │
+│   │ • State    │             │            │          │  Server       │ │
+│   │ • Cycle    │             │ Sends:     │          │  (Uvicorn)    │ │
 │                              │ /api/insert│          │  Port 8000    │ │
 │                              │  _data     │          └───────┬───────┘ │
 │                              └────────────┘                  │         │
@@ -110,7 +111,7 @@ The server runs behind a **NAT** and is exposed to the public internet through a
 
 | Layer          | Technology                                       |
 | -------------- | ------------------------------------------------ |
-| **Hardware**   | Arduino (sensor reading), ESP32 (WiFi data TX)   |
+| **Hardware**   | Arduino, ESP32, AOD4184 MOSFET, GY-302 (BH1750)  |
 | **Backend**    | Python 3.9, FastAPI, Uvicorn                     |
 | **Database**   | PostgreSQL 13                                    |
 | **Frontend**   | Vanilla HTML/CSS/JS, Chart.js, jStat             |
@@ -129,10 +130,16 @@ The server runs behind a **NAT** and is exposed to the public internet through a
 - **Heating rate calculation** — instantaneous °C/s for both IR and TC during heating phase.
 - **State indicator bar** — visual dots showing current experiment phase (IDLE → PRE-HEAT → HEATING → COOLING → STABILIZING → DONE).
 - **Cycle performance table** — per-cycle heating rate with linear regression slope ± standard error, duration, and peak temperature.
-- **Experiment control panel** — configure operator name, sample name, duration, cycles, max temp, and logging interval.
+- **Experiment control panel** — configure operator name, sample name, duration, cycles, max temp, target lux, and logging interval.
+- **Closed-Loop LED Dimming** — seamless mapping and PID-style tuning that adjusts the AOD4184 PWM frequency in real-time to combat LED thermal droop. 
 - **Emergency stop** — immediately halts the experiment and updates database.
 - **Auto-sync** — multiple browser clients stay synchronized with server state.
 - **State restore on restart** — server resumes tracking an active experiment after a reboot.
+
+### Device Calibration (`/static/calibration.html`)
+- **Automated hardware profiling** — blazes an LED connected to the AOD4184 module at 100% PWM.
+- **Droop-Awareness** — intelligently charts and halts only when the sliding-window derivative proves the LED's thermal drop has plateaued.
+- **Hardware Limitations** — binds hardware constraints to PostgreSQL to prevent impossible parameter requests.
 
 ### Data Archive / History (`/history`)
 - **Experiment list** — filterable by operator and searchable by sample name.
@@ -194,7 +201,8 @@ pt-kit-backend/
   "duration": 60,
   "cycles": 5,
   "max_temp": 80.0,
-  "interval": 1
+  "interval": 1,
+  "target_lux": 5000.0
 }
 ```
 
@@ -206,7 +214,7 @@ pt-kit-backend/
 }
 ```
 
-**Behavior:** Creates a new experiment record with status `WAITING`, clears the sensor cache, and queues a command string for the ESP32: `SET:<duration>:<cycles>:<max_temp>:<interval>`.
+**Behavior:** Creates a new experiment record with status `WAITING`, clears the sensor cache, and queues a command string for the ESP32: `SET:<duration>:<cycles>:<max_temp>:<interval>:<target_lux>`.
 
 #### `POST /api/stop_experiment`
 
@@ -233,6 +241,7 @@ pt-kit-backend/
     "target_cycles": 5,
     "max_temp": 80.0,
     "log_interval": 1,
+    "target_lux": 5000.0,
     "started_at": "2026-02-11T10:30:00"
   },
   "recent_data": [
@@ -243,7 +252,8 @@ pt-kit-backend/
       "state_code": 2,
       "state_label": "HEATING",
       "ir_temp": 65.32,
-      "tc_temp": 63.18
+      "tc_temp": 63.18,
+      "current_lux": 4980.5
     }
   ]
 }
@@ -279,11 +289,11 @@ pt-kit-backend/
 **Request Body:**
 ```json
 {
-  "csv_line": "45,15,2,2,65.32,63.18"
+  "csv_line": "45,15,2,2,65.32,63.18,4980.5"
 }
 ```
 
-CSV format: `total_time,phase_time,cycle_num,state_code,ir_temp,tc_temp`
+CSV format: `total_time,phase_time,cycle_num,state_code,ir_temp,tc_temp,current_lux`
 
 **State Codes:**
 | Code | Label        |
@@ -338,6 +348,7 @@ Filename format: `<sample_name>_<operator_name>.csv`
 | `target_duration` | INT          | Target duration per cycle (seconds)              |
 | `target_cycles`   | INT          | Target number of heating/cooling cycles          |
 | `max_temp`        | FLOAT        | Maximum temperature cutoff (°C)                  |
+| `target_lux`      | FLOAT        | Target Lux level for closed-loop dimming         |
 | `log_interval`    | INT          | Sensor logging interval (seconds)                |
 | `status`          | VARCHAR(20)  | `WAITING` (active), `STOPPED`, or `COMPLETED`    |
 | `started_at`      | TIMESTAMP    | Experiment creation timestamp                    |
@@ -352,11 +363,19 @@ Filename format: `<sample_name>_<operator_name>.csv`
 | `total_time`    | INT         | Elapsed time since experiment start (seconds)       |
 | `phase_time`    | INT         | Elapsed time within current phase (seconds)         |
 | `cycle_num`     | INT         | Current cycle number                                |
-| `state_code`    | INT         | Numeric state code (0–5)                            |
+| `state_code`    | INT         | Numeric state code (0–6)                            |
 | `state_label`   | VARCHAR(20) | Human-readable state name                           |
 | `ir_temp`       | FLOAT       | Infrared sensor temperature (°C)                    |
 | `tc_temp`       | FLOAT       | Thermocouple sensor temperature (°C)                |
+| `current_lux`   | FLOAT       | Ambient Light level via GY-302 sensor (lx)          |
 | `recorded_at`   | TIMESTAMP   | Server-side timestamp when data was recorded         |
+
+### `device_config`
+
+| Column          | Type        | Description                                        |
+| --------------- | ----------- | -------------------------------------------------- |
+| `key`           | VARCHAR(50) | Setting key (e.g., `max_hardware_lux`)             |
+| `value`         | VARCHAR(100)| Setting value                                      |
 
 ---
 
