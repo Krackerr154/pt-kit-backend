@@ -10,43 +10,179 @@
   <style>
     body { font-family: 'Roboto', sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
     .container { max-width: 900px; margin: auto; }
-    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; }
-    .btn-calib { background: #ffbc00; color: #000; border: none; padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 20px; transition: 0.3s; }
-    .btn-calib:hover { background: #e0a600; }
-    .btn-calib:disabled { background: #ccc; cursor: not-allowed; }
-    .chart-container { position: relative; height: 400px; width: 100%; margin-top: 30px; }
-    h1 { margin-top: 0; }
-    .status-text { margin-top: 15px; font-style: italic; color: #666; }
-    .lux-display { font-size: 3rem; font-weight: bold; color: #ffbc00; margin: 20px 0; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    h1 { margin-top: 0; text-align: center; }
     .nav-link { display: inline-block; margin-bottom: 20px; text-decoration: none; color: #007bff; font-weight: bold; }
+
+    /* Step Indicator */
+    .step-indicator { display: flex; justify-content: center; align-items: center; margin-bottom: 30px; }
+    .step-circle { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; transition: all 0.3s; }
+    .step-circle.pending { background: #e9ecef; color: #999; }
+    .step-circle.active { background: #ffbc00; color: #000; box-shadow: 0 0 12px rgba(255, 188, 0, 0.5); }
+    .step-circle.done { background: #28a745; color: white; }
+    .step-line { width: 60px; height: 3px; background: #e9ecef; margin: 0 8px; transition: background 0.3s; }
+    .step-line.done { background: #28a745; }
+    .step-label { text-align: center; font-size: 0.75rem; color: #999; margin-top: 5px; }
+    .step-group { display: flex; flex-direction: column; align-items: center; }
+
+    /* Buttons */
+    .btn { border: none; padding: 15px 30px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.3s; display: inline-block; margin-top: 15px; }
+    .btn:disabled { background: #ccc !important; color: #999 !important; cursor: not-allowed; box-shadow: none !important; }
+    .btn-primary { background: #ffbc00; color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #e0a600; }
+    .btn-next { background: #007bff; color: white; }
+    .btn-next:hover:not(:disabled) { background: #0056b3; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-success:hover:not(:disabled) { background: #1e7e34; }
+    .btn-reset { background: #6c757d; color: white; margin-left: 10px; }
+    .btn-reset:hover:not(:disabled) { background: #545b62; }
+
+    /* Phase Panel */
+    .phase-panel { display: none; }
+    .phase-panel.active { display: block; }
+    .phase-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: #2c3e50; }
+    .phase-desc { color: #666; margin-bottom: 15px; line-height: 1.6; }
+    .instruction-box { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin: 15px 0; font-weight: 500; }
+    .instruction-box .emoji { font-size: 1.3rem; margin-right: 8px; }
+
+    /* Live Display */
+    .lux-display { font-size: 2.5rem; font-weight: bold; color: #ffbc00; text-align: center; margin: 15px 0; }
+    .lux-display small { font-size: 1rem; color: #999; }
+    .chart-container { position: relative; height: 300px; width: 100%; margin-top: 20px; }
+    .status-text { text-align: center; font-style: italic; color: #666; margin-top: 10px; }
+
+    /* Results */
+    .results-card { background: #f8fff8; border: 2px solid #28a745; border-radius: 12px; padding: 25px; margin-top: 20px; }
+    .results-card h3 { color: #28a745; margin-top: 0; text-align: center; }
+    .result-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef; }
+    .result-row:last-child { border-bottom: none; }
+    .result-label { color: #666; }
+    .result-value { font-weight: bold; color: #333; }
+    .factor-highlight { font-size: 1.5rem; color: #ffbc00; font-weight: bold; text-align: center; margin: 10px 0; }
+
+    .btn-group { text-align: center; margin-top: 20px; }
   </style>
 </head>
 <body>
 
 <div class="container">
     <a href="/" class="nav-link">← Back to Dashboard</a>
+    
     <div class="card">
-        <h1>🔧 Absolute Max Lux Calibration</h1>
-        <p>Run this calibration to find the maximum stable light output of the AOD4184 & Lamp setup.<br>The system will turn the lamp to 100% PWM and wait for the LED droop to stabilize.</p>
+        <h1>🔧 Lux Calibration — Teflon Tape Method</h1>
+        <p style="text-align:center; color:#666;">Calibrate the BH1750 sensor to extend its measurement range using teflon tape as a physical attenuator.</p>
         
-        <div class="lux-display" id="luxVal">-- lx</div>
-        
-        <button id="startBtn" class="btn-calib" onclick="startCalibration()">START CALIBRATION</button>
-        <div id="statusMsg" class="status-text">Ready. Press Start.</div>
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step-group">
+                <div class="step-circle active" id="stepCircle1">1</div>
+                <div class="step-label">Bare</div>
+            </div>
+            <div class="step-line" id="stepLine1"></div>
+            <div class="step-group">
+                <div class="step-circle pending" id="stepCircle2">2</div>
+                <div class="step-label">Tape</div>
+            </div>
+            <div class="step-line" id="stepLine2"></div>
+            <div class="step-group">
+                <div class="step-circle pending" id="stepCircle3">3</div>
+                <div class="step-label">Full Power</div>
+            </div>
+        </div>
 
+        <!-- Live Lux Display -->
+        <div class="lux-display" id="luxVal">-- <small>lx</small></div>
+        <div id="statusMsg" class="status-text">Ready. Follow the steps below.</div>
+
+        <!-- Chart -->
         <div class="chart-container">
             <canvas id="calibChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Phase 1: Bare Sensor -->
+    <div class="card phase-panel active" id="phase1">
+        <div class="phase-title">① Bare Sensor Measurement</div>
+        <div class="phase-desc">
+            The lamp will turn on at <b>50% PWM</b> (reference level). The system will wait for the lux reading to stabilize.
+            <br><b>Make sure:</b> No teflon tape is on the sensor. The sensor should be bare/uncovered.
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-primary" id="btnBare" onclick="startPhase('bare')">▶ START BARE MEASUREMENT</button>
+        </div>
+    </div>
+
+    <!-- Phase 2: Taped Sensor -->
+    <div class="card phase-panel" id="phase2">
+        <div class="phase-title">② Taped Sensor Measurement</div>
+        <div class="instruction-box">
+            <span class="emoji">📎</span> Apply teflon tape layers on the BH1750 sensor now. Press the button below when ready.
+        </div>
+        <div class="phase-desc">
+            The lamp will turn on at the same <b>50% PWM</b>. The system will measure the attenuated reading and compute the correction factor.
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-primary" id="btnTape" onclick="startPhase('tape')">▶ MEASURE WITH TAPE</button>
+        </div>
+    </div>
+
+    <!-- Phase 3: Full Power -->
+    <div class="card phase-panel" id="phase3">
+        <div class="phase-title">③ Full Power Verification</div>
+        <div class="phase-desc">
+            The lamp will ramp to <b>100% PWM</b> with the tape still on the sensor. The system will apply the correction factor and determine the true maximum lux output.
+        </div>
+        <div id="factorPreview" style="display:none;">
+            <div class="factor-highlight">Attenuation Factor: <span id="previewFactor">--</span>×</div>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-success" id="btnFull" onclick="startPhase('full')">⚡ FULL POWER TEST</button>
+        </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="card phase-panel" id="phaseResults">
+        <div class="results-card">
+            <h3>✅ Calibration Complete!</h3>
+            <div class="result-row">
+                <span class="result-label">Bare Reference (50% PWM)</span>
+                <span class="result-value" id="resBare">--</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Taped Reading (50% PWM)</span>
+                <span class="result-value" id="resTaped">--</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Attenuation Factor</span>
+                <span class="result-value" id="resFactor" style="color:#ffbc00; font-size:1.2rem;">--</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Corrected Max Lux</span>
+                <span class="result-value" id="resMax" style="color:#28a745; font-size:1.2rem;">--</span>
+            </div>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="resetWizard()">🔄 RECALIBRATE</button>
+            <a href="/" class="btn btn-next" style="text-decoration:none;">← Dashboard</a>
         </div>
     </div>
 </div>
 
 <script>
 var chart;
-var isCalibrating = false;
-var pollInterval;
-var startTime;
+var pollInterval = null;
+var calStatusInterval = null;
+var startTime = 0;
+var currentPhase = 'idle';
+
+// Stored results
+var bareLux = null;
+var tapedLux = null;
+var factor = null;
+var correctedMax = null;
 
 function initChart() {
+    if (chart) chart.destroy();
     var ctx = document.getElementById('calibChart').getContext('2d');
     chart = new Chart(ctx, {
         type: 'line', 
@@ -55,11 +191,12 @@ function initChart() {
             datasets: [{ 
                 label: 'Light Intensity (Lux)', 
                 borderColor: '#ffbc00', 
-                backgroundColor: 'rgba(255, 188, 0, 0.2)', 
+                backgroundColor: 'rgba(255, 188, 0, 0.15)', 
                 borderWidth: 3, 
                 data: [], 
                 fill: true,
-                tension: 0.1 
+                tension: 0.2,
+                pointRadius: 0
             }]
         },
         options: {
@@ -72,72 +209,208 @@ function initChart() {
     });
 }
 
-function startCalibration() {
-    if(!confirm("Peringatan: Lampu akan menyala 100%! Pastikan chamber tertutup.")) return;
+function setStep(stepNum) {
+    // Update step circles
+    for (var i = 1; i <= 3; i++) {
+        var circle = document.getElementById('stepCircle' + i);
+        circle.className = 'step-circle ' + (i < stepNum ? 'done' : (i === stepNum ? 'active' : 'pending'));
+        if (i < stepNum) circle.innerText = '✓';
+    }
+    // Update step lines
+    document.getElementById('stepLine1').className = 'step-line' + (stepNum > 1 ? ' done' : '');
+    document.getElementById('stepLine2').className = 'step-line' + (stepNum > 2 ? ' done' : '');
+}
+
+function showPhase(phaseId) {
+    document.querySelectorAll('.phase-panel').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById(phaseId).classList.add('active');
+}
+
+function startPhase(phase) {
+    currentPhase = phase;
     
-    document.getElementById('startBtn').disabled = true;
-    document.getElementById('statusMsg').innerText = "Triggering hardware... Please wait.";
+    // Disable the button that was clicked
+    if (phase === 'bare') document.getElementById('btnBare').disabled = true;
+    if (phase === 'tape') document.getElementById('btnTape').disabled = true;
+    if (phase === 'full') document.getElementById('btnFull').disabled = true;
     
-    // Reset Chart
+    // Reset chart for this phase
     chart.data.labels = [];
     chart.data.datasets[0].data = [];
     chart.update();
     startTime = Date.now();
-
-    fetch('/api/calibrate_lux', { method: 'POST' })
-        .then(r => r.json())
-        .then(d => {
-            isCalibrating = true;
-            document.getElementById('statusMsg').innerText = "Lamp ON. Monitoring LED drooping to find absolute stabilization point...";
-            pollInterval = setInterval(pollData, 1000);
+    
+    var phaseLabels = { 'bare': 'Bare Sensor', 'tape': 'Taped Sensor', 'full': 'Full Power' };
+    document.getElementById('statusMsg').innerText = 'Starting ' + phaseLabels[phase] + ' measurement... Waiting for stabilization.';
+    
+    // Send command to server
+    fetch('/api/calibrate_tape?phase=' + phase, { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            // Start polling live data
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(pollLiveData, 1000);
             
-            // Remove premature checkMaxLuxInterval();
+            // Start polling calibration status
+            if (calStatusInterval) clearInterval(calStatusInterval);
+            calStatusInterval = setInterval(pollCalStatus, 1500);
         });
 }
 
-function pollData() {
-    fetch('/api/current_status').then(r => r.json()).then(data => {
-        var dataList = data.recent_data;
-        if (dataList && dataList.length > 0) {
-            var latest = dataList[dataList.length - 1];
-            
-            var lux = latest.current_lux || 0;
-            document.getElementById('luxVal').innerText = lux.toFixed(0) + " lx";
-            
-            if (isCalibrating) {
+function pollLiveData() {
+    fetch('/api/current_status')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var dataList = data.recent_data;
+            if (dataList && dataList.length > 0) {
+                var latest = dataList[dataList.length - 1];
+                var lux = latest.current_lux || 0;
+                document.getElementById('luxVal').innerHTML = lux.toFixed(0) + ' <small>lx</small>';
+                
                 var elapsed = Math.floor((Date.now() - startTime) / 1000);
                 chart.data.labels.push(elapsed);
                 chart.data.datasets[0].data.push(lux);
                 chart.update('none');
-                
-                // Jika state kembali ke IDLE (0), Arduino selesai kalibrasi
-                if (latest.state_code === 0 && elapsed > 5) {
-                    finishCalibration();
-                }
             }
-        }
-    });
+        });
 }
 
-function finishCalibration() {
-    isCalibrating = false;
-    clearInterval(pollInterval);
+function pollCalStatus() {
+    fetch('/api/calibration_status')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var state = data.state;
+            
+            if (currentPhase === 'bare' && state.phase === 'bare_done') {
+                onBareDone(state.bare_lux);
+            }
+            else if (currentPhase === 'tape' && state.phase === 'tape_done') {
+                onTapeDone(state.taped_lux, state.factor);
+            }
+            else if (currentPhase === 'done') {
+                onCalComplete(data.config);
+            }
+            
+            // Also check for "done" phase from CALRESULT
+            if (state.phase === 'done' && currentPhase === 'full') {
+                currentPhase = 'done_detected';
+                onCalComplete(data.config);
+            }
+        });
+}
+
+function onBareDone(bare) {
+    bareLux = bare;
+    currentPhase = 'bare_complete';
     
-    // Fetch newly saved value
-    fetch('/api/get_config').then(r => r.json()).then(conf => {
-        if (conf && conf.max_hardware_lux) {
-            document.getElementById('statusMsg').innerText = "Sukses! Max stable Lux is: " + conf.max_hardware_lux + " lx";
-        } else {
-            document.getElementById('statusMsg').innerText = "Kalibrasi selesai, tapi gagal membaca config DB.";
-        }
-    });
+    // Stop polling
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+    if (calStatusInterval) { clearInterval(calStatusInterval); calStatusInterval = null; }
     
-    document.getElementById('startBtn').disabled = false;
-    document.getElementById('startBtn').innerText = "RECALIBRATE";
+    document.getElementById('statusMsg').innerText = 'Bare sensor stabilized at ' + bare.toFixed(0) + ' lx. Apply teflon tape and proceed.';
+    
+    // Advance to step 2
+    setStep(2);
+    showPhase('phase2');
+}
+
+function onTapeDone(taped, f) {
+    tapedLux = taped;
+    factor = f;
+    currentPhase = 'tape_complete';
+    
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+    if (calStatusInterval) { clearInterval(calStatusInterval); calStatusInterval = null; }
+    
+    document.getElementById('statusMsg').innerText = 'Taped reading: ' + taped.toFixed(0) + ' lx. Factor: ' + f.toFixed(3) + '×. Ready for full power test.';
+    
+    // Show factor preview
+    document.getElementById('previewFactor').innerText = f.toFixed(3);
+    document.getElementById('factorPreview').style.display = 'block';
+    
+    // Advance to step 3
+    setStep(3);
+    showPhase('phase3');
+}
+
+function onCalComplete(config) {
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+    if (calStatusInterval) { clearInterval(calStatusInterval); calStatusInterval = null; }
+    
+    // Fill results
+    document.getElementById('resBare').innerText = (config.cal_bare_lux || '--') + ' lx';
+    document.getElementById('resTaped').innerText = (config.cal_taped_lux || '--') + ' lx';
+    document.getElementById('resFactor').innerText = (config.lux_attenuation_factor || '--') + '×';
+    document.getElementById('resMax').innerText = (config.max_hardware_lux ? parseFloat(config.max_hardware_lux).toFixed(0) : '--') + ' lx';
+    
+    document.getElementById('statusMsg').innerText = 'Calibration complete! All values saved to device.';
+    
+    // Show results
+    setStep(4); // all done
+    showPhase('phaseResults');
+}
+
+function resetWizard() {
+    currentPhase = 'idle';
+    bareLux = null;
+    tapedLux = null;
+    factor = null;
+    correctedMax = null;
+    
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+    if (calStatusInterval) { clearInterval(calStatusInterval); calStatusInterval = null; }
+    
+    // Reset UI
+    setStep(1);
+    showPhase('phase1');
+    document.getElementById('btnBare').disabled = false;
+    document.getElementById('btnTape').disabled = false;
+    document.getElementById('btnFull').disabled = false;
+    document.getElementById('factorPreview').style.display = 'none';
+    document.getElementById('luxVal').innerHTML = '-- <small>lx</small>';
+    document.getElementById('statusMsg').innerText = 'Ready. Follow the steps below.';
+    
+    initChart();
+}
+
+// Load existing config on page load
+function loadExistingConfig() {
+    fetch('/api/get_config')
+        .then(function(r) { return r.json(); })
+        .then(function(conf) {
+            if (conf && conf.max_hardware_lux) {
+                var info = 'Current: Max ' + parseFloat(conf.max_hardware_lux).toFixed(0) + ' lx';
+                if (conf.lux_attenuation_factor) {
+                    info += ' | Factor: ' + parseFloat(conf.lux_attenuation_factor).toFixed(3) + '×';
+                }
+                document.getElementById('statusMsg').innerText = info + ' — Run calibration to update.';
+            }
+        })
+        .catch(function() {});
+}
+
+// Passive lux monitoring when idle
+var idlePoll = null;
+function startIdleMonitor() {
+    idlePoll = setInterval(function() {
+        if (currentPhase !== 'idle') return;
+        fetch('/api/current_status')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var dataList = data.recent_data;
+                if (dataList && dataList.length > 0) {
+                    var latest = dataList[dataList.length - 1];
+                    var lux = latest.current_lux || 0;
+                    document.getElementById('luxVal').innerHTML = lux.toFixed(0) + ' <small>lx</small>';
+                }
+            })
+            .catch(function() {});
+    }, 2000);
 }
 
 initChart();
-setInterval(() => { if(!isCalibrating) pollData(); }, 1000);
+loadExistingConfig();
+startIdleMonitor();
 </script>
 
 </body>

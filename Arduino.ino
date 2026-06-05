@@ -49,7 +49,7 @@ BH1750 lightMeter;
 
 
 // Status Mesin
-enum State { IDLE, PRE_HEAT, HEATING, COOLING, STABILIZING, DONE, CALIBRATING };
+enum State { IDLE, PRE_HEAT, HEATING, COOLING, STABILIZING, DONE, CAL_BARE, CAL_TAPE, CAL_FULL };
 State currentState = IDLE;
 
 
@@ -68,6 +68,13 @@ float maxHardwareLux = 10000.0; // default, will be overridden by EEPROM
 const float KP = 0.05;
 const float LUX_TOLERANCE = 50.0;
 const float EMA_ALPHA = 0.2;
+
+// Tape Calibration Vars
+float luxAttenuationFactor = 1.0;  // multiplier (default = no tape)
+float calBareLux = 0.0;            // bare sensor reading at ref PWM
+float calTapedLux = 0.0;           // taped sensor reading at ref PWM
+const int CAL_REF_PWM = 128;       // hardcoded 50% reference
+const int CAL_MIN_WARMUP = 15;     // minimum seconds before checking stability
 
 
 unsigned long currentSec = 0;       
@@ -103,9 +110,12 @@ void setup() {
   mlx.begin();
   lightMeter.begin();
 
-  // Load maxHardwareLux from EEPROM (address 0)
+  // Load calibration values from EEPROM
+  // Memory Map: addr 0-3 = maxHardwareLux, addr 4-7 = luxAttenuationFactor
   EEPROM.get(0, maxHardwareLux);
   if(isnan(maxHardwareLux) || maxHardwareLux <= 0) maxHardwareLux = 10000.0;
+  EEPROM.get(4, luxAttenuationFactor);
+  if(isnan(luxAttenuationFactor) || luxAttenuationFactor <= 0) luxAttenuationFactor = 1.0;
   
   // [DEBUG STARTUP] - Fitur dari kode pertama
   lcd.clear();
@@ -190,13 +200,36 @@ void loop() {
       currentState = PRE_HEAT; 
       lcd.clear();
     }
-    else if (data == "CAL_LUX") {
-      currentState = CALIBRATING;
+    else if (data == "CAL_BARE") {
+      // Phase 1: Bare sensor measurement at 50% PWM
+      luxAttenuationFactor = 1.0;  // CRITICAL: reset factor for raw measurement
+      currentState = CAL_BARE;
+      currentSec = 0;
+      calBareLux = 0.0;
+      lampPWM = CAL_REF_PWM;
+      analogWrite(PIN_LAMP, lampPWM);
+      lcd.clear();
+      lcd.setCursor(0,0); lcd.print("CAL: BARE SENSOR");
+    }
+    else if (data == "CAL_TAPE") {
+      // Phase 2: Taped sensor measurement (factor must be 1.0 for raw reading)
+      luxAttenuationFactor = 1.0;  // Ensure raw measurement
+      currentState = CAL_TAPE;
+      currentSec = 0;
+      calTapedLux = 0.0;
+      lampPWM = CAL_REF_PWM;  // same PWM as bare
+      analogWrite(PIN_LAMP, lampPWM);
+      lcd.clear();
+      lcd.setCursor(0,0); lcd.print("CAL: TAPED SENS");
+    }
+    else if (data == "CAL_FULL") {
+      // Phase 3: Full power measurement with newly computed factor
+      currentState = CAL_FULL;
       currentSec = 0;
       lampPWM = 255;
       analogWrite(PIN_LAMP, lampPWM);
       lcd.clear();
-      lcd.setCursor(0,0); lcd.print("CALIBRATING...");
+      lcd.setCursor(0,0); lcd.print("CAL: FULL POWER");
     }
   }
 
@@ -224,7 +257,12 @@ void loop() {
     }
 
     if(currentState != IDLE && currentState != DONE) {
-      runExperimentLogic(); 
+      // Route calibration states to calibration logic
+      if (currentState == CAL_BARE || currentState == CAL_TAPE || currentState == CAL_FULL) {
+        runCalibrationLogic();
+      } else {
+        runExperimentLogic();
+      }
     } 
     else if (currentState == DONE) {
       // MODIFIKASI: Tetap tampilkan DONE, lalu auto reset setelah delay
@@ -243,9 +281,6 @@ void loop() {
       currentSec = 0;
       totalMasterSec = 0;
       lcd.clear();
-    } 
-    else if (currentState == CALIBRATING) {
-      runCalibrationLogic();
     }
     else {
       // MODE IDLE
@@ -327,26 +362,94 @@ float luxWindow[10];
 
 void runCalibrationLogic() {
   currentSec++;
-  analogWrite(PIN_LAMP, 255); // 100% PWM
+  
+  // Keep lamp at the correct PWM for current phase
+  if (currentState == CAL_FULL) {
+    analogWrite(PIN_LAMP, 255);  // 100% PWM
+  } else {
+    analogWrite(PIN_LAMP, CAL_REF_PWM);  // 50% reference
+  }
   
   // Fill sliding window
   luxWindow[(currentSec - 1) % 10] = smoothedLux;
   
-  if (currentSec > 10) {
-    // Check if the difference between oldest and newest is within tolerance (stable droop)
-    float oldest = luxWindow[currentSec % 10];
-    float diffPercent = abs(oldest - smoothedLux) / oldest;
-    
-    if (diffPercent < 0.01) { // 1% deviation over 10 seconds = stable
-        maxHardwareLux = smoothedLux;
-        EEPROM.put(0, maxHardwareLux);
-        
-        // Let ESP know we got the value
-        comm.println("MAXLUX:" + String(maxHardwareLux));
-        delay(500); 
-        comm.println("MAXLUX:" + String(maxHardwareLux)); // send twice for redundancy
-        
-        forceStop("CALIB_DONE");
+  // Update LCD with live reading
+  lcd.setCursor(0,1);
+  lcd.print("Lux:"); lcd.print(smoothedLux, 0); lcd.print("  ");
+  lcd.print(currentSec); lcd.print("s   ");
+  
+  // Don't check stability until minimum warm-up
+  if (currentSec < CAL_MIN_WARMUP) return;
+  
+  // Check stability: sliding window 1% deviation
+  float oldest = luxWindow[currentSec % 10];
+  if (oldest <= 0) return;
+  float diffPercent = abs(oldest - smoothedLux) / oldest;
+  
+  if (diffPercent < 0.01) {  // Stable!
+    if (currentState == CAL_BARE) {
+      calBareLux = smoothedLux;
+      // Send bare result to server
+      comm.println("CALBARE:" + String(calBareLux, 1));
+      delay(300);
+      comm.println("CALBARE:" + String(calBareLux, 1)); // redundancy
+      
+      lcd.clear();
+      lcd.setCursor(0,0); lcd.print("BARE OK:");
+      lcd.setCursor(0,1); lcd.print(String(calBareLux, 0) + " lx");
+      
+      // Turn off lamp and wait for next command
+      currentState = IDLE;
+      analogWrite(PIN_LAMP, 0);
+    }
+    else if (currentState == CAL_TAPE) {
+      calTapedLux = smoothedLux;
+      
+      // Compute attenuation factor
+      if (calTapedLux > 0) {
+        luxAttenuationFactor = calBareLux / calTapedLux;
+      } else {
+        luxAttenuationFactor = 1.0;  // safety fallback
+      }
+      
+      comm.println("CALTAPE:" + String(calTapedLux, 1) + ":" + String(luxAttenuationFactor, 3));
+      delay(300);
+      comm.println("CALTAPE:" + String(calTapedLux, 1) + ":" + String(luxAttenuationFactor, 3));
+      
+      lcd.clear();
+      lcd.setCursor(0,0); lcd.print("TAPE OK: x");
+      lcd.setCursor(0,1); lcd.print(String(luxAttenuationFactor, 2));
+      
+      // Turn off lamp and wait for CAL_FULL command
+      currentState = IDLE;
+      analogWrite(PIN_LAMP, 0);
+    }
+    else if (currentState == CAL_FULL) {
+      // smoothedLux already has factor applied (from readSensors)
+      maxHardwareLux = smoothedLux;  // this IS the corrected max
+      
+      // Save both to EEPROM
+      EEPROM.put(0, maxHardwareLux);
+      EEPROM.put(4, luxAttenuationFactor);
+      
+      // Send final result to server
+      String result = "CALRESULT:" + String(calBareLux, 1) 
+                    + "," + String(calTapedLux, 1) 
+                    + "," + String(luxAttenuationFactor, 3) 
+                    + "," + String(maxHardwareLux, 1);
+      comm.println(result);
+      delay(500);
+      comm.println(result);  // redundancy
+      
+      // Also send MAXLUX for backward compatibility
+      comm.println("MAXLUX:" + String(maxHardwareLux));
+      
+      lcd.clear();
+      lcd.setCursor(0,0); lcd.print("DONE! Max:");
+      lcd.setCursor(0,1); lcd.print(String(maxHardwareLux, 0) + " lx");
+      delay(3000);
+      
+      forceStop("CALIB_DONE");
     }
   }
 }
@@ -396,6 +499,10 @@ void readSensors() {
   smoothedLux = (EMA_ALPHA * rawLux) + ((1.0 - EMA_ALPHA) * smoothedLux);
   // Optional: if smoothed is 0 initially, set to raw
   if (smoothedLux < 1.0 && rawLux > 1.0) smoothedLux = rawLux;
+
+  // Apply teflon tape attenuation correction
+  // During CAL_BARE/CAL_TAPE, factor is set to 1.0 so we measure raw sensor
+  smoothedLux *= luxAttenuationFactor;
 }
 
 void forceStop(String reason) { 

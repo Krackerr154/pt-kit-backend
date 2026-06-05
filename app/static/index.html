@@ -146,7 +146,7 @@
                 <div class="form-group"><label>Target Duration (sec/cycle)</label><input type="number" id="duration" value="60"></div>
                 <div class="form-group"><label>Total Cycles</label><input type="number" id="cycles" value="5"></div>
                 <div class="form-group"><label>Max Temp (°C)</label><input type="number" id="maxTemp" value="100"></div>
-                <div class="form-group"><label>Target Lux (lx)</label><input type="number" id="targetLux" value="5000"></div>
+                <div class="form-group"><label>Target Lux (lx) <small id="maxLuxHint" style="color:#999;"></small></label><input type="number" id="targetLux" value="5000"></div>
                 <div class="form-group"><label>Logging Interval (sec)</label><input type="number" id="interval" value="1" min="1"></div>
                 <button class="btn-start" onclick="startExperiment()">🚀 START EXPERIMENT</button>
             </div>
@@ -164,7 +164,7 @@
                 <div class="stat-val" style="font-size:1.2rem; color:#666;" id="valTime">00:00</div>
             </div>
             <a href="/history" class="btn-history">📂 Buka Data Archive (History)</a>
-            <a href="/static/calibration.html" class="btn-history" style="margin-top: 5px;">🔧 Calibrate Max Lux Limits</a>
+            <a href="/static/calibration.html" class="btn-history" style="margin-top: 5px;">🔧 Lux Calibration (Teflon Tape)</a>
         </div>
         <div class="card">
             <div class="card-title" style="font-size:0.9rem;">ℹ️ System Log</div>
@@ -201,7 +201,10 @@ var stateMap = {
     2: "HEATING",
     3: "COOLING",
     4: "STABILIZING",
-    5: "DONE"
+    5: "DONE",
+    6: "CAL_BARE",
+    7: "CAL_TAPE",
+    8: "CAL_FULL"
 };
 
 var stateClassMap = {
@@ -210,7 +213,10 @@ var stateClassMap = {
     2: "heat",
     3: "cool",
     4: "stabil",
-    5: "done"
+    5: "done",
+    6: "idle",
+    7: "idle",
+    8: "idle"
 };
 
 function initChart() {
@@ -695,6 +701,14 @@ function setUIState(state) {
 }
 
 initChart(); setInterval(updateStatus, 1000);
+
+// Load calibrated max lux hint on page load
+fetch('/api/get_config').then(function(r) { return r.json(); }).then(function(conf) {
+    if (conf && conf.max_hardware_lux) {
+        document.getElementById('maxLuxHint').innerText = '(Max: ' + parseFloat(conf.max_hardware_lux).toFixed(0) + ' lx)';
+        document.getElementById('targetLux').max = parseFloat(conf.max_hardware_lux);
+    }
+}).catch(function() {});
 </script>
 </body>
 </html>

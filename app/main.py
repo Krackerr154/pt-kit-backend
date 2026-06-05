@@ -40,6 +40,7 @@ def get_db_connection(max_retries=5):
 pending_command = None 
 current_experiment_id = None
 recent_sensors_cache = collections.deque(maxlen=20)
+calibration_state = {"phase": "idle", "bare_lux": None, "taped_lux": None, "factor": None}
 
 # --- MODELS ---
 class ExperimentConfig(BaseModel):
@@ -221,6 +222,60 @@ def insert_data(data: EspSensorData):
                 logger.error(f"Error parsing MAXLUX: {e}")
                 return {"status": "error_maxlux"}
 
+        if data.csv_line.startswith("CALBARE:"):
+            try:
+                bare_lux = float(data.csv_line.split(":")[1].strip())
+                calibration_state["phase"] = "bare_done"
+                calibration_state["bare_lux"] = bare_lux
+                return {"status": "cal_bare_saved", "bare_lux": bare_lux}
+            except Exception as e:
+                logger.error(f"Error parsing CALBARE: {e}")
+                return {"status": "error_calbare"}
+
+        if data.csv_line.startswith("CALTAPE:"):
+            try:
+                parts = data.csv_line.replace("CALTAPE:", "").split(":")
+                taped_lux = float(parts[0].strip())
+                factor = float(parts[1].strip())
+                calibration_state["phase"] = "tape_done"
+                calibration_state["taped_lux"] = taped_lux
+                calibration_state["factor"] = factor
+                return {"status": "cal_tape_saved", "taped_lux": taped_lux, "factor": factor}
+            except Exception as e:
+                logger.error(f"Error parsing CALTAPE: {e}")
+                return {"status": "error_caltape"}
+
+        if data.csv_line.startswith("CALRESULT:"):
+            try:
+                vals = data.csv_line.replace("CALRESULT:", "").split(",")
+                bare = vals[0].strip()
+                taped = vals[1].strip()
+                factor = vals[2].strip()
+                corrected_max = vals[3].strip()
+                
+                conn = get_db_connection()
+                cur = conn.cursor()
+                for k, v in [
+                    ("max_hardware_lux", corrected_max),
+                    ("lux_attenuation_factor", factor),
+                    ("cal_bare_lux", bare),
+                    ("cal_taped_lux", taped),
+                    ("cal_timestamp", str(time.time()))
+                ]:
+                    cur.execute(
+                        "INSERT INTO device_config (key, value) VALUES (%s, %s) "
+                        "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", (k, v)
+                    )
+                conn.commit()
+                cur.close()
+                conn.close()
+                
+                calibration_state["phase"] = "done"
+                return {"status": "cal_complete", "factor": factor, "max_lux": corrected_max}
+            except Exception as e:
+                logger.error(f"Error parsing CALRESULT: {e}")
+                return {"status": "error_calresult"}
+
         parts = data.csv_line.split(',')
         if len(parts) < 7: return {"status": "error_format"}
         
@@ -233,8 +288,13 @@ def insert_data(data: EspSensorData):
         tc_temp    = float(parts[5])
         current_lux = float(parts[6])
         
-        states = ["IDLE", "PRE_HEAT", "HEATING", "COOLING", "STABILIZING", "DONE"]
+        states = ["IDLE", "PRE_HEAT", "HEATING", "COOLING", "STABILIZING", "DONE", "CAL_BARE", "CAL_TAPE", "CAL_FULL"]
         state_label = states[state_code] if 0 <= state_code < len(states) else "UNKNOWN"
+
+        # Skip calibration data from being stored in sensor cache / DB
+        # Calibration has its own dedicated result protocol (CALBARE/CALTAPE/CALRESULT)
+        if state_code >= 6:
+            return {"status": "ignored_cal_data"}
 
         # 1. Masukkan ke Buffer (Agar Grafik Live tetap jalan untuk Monitoring IDLE)
         # Data IDLE tetap masuk ke sini supaya user bisa liat suhu sebelum start
@@ -337,11 +397,33 @@ def export_csv(exp_id: int):
     
     return StreamingResponse(io.BytesIO(output.getvalue().encode()), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename={filename}"})
 
-@app.post("/api/calibrate_lux")
-def trigger_calibrate_lux():
-    global pending_command
-    pending_command = "CAL_LUX"
-    return {"status": "calibrating"}
+@app.post("/api/calibrate_tape")
+def trigger_calibrate_tape(phase: str = "bare"):
+    """
+    Start a calibration phase.
+    phase: "bare" | "tape" | "full"
+    """
+    global pending_command, calibration_state
+    
+    cmd_map = {"bare": "CAL_BARE", "tape": "CAL_TAPE", "full": "CAL_FULL"}
+    if phase not in cmd_map:
+        raise HTTPException(400, "Invalid phase. Use: bare, tape, full")
+    
+    pending_command = cmd_map[phase]
+    calibration_state["phase"] = phase + "_running"
+    return {"status": "calibrating", "phase": phase}
+
+@app.get("/api/calibration_status")
+def get_calibration_status():
+    """Returns current calibration state + stored config."""
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT key, value FROM device_config")
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    config = {row["key"]: row["value"] for row in rows}
+    return {"state": calibration_state, "config": config}
 
 @app.get("/api/get_config")
 def get_config():
