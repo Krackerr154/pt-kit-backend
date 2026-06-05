@@ -291,13 +291,9 @@ def insert_data(data: EspSensorData):
         states = ["IDLE", "PRE_HEAT", "HEATING", "COOLING", "STABILIZING", "DONE", "CAL_BARE", "CAL_TAPE", "CAL_FULL"]
         state_label = states[state_code] if 0 <= state_code < len(states) else "UNKNOWN"
 
-        # Skip calibration data from being stored in sensor cache / DB
-        # Calibration has its own dedicated result protocol (CALBARE/CALTAPE/CALRESULT)
-        if state_code >= 6:
-            return {"status": "ignored_cal_data"}
-
         # 1. Masukkan ke Buffer (Agar Grafik Live tetap jalan untuk Monitoring IDLE)
         # Data IDLE tetap masuk ke sini supaya user bisa liat suhu sebelum start
+        # Calibration data ALSO goes here so the calibration page live chart works
         new_data = {
             "total_time": total_time,
             "phase_time": phase_time,
@@ -311,6 +307,11 @@ def insert_data(data: EspSensorData):
         
         recent_sensors_cache.append(new_data)
         # deque(maxlen=20) otomatis buang data lama
+
+        # Skip calibration data from being stored in DB
+        # Calibration has its own dedicated result protocol (CALBARE/CALTAPE/CALRESULT)
+        if state_code >= 6:
+            return {"status": "cal_live_only"}
         
         # 2. LOGIKA PENYIMPANAN DATABASE (FILTER KETAT)
         if current_experiment_id: 
