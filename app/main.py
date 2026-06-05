@@ -308,10 +308,33 @@ def insert_data(data: EspSensorData):
         recent_sensors_cache.append(new_data)
         # deque(maxlen=20) otomatis buang data lama
 
-        # Skip calibration data from being stored in DB
-        # Calibration has its own dedicated result protocol (CALBARE/CALTAPE/CALRESULT)
+        # Track calibration lux readings (backup detection if CALBARE/CALTAPE messages are lost)
         if state_code >= 6:
+            calibration_state["last_cal_lux"] = current_lux
+            calibration_state["last_cal_state"] = state_code
             return {"status": "cal_live_only"}
+        
+        # Fallback: detect calibration phase completion via state transition
+        # When Arduino finishes a cal phase, state drops from CAL_x (6/7/8) back to IDLE (0)
+        # If the dedicated CALBARE/CALTAPE message was lost, we catch it here
+        if state_code == 0 and calibration_state.get("last_cal_state") is not None:
+            last_cal = calibration_state.pop("last_cal_state", None)
+            last_lux = calibration_state.pop("last_cal_lux", None)
+            
+            if last_cal == 6 and calibration_state["phase"] != "bare_done" and last_lux:
+                # CAL_BARE just finished, CALBARE message was likely lost
+                calibration_state["phase"] = "bare_done"
+                calibration_state["bare_lux"] = last_lux
+                logger.info(f"Fallback: bare calibration detected via state transition. Lux={last_lux}")
+            elif last_cal == 7 and calibration_state["phase"] != "tape_done" and last_lux:
+                # CAL_TAPE just finished
+                bare = calibration_state.get("bare_lux")
+                if bare and bare > 0:
+                    factor = bare / last_lux if last_lux > 0 else 1.0
+                    calibration_state["phase"] = "tape_done"
+                    calibration_state["taped_lux"] = last_lux
+                    calibration_state["factor"] = factor
+                    logger.info(f"Fallback: tape calibration detected. Lux={last_lux}, factor={factor}")
         
         # 2. LOGIKA PENYIMPANAN DATABASE (FILTER KETAT)
         if current_experiment_id: 
