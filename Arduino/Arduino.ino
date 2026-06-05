@@ -495,14 +495,15 @@ void readSensors() {
   
   rawLux = lightMeter.readLightLevel();
   if(isnan(rawLux)) rawLux = 0.0;
-  // EMA Filter
-  smoothedLux = (EMA_ALPHA * rawLux) + ((1.0 - EMA_ALPHA) * smoothedLux);
-  // Optional: if smoothed is 0 initially, set to raw
-  if (smoothedLux < 1.0 && rawLux > 1.0) smoothedLux = rawLux;
 
-  // Apply teflon tape attenuation correction
+  // Apply teflon tape attenuation correction to raw reading BEFORE smoothing
   // During CAL_BARE/CAL_TAPE, factor is set to 1.0 so we measure raw sensor
-  smoothedLux *= luxAttenuationFactor;
+  float correctedLux = rawLux * luxAttenuationFactor;
+
+  // EMA Filter (operates on corrected values to avoid compounding)
+  smoothedLux = (EMA_ALPHA * correctedLux) + ((1.0 - EMA_ALPHA) * smoothedLux);
+  // Optional: if smoothed is 0 initially, set to corrected
+  if (smoothedLux < 1.0 && correctedLux > 1.0) smoothedLux = correctedLux;
 }
 
 void forceStop(String reason) { 
