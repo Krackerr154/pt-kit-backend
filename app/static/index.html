@@ -38,6 +38,12 @@
     .btn-history { display:block; text-align:center; margin-top:15px; color: #666; text-decoration:none; font-size:0.9rem; }
 
     .chart-container { position: relative; height: 350px; width: 100%; }
+    .lux-chart-container { position:relative; height:150px; width:100%; margin-top:8px; }
+    .chart-controls { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+    .chart-controls button { min-height:36px; border:1px solid #789; background:#fff; border-radius:5px; padding:5px 9px; }
+    .chart-controls button[aria-pressed="true"] { background:#173f67; color:#fff; }
+    fieldset { border:1px solid #d7dee5; border-radius:8px; margin:0 0 12px; padding:12px; } legend { font-weight:700; color:#173f67; }
+    .result-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0; } .result-cards div { background:#f5f7f9;padding:8px;border-radius:6px; }
     .chart-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:24px; box-sizing:border-box; background:rgba(255,255,255,.86); color:#374151; font-weight:700; z-index:2; }
     .chart-overlay[hidden], .sticky-stop[hidden], .modal-backdrop[hidden], [hidden] { display:none !important; }
     .phase-stepper { display:flex; gap:6px; padding:8px; margin-bottom:12px; list-style:none; overflow-x:auto; }
@@ -115,7 +121,10 @@
             
             <div id="healthCluster" class="health-cluster" aria-label="System health"></div>
             <ol id="phaseStepper" class="phase-stepper" aria-label="Experiment phases"></ol>
+            <div class="chart-controls" aria-label="Chart controls"><button type="button" data-window="live">Live (latest 60s)</button><button type="button" data-window="1m">1 min</button><button type="button" data-window="5m">5 min</button><button type="button" data-window="all">All</button><button type="button" onclick="resetZoom()">Reset zoom</button><button id="toggleIR" type="button" aria-pressed="true" data-channel="ir">IR</button><button id="toggleTC" type="button" aria-pressed="true" data-channel="tc">TC</button><button id="toggleLux" type="button" aria-pressed="true" data-channel="lux">Lux</button><button id="toggleSetpoint" type="button" aria-pressed="true" data-channel="setpoint">Setpoint</button></div>
             <div class="chart-container"><div id="chartOverlay" class="chart-overlay" aria-live="assertive">Waiting for telemetry</div><canvas id="liveChart" ondblclick="resetZoom()"></canvas></div>
+            <div class="lux-chart-container"><canvas id="luxChart" aria-label="Lux over time"></canvas></div>
+            <div id="resultSummaryCards" class="result-cards" aria-live="polite"></div>
             <div class="zoom-hint">🖱️ Tahan <b>Ctrl + Scroll</b> untuk Zoom • Drag Geser • Double Click Reset</div>
         </div>
 
@@ -152,9 +161,11 @@
             <div class="card-title">⚙️ Control Panel <span id="statusBadge" class="badge bg-idle">IDLE</span></div>
             
             <div id="setupForm">
+                <fieldset><legend>Experiment</legend>
                 <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" value="Gerald"></div>
                 <div class="form-group"><label>Sample Name</label><input type="text" id="sampleName" placeholder="Contoh: MOF-Batch-1"></div>
-                <div class="form-group"><label>Experiment Mode</label><select id="experimentMode" onchange="updateModeFields()"><option value="NORMAL_CYCLIC" selected>Normal cyclic</option><option value="FIXED_TEMPERATURE">Fixed temperature</option><option value="NATURAL_PLATEAU">Natural plateau</option></select></div>
+                <div class="form-group"><label>Experiment Mode</label><select id="experimentMode" onchange="updateModeFields()"><option value="NORMAL_CYCLIC" selected>Normal cyclic</option><option value="FIXED_TEMPERATURE">Fixed temperature</option><option value="NATURAL_PLATEAU">Natural plateau</option></select></div></fieldset>
+                <fieldset><legend>Mode parameters</legend>
                 <div id="normalFields" class="mode-fields">
                   <div class="form-group"><label>Target Duration (sec/cycle)</label><input type="number" id="duration" value="60"></div>
                   <div class="form-group"><label>Total Cycles</label><input type="number" id="cycles" value="5"></div>
@@ -176,12 +187,13 @@
                   <div class="form-group"><label>Confirmation Duration (sec)</label><input type="number" id="confirmationDuration" value="60"></div>
                   <div class="form-group"><label>Max Discovery Time (minutes)</label><input type="number" id="maxDiscoveryTime" value="60"></div>
                   <div class="form-group"><label>Post-plateau Behavior</label><select id="postPlateauBehavior"><option value="PASSIVE" selected>Passive (same illumination)</option><option value="REGULATED">Regulated</option></select></div>
-                </div>
-                <div class="form-group"><label>Max Temp (°C)</label><input type="number" id="maxTemp" value="100"></div>
+                </div></fieldset>
+                <fieldset><legend>Illumination &amp; acquisition</legend>
                 <div class="form-group"><label>Target Lux (lx) <small id="maxLuxHint" style="color:#999;"></small></label><input type="number" id="targetLux" value="38000"></div>
-                <div class="form-group"><label>Logging Interval (sec)</label><input type="number" id="interval" value="1" min="1"></div>
+                <div class="form-group"><label>Logging Interval (sec)</label><input type="number" id="interval" value="1" min="1"></div></fieldset>
+                <fieldset><legend>Safety</legend><div class="form-group"><label>Max Temp (°C)</label><input type="number" id="maxTemp" value="100"></div></fieldset>
                 <div id="modeSummary" class="mode-summary"></div>
-                <button class="btn-start" onclick="startExperiment()">🚀 START EXPERIMENT</button>
+                <button class="btn-start" onclick="openReviewModal()">🚀 START EXPERIMENT</button>
             </div>
 
             <div id="runOverview" class="run-overview" hidden><strong>Run overview — configuration locked</strong><div id="controlMetric" class="primary-metric">Control temperature: -- °C</div><div id="runSummary">Waiting for run details…</div></div>
@@ -210,9 +222,13 @@
 </div>
 
 <div id="stopModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="stopModalTitle" aria-describedby="stopModalDescription"><h2 id="stopModalTitle">Stop this experiment?</h2><p id="stopModalDescription">The lamp will be turned off. Data already recorded will be retained.</p><div class="modal-actions"><button id="cancelStop" type="button" onclick="closeStopModal()">Cancel</button><button id="confirmStop" class="danger" type="button" onclick="stopExperiment()">Stop now</button></div></div></div>
+<div id="reviewModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="reviewTitle"><h2 id="reviewTitle">Review experiment settings</h2><dl id="reviewDetails"></dl><div class="modal-actions"><button id="cancelReview" type="button" onclick="closeReviewModal()">Cancel</button><button id="confirmReview" type="button" onclick="confirmReviewedStart()">Confirm and start</button></div></div></div>
 
 <script>
-var chart;
+var chart, luxChart, pendingReviewPayload=null, scientificSeries={samples:[]}, chartWindow='live';
+var MAX_SCIENTIFIC_POINTS=10000; // One bounded, synchronized scientific record buffer.
+var reviewModalOpener=null;
+var DATASET_INDEX={IR:0,TC:1,TOLERANCE_LOWER:2,TOLERANCE_UPPER:3,SETPOINT:4,SAFETY:5,PLATEAU:6};
 var isRunning = false;
 var currentExpId = null;
 var lastTelemetryAt = null;
@@ -273,6 +289,23 @@ function updateModeFields() {
     document.getElementById('modeSummary').textContent=mode==='NORMAL_CYCLIC'?'Run the existing heat/cool cycles.':mode==='FIXED_TEMPERATURE'?'Ramp to target, qualify within tolerance, then accumulate qualified hold time.':'Illuminate each sample while detecting its natural thermal plateau, confirm it, then hold.';
 }
 function field(data, names, fallback) { for(var i=0;i<names.length;i++) if(data && data[names[i]]!==undefined && data[names[i]]!==null) return data[names[i]]; return fallback; }
+function finiteOrNull(v){var n=Number(v);return v!==null&&v!==undefined&&v!==''&&Number.isFinite(n)?n:null;}
+function buildOverlayModel(mode,exp,t){var set=finiteOrNull(field(t,['temp_setpoint'],null)),tol=finiteOrNull(field(exp,['temperature_tolerance'],null));return {setpoint:set,tolerance:mode==='FIXED_TEMPERATURE'&&set!==null&&tol!==null?{lower:set-tol,upper:set+tol}:null,safety:finiteOrNull(field(exp,['max_temp'],null)),plateau:mode==='NATURAL_PLATEAU'?finiteOrNull(field(t,['detected_plateau_temp'],null)):null};}
+function filterChartWindow(points,w){if(!points.length||w==='all')return points.slice();var span=w==='5m'?300:w==='1m'?60:60,max=points[points.length-1].x;return points.filter(function(p){return p.x>=max-span;});}
+function chartDomain(points,w){var p=filterChartWindow(points,w);return {min:p.length?p[0].x:undefined,max:p.length?p[p.length-1].x:undefined};}
+function buildReviewModel(v){var p=JSON.parse(JSON.stringify(buildExperimentPayload(v))), rows=[['Operator',v.operator_name],['Sample',v.sample_name],['Mode',v.mode],['Target lux',v.target_lux+' lx'],['Max temp',v.max_temp+' °C'],['Logging interval',v.interval+' s']];if(v.mode==='NORMAL_CYCLIC')rows.push(['Mode parameters',v.cycles+' cycles × '+v.duration+' s']);if(v.mode==='FIXED_TEMPERATURE')rows.push(['Mode parameters',v.target_temperature+' °C, ±'+v.tolerance+' °C, '+v.hold_minutes+' min hold']);if(v.mode==='NATURAL_PLATEAU')rows.push(['Mode parameters',v.window_s+' s window, '+v.hold_minutes+' min hold']);return {payload:p,rows:rows};}
+function shown(v){return v===null||v===undefined||v===''?'—':v;}
+function withUnit(v,u){return finiteOrNull(v)===null?'—':String(v)+' '+u;}
+function buildResultSummary(mode,exp,t){var common={lamp_pwm:finiteOrNull(t.lamp_pwm)===null?'—':String(t.lamp_pwm)+' / 255',current_lux:withUnit(t.current_lux,'lx')};if(mode==='FIXED_TEMPERATURE')return Object.assign({control:withUnit(t.control_temp,'°C'),error:withUnit(t.temp_error,'°C'),hold_elapsed:withUnit(t.hold_qualified_elapsed_s,'s')},common);if(mode==='NATURAL_PLATEAU')return Object.assign({detected_plateau:withUnit(t.detected_plateau_temp,'°C'),control:withUnit(t.control_temp,'°C'),error:withUnit(t.temp_error,'°C'),hold_elapsed:withUnit(t.hold_wall_elapsed_s,'s')},common);return Object.assign({cycle:finiteOrNull(t.cycle_num)===null?'—':String(t.cycle_num),state_code:finiteOrNull(t.state_code)===null?'—':String(t.state_code)},common);}
+function sampleSignature(sample){if(!sample)return null;return JSON.stringify(['total_time','phase_time','cycle_num','state_code','ir_temp','tc_temp','current_lux','temp_setpoint','temp_error','detected_plateau_temp','lamp_pwm'].map(function(k){return sample[k]===undefined?null:sample[k];}));}
+function buildSynchronizedPoints(s){var x=finiteOrNull(s.total_time);return {ir:{x:x,y:finiteOrNull(s.ir_temp)},tc:{x:x,y:finiteOrNull(s.tc_temp)},lux:{x:x,y:finiteOrNull(s.current_lux)}};}
+function emptyScientificSeries(){return {samples:[]};}
+function appendScientificSample(buffer,s,exp,mode){var sig=sampleSignature(s);if(buffer.samples.some(function(sample){return sample.signature===sig;}))return false;var x=finiteOrNull(s.total_time),ov=buildOverlayModel(mode,exp||{},s),target=finiteOrNull(field(exp,['target_lux'],null));buffer.samples.push({x:x,ir:finiteOrNull(s.ir_temp),tc:finiteOrNull(s.tc_temp),lux:finiteOrNull(s.current_lux),setpoint:ov.setpoint,toleranceLower:ov.tolerance&&ov.tolerance.lower,toleranceUpper:ov.tolerance&&ov.tolerance.upper,safety:ov.safety,plateau:ov.plateau,targetLux:target,stateCode:finiteOrNull(s.state_code),signature:sig});if(buffer.samples.length>MAX_SCIENTIFIC_POINTS)buffer.samples.splice(0,buffer.samples.length-MAX_SCIENTIFIC_POINTS);return true;}
+function selectScientificView(buffer,w){var a=buffer.samples.slice();if(!a.length||w==='all')return a;var span=w==='5m'?300:60,max=a[a.length-1].x;return a.filter(function(p){return p.x>=max-span;});}
+function phaseInfo(code,mode){var labels=getPhaseModel(mode),step=getPhaseStep(mode,code).current,colors=['rgba(80,90,100,.05)','rgba(255,170,0,.08)','rgba(0,123,255,.07)','rgba(40,167,69,.07)','rgba(108,117,125,.08)','rgba(20,20,20,.05)'];return {label:labels[step]||stateMap[code]||'Unknown',color:colors[step%colors.length]};}
+function derivePhaseRegions(samples,mode){var out=[];samples.forEach(function(s,i){var prev=out[out.length-1];if(!prev||prev.stateCode!==s.stateCode){var info=phaseInfo(s.stateCode,mode);if(prev)prev.end=s.x;out.push({start:s.x,end:s.x,stateCode:s.stateCode,label:info.label,color:info.color});}else prev.end=s.x;});return out;}
+function validateSetupValues(v){if(!v.operator_name||!v.sample_name)return 'Operator and sample name are required.';if(v.mode==='NORMAL_CYCLIC'&&!(v.duration>0))return 'Duration must be greater than 0 seconds.';if(v.mode==='NORMAL_CYCLIC'&&!(v.cycles>0))return 'Cycles must be greater than 0.';if(!(v.max_temp>=50))return 'Maximum temperature must be at least 50 °C.';if(!(v.target_lux>=0))return 'Target lux must be 0 or greater.';if(!(v.interval>=1))return 'Interval must be at least 1 second.';return null;}
+function getControlVisibility(v){return {temperature:[v.ir!==false,v.tc!==false],lux:v.lux!==false,setpoint:v.setpoint!==false};}
 function formatSensorValue(value, digits, unit) {
     if (value === null || value === undefined || value === '') return '-- ' + unit;
     var number = typeof value === 'number' ? value : Number(value);
@@ -345,7 +378,12 @@ function initChart() {
             labels: [],
             datasets: [
                 { label: 'IR Temp', borderColor: '#007bff', backgroundColor: 'rgba(0, 123, 255, 0.1)', borderWidth: 2, data: [], pointRadius: 0, tension: 0.3 },
-                { label: 'TC Temp', borderColor: '#dc3545', backgroundColor: 'transparent', borderWidth: 2, borderDash: [5, 5], data: [], pointRadius: 0, tension: 0.3 }
+                { label: 'TC Temp', borderColor: '#dc3545', backgroundColor: 'transparent', borderWidth: 2, borderDash: [5, 5], data: [], pointRadius: 0, tension: 0.3 },
+                {label:'Tolerance lower',data:[],borderColor:'#7b61a8',pointRadius:0,borderWidth:1},
+                {label:'Tolerance upper',data:[],borderColor:'#7b61a8',backgroundColor:'rgba(123,97,168,.12)',fill:'-1',pointRadius:0,borderWidth:1},
+                {label:'Setpoint',data:[],borderColor:'#6542a6',borderDash:[7,4],pointRadius:0},
+                {label:'Safety cutoff',data:[],borderColor:'#b42318',borderDash:[3,3],pointRadius:0},
+                {label:'Detected plateau',data:[],borderColor:'#087f5b',borderWidth:2,pointRadius:3}
             ]
         },
         options: {
@@ -354,8 +392,23 @@ function initChart() {
             plugins: { zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, pinch: { enabled: true }, mode: 'x' } }, tooltip: { mode: 'index', intersect: false } }
         }
     });
+    luxChart=new Chart(document.getElementById('luxChart').getContext('2d'),{type:'line',data:{datasets:[{label:'Lux',data:[],borderColor:'#b77900',pointRadius:0},{label:'Target lux',data:[],borderColor:'#745b00',borderDash:[6,4],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,animation:false,scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{title:{display:true,text:'Illuminance (lx)'}}}}});
+    applyChannelVisibility();
 }
-function resetZoom() { if(chart) chart.resetZoom(); }
+function pointData(view,key){return view.filter(function(p){return p[key]!==null&&p[key]!==undefined;}).map(function(p){return {x:p.x,y:p[key]};});}
+function applyChannelVisibility(){
+    if(!document.querySelectorAll)return;
+    document.querySelectorAll('[data-channel]').forEach(function(b){
+        var hidden=b.getAttribute('aria-pressed')!=='true', c=b.dataset.channel;
+        if(chart&&(c==='ir'||c==='tc'))chart.data.datasets[c==='ir'?DATASET_INDEX.IR:DATASET_INDEX.TC].hidden=hidden;
+        if(chart&&c==='setpoint')[DATASET_INDEX.TOLERANCE_LOWER,DATASET_INDEX.TOLERANCE_UPPER,DATASET_INDEX.SETPOINT,DATASET_INDEX.SAFETY,DATASET_INDEX.PLATEAU].forEach(function(i){chart.data.datasets[i].hidden=hidden;});
+        if(luxChart&&c==='lux')luxChart.data.datasets[0].hidden=hidden;
+    });
+}
+function applyChartView(){var view=selectScientificView(scientificSeries,chartWindow);if(chart){['ir','tc','toleranceLower','toleranceUpper','setpoint','safety','plateau'].forEach(function(k,i){chart.data.datasets[i].data=pointData(view,k);});chart.options.plugins.phaseRegions={regions:derivePhaseRegions(view,activeMode||valueOf('experimentMode'))};var d=chartDomain(view.map(function(p){return {x:p.x};}),'all');chart.options.scales.x.min=d.min;chart.options.scales.x.max=d.max;chart.update('none');}if(luxChart){luxChart.data.datasets[0].data=pointData(view,'lux');luxChart.data.datasets[1].data=pointData(view,'targetLux');luxChart.data.datasets[1].hidden=!luxChart.data.datasets[1].data.length;var d=chartDomain(view.map(function(p){return {x:p.x};}),'all');luxChart.options.scales.x.min=d.min;luxChart.options.scales.x.max=d.max;luxChart.update('none');}}
+function resetZoom() { if(chart&&chart.resetZoom) chart.resetZoom(); if(luxChart&&luxChart.resetZoom)luxChart.resetZoom(); applyChartView(); }
+var phaseRegionPlugin={id:'phaseRegions',beforeDatasetsDraw:function(c,a,o){if(!o||!o.regions)return;var ctx=c.ctx,x=c.scales.x,area=c.chartArea;ctx.save();o.regions.forEach(function(r){ctx.fillStyle=r.color||'rgba(23,63,103,.05)';ctx.fillRect(x.getPixelForValue(r.start),area.top,x.getPixelForValue(r.end)-x.getPixelForValue(r.start),area.bottom-area.top);});ctx.restore();}};
+if(typeof Chart!=='undefined'&&Chart.register)Chart.register(phaseRegionPlugin);
 function log(msg) { var box=document.getElementById('sysLog'),row=document.createElement('div'),t=new Date().toLocaleTimeString();row.textContent='['+t+'] '+String(msg);box.appendChild(row);box.scrollTop=box.scrollHeight; }
 
 function calculateSlopeAndError(dataPoints) {
@@ -562,6 +615,8 @@ function updateStatus() {
             var stateLabel = stateMap[stateCode] || "UNKNOWN";
             document.getElementById('cycleInfo').innerText = `Cycle: ${latest.cycle_num} | Phase: ${stateLabel}`;
             var mode=resolveActiveMode(isRunning,activeMode,valueOf('experimentMode'));
+            dataList.forEach(function(sensor){appendScientificSample(scientificSeries,sensor,exp||{},mode);});
+            applyChartView();
             var telemetry=advanceTelemetryState({signature:lastTelemetrySignature,lastTelemetryAt:lastTelemetryAt},latest,Date.now());lastTelemetrySignature=telemetry.signature;lastTelemetryAt=telemetry.lastTelemetryAt;lastTelemetrySample=latest;var age=(Date.now()-lastTelemetryAt)/1000;
             renderPhaseStepper(mode,stateCode); renderHealth(true,latest,age); renderEsp32Indicator(true,age);
             var overlay=document.getElementById('chartOverlay');
@@ -571,6 +626,8 @@ function updateStatus() {
             document.getElementById('controlMetric').textContent=mode==='NORMAL_CYCLIC'?'IR / TC: '+formatSensorValue(latest.ir_temp,1,'°C')+' / '+formatSensorValue(latest.tc_temp,1,'°C'):'Control temperature: '+formatSensorValue(control,1,'°C');
             document.getElementById('runSummary').textContent=(mode==='NORMAL_CYCLIC'?'Cycle '+latest.cycle_num+' / '+field(exp,['cycles'],'—')+' • ':'')+'Target '+field(latest,['temp_setpoint'],field(exp,['target_temperature'],'—'))+' °C • Lux '+formatSensorValue(latest.current_lux,0,'lx')+' / '+field(exp,['target_lux'],'—')+' lx • Safety max '+field(exp,['max_temp'],'—')+' °C • Hold remaining '+formatRemainingHold(field(latest,['hold_remaining_s'],NaN));
             updateModeProgress(exp, latest, stateLabel);
+            var result=buildResultSummary(mode,exp||{},latest),resultBox=document.getElementById('resultSummaryCards');resultBox.replaceChildren();Object.keys(result).forEach(function(k){var d=document.createElement('div');d.textContent=k.replaceAll('_',' ')+': '+shown(result[k]);resultBox.appendChild(d);});
+
             
             // Update state indicator
             updateStateIndicator(stateCode);
@@ -602,20 +659,6 @@ function updateStatus() {
             
             // A. MODE IDLE (MONITORING / CCTV)
             if (!isRunning && !isWaitingReset) {
-                // Gambar data terbaru saja (efek CCTV/Scrolling)
-                if (chart) {
-                    chart.data.labels.push(totalSecs); 
-                    chart.data.datasets[0].data.push(latest.ir_temp);
-                    chart.data.datasets[1].data.push(latest.tc_temp);
-                    
-                    // Batasi hanya 60 data terakhir agar grafik bergerak
-                    if (chart.data.labels.length > 60) {
-                        chart.data.labels.shift();
-                        chart.data.datasets[0].data.shift();
-                        chart.data.datasets[1].data.shift();
-                    }
-                    chart.update('none');
-                }
                 // Di mode IDLE, rate kita nol-kan saja biar bersih
                 updateLiveRate(0, 0, 0, 0); 
             } 
@@ -655,23 +698,9 @@ function updateStatus() {
                         
                         checkCycleLogic(sensor.state_code || 0, sensor.cycle_num, sensor.total_time, sensor.ir_temp, sensor.tc_temp);
 
-                        if (chart) {
-                            chart.data.labels.push(sensor.total_time);
-                            chart.data.datasets[0].data.push({x: sensor.total_time, y: sensor.ir_temp});
-                            chart.data.datasets[1].data.push({x: sensor.total_time, y: sensor.tc_temp});
-                            
-                            // Batasi Max Point agar browser tidak berat (opsional)
-                            var maxPoints = 2000; 
-                            if (chart.data.datasets[0].data.length > maxPoints) {
-                                chart.data.labels.shift();
-                                chart.data.datasets[0].data.shift();
-                                chart.data.datasets[1].data.shift();
-                            }
-                        }
                         lastPlottedTime = sensor.total_time;
                     }
                 });
-                if(chart) chart.update('none');
             }
         } else { renderHealth(true,null,null);renderEsp32Indicator(true,null);var emptyOverlay=document.getElementById('chartOverlay');emptyOverlay.hidden=false;emptyOverlay.textContent='Waiting for telemetry — no samples received'; }
     }).catch(handleBackendFailure);
@@ -685,29 +714,21 @@ function buildExperimentPayload(v) {
     if(v.mode==='NATURAL_PLATEAU') Object.assign(p,{mode:v.mode,hold_duration_s:v.hold_minutes*60,control_sensor:v.control_sensor,plateau_window_s:v.window_s,plateau_max_slope:v.max_slope,plateau_max_range:v.max_range,plateau_confirmation_s:v.confirmation_s,plateau_max_discovery_s:v.max_discovery_minutes*60,post_plateau_mode:v.post_mode});
     return p;
 }
-function startExperiment() {
-    var op = document.getElementById('operatorName').value, 
-        name = document.getElementById('sampleName').value,
-        duration = parseInt(document.getElementById('duration').value),
-        cycles = parseInt(document.getElementById('cycles').value),
-        maxTemp = parseFloat(document.getElementById('maxTemp').value),
-        targetLux = parseFloat(document.getElementById('targetLux').value),
-        interval = parseInt(document.getElementById('interval').value);
-    
-    if(!name || !op) return alert("Operator & Nama Sampel wajib diisi!");
-    var mode=valueOf('experimentMode');
-    if(mode === 'NORMAL_CYCLIC' && duration <= 0) return alert("Durasi harus > 0 detik!");
-    if(mode === 'NORMAL_CYCLIC' && cycles <= 0) return alert("Jumlah siklus harus > 0!");
-    if(maxTemp < 50) return alert("Max temp minimal 50°C!");
-    if(targetLux < 0) return alert("Target lux harus > 0!");
-    if(interval < 1) return alert("Interval minimal 1 detik!");
+function currentSetupValues(){var mode=valueOf('experimentMode');return {operator_name:valueOf('operatorName'),sample_name:valueOf('sampleName'),duration:parseInt(valueOf('duration')),cycles:parseInt(valueOf('cycles')),max_temp:numberOf('maxTemp'),target_lux:numberOf('targetLux'),interval:parseInt(valueOf('interval')),mode:mode,target_temperature:numberOf('targetTemperature'),hold_minutes:mode==='FIXED_TEMPERATURE'?numberOf('qualifiedHoldMinutes'):numberOf('plateauHoldMinutes'),tolerance:numberOf('temperatureTolerance'),qualification_dwell_s:numberOf('qualificationDwell'),control_sensor:mode==='FIXED_TEMPERATURE'?valueOf('fixedControlSensor'):valueOf('plateauControlSensor'),ramp_rate:numberOf('rampRate'),window_s:numberOf('detectionWindow'),max_slope:numberOf('maxAbsSlope'),max_range:numberOf('maxPeakToPeak'),confirmation_s:numberOf('confirmationDuration'),max_discovery_minutes:numberOf('maxDiscoveryTime'),post_mode:valueOf('postPlateauBehavior')};}
+function openReviewModal(){var values=currentSetupValues(),error=validateSetupValues(values);if(error){var overlay=document.getElementById('chartOverlay');overlay.hidden=false;overlay.textContent=error;return;}reviewModalOpener=document.activeElement;var model=buildReviewModel(values),box=document.getElementById('reviewDetails');pendingReviewPayload=model.payload;box.replaceChildren();model.rows.forEach(function(r){var dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=r[0];dd.textContent=r[1];box.append(dt,dd);});document.getElementById('reviewModal').hidden=false;document.querySelector('.dashboard-grid').setAttribute('aria-hidden','true');document.getElementById('confirmReview').focus();}
+function closeReviewModal(){pendingReviewPayload=null;document.getElementById('reviewModal').hidden=true;document.querySelector('.dashboard-grid').removeAttribute('aria-hidden');if(reviewModalOpener&&reviewModalOpener.focus)reviewModalOpener.focus();}
+function confirmReviewedStart(){var payload=pendingReviewPayload;if(!payload)return;pendingReviewPayload=null;document.getElementById('reviewModal').hidden=true;document.querySelector('.dashboard-grid').removeAttribute('aria-hidden');startExperiment(payload);}
+function handleReviewModalKeydown(e){if(document.getElementById('reviewModal').hidden)return;if(e.key==='Escape'){e.preventDefault();closeReviewModal();return;}if(e.key==='Tab'){var a=[document.getElementById('cancelReview'),document.getElementById('confirmReview')],i=a.indexOf(document.activeElement),next=e.shiftKey?(i<=0?a.length-1:i-1):(i<0||i===a.length-1?0:i+1);e.preventDefault();a[next].focus();}}
+document.getElementById('reviewModal').addEventListener('keydown',handleReviewModalKeydown);
+function startExperiment(payload) {
+    var mode=payload.mode||'NORMAL_CYCLIC';
     
     log("Starting experiment...");
     isProcessingStart = true;
     // Destructive resets happen only after the server accepts the request.
     startWaitData = false;
 
-    var p=buildExperimentPayload({operator_name:op,sample_name:name,duration:duration,cycles:cycles,max_temp:maxTemp,target_lux:targetLux,interval:interval,mode:mode,target_temperature:numberOf('targetTemperature'),hold_minutes:mode==='FIXED_TEMPERATURE'?numberOf('qualifiedHoldMinutes'):numberOf('plateauHoldMinutes'),tolerance:numberOf('temperatureTolerance'),qualification_dwell_s:numberOf('qualificationDwell'),control_sensor:mode==='FIXED_TEMPERATURE'?valueOf('fixedControlSensor'):valueOf('plateauControlSensor'),ramp_rate:numberOf('rampRate'),window_s:numberOf('detectionWindow'),max_slope:numberOf('maxAbsSlope'),max_range:numberOf('maxPeakToPeak'),confirmation_s:numberOf('confirmationDuration'),max_discovery_minutes:numberOf('maxDiscoveryTime'),post_mode:valueOf('postPlateauBehavior')});
+    var p=payload;
     
     fetch('/api/start_experiment', { 
         method: 'POST', 
@@ -767,10 +788,9 @@ function resetUI() {
 
 function resetChartData() {
     // 1. Musnahkan Chart Lama
-    if(chart) {
-        chart.destroy();
-        chart = null;
-    }
+    if(chart) { chart.destroy(); chart = null; }
+    if(luxChart) { luxChart.destroy(); luxChart=null; }
+    scientificSeries=emptyScientificSeries();
 
     // 2. Bangun Ulang Chart Baru
     initChart();
@@ -830,6 +850,8 @@ function setUIState(state, clearTerminal) {
     }
 }
 
+if(document.querySelectorAll){document.querySelectorAll('[data-window]').forEach(function(b){b.addEventListener('click',function(){chartWindow=b.dataset.window;applyChartView();});});
+document.querySelectorAll('[data-channel]').forEach(function(b){b.addEventListener('click',function(){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));applyChannelVisibility();applyChartView();});});}
 updateModeFields(); initChart(); renderPhaseStepper('NORMAL_CYCLIC',0); renderHealth(true,null,null); setInterval(updateStatus, 1000);
 
 // Load calibrated max lux hint on page load
