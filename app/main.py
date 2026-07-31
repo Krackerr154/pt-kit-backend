@@ -92,6 +92,7 @@ class ExperimentConfig(BaseModel):
         if mode == ExperimentMode.NATURAL_PLATEAU:
             if values["plateau_window_s"] > 60: raise ValueError("plateau_window_s exceeds firmware capacity")
             if values["plateau_max_discovery_s"] < values["plateau_window_s"]: raise ValueError("discovery must cover window")
+            if values["plateau_max_discovery_s"] > 6500: raise ValueError("plateau_max_discovery_s must be at most 6500")
         for n in ("hold_duration_s", "qualification_dwell_s", "plateau_window_s", "plateau_confirmation_s", "plateau_max_discovery_s"):
             if values.get(n) is not None and values[n] > 4294967: raise ValueError(n + " is too large")
         return values

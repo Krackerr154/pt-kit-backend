@@ -38,6 +38,12 @@ def test_extended_telemetry():
     assert row["detected_plateau_temp"] == 44.1
 
 
+def test_non_finite_telemetry_is_json_safe_none():
+    row = parse_telemetry("10,2,1,11,nan,inf,1234,x,FIXED_TEMPERATURE,-inf,nan,inf,127,90,75,true,nan")
+    for key in ("ir_temp", "tc_temp", "control_temp", "temp_setpoint", "temp_error", "detected_plateau_temp"):
+        assert row[key] is None
+
+
 def test_bad_telemetry_rejected():
     with pytest.raises(ValueError):
         parse_telemetry("1,2")

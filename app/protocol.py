@@ -1,5 +1,6 @@
 """Wire protocol definitions shared by the PT-Kit backend and controllers."""
 from enum import Enum
+import math
 
 
 class ExperimentMode(str, Enum):
@@ -42,16 +43,19 @@ def parse_telemetry(csv_line):
     parts = [part.strip() for part in csv_line.split(",")]
     if len(parts) < 7:
         raise ValueError("telemetry requires at least seven fields")
+    def finite_float(value):
+        parsed = float(value)
+        return parsed if math.isfinite(parsed) else None
     row = dict(total_time=int(parts[0]), phase_time=int(parts[1]), cycle_num=int(parts[2]),
-               state_code=int(parts[3]), ir_temp=float(parts[4]), tc_temp=float(parts[5]),
-               current_lux=float(parts[6]), mode=None, control_temp=None, temp_setpoint=None,
+               state_code=int(parts[3]), ir_temp=finite_float(parts[4]), tc_temp=finite_float(parts[5]),
+               current_lux=finite_float(parts[6]), mode=None, control_temp=None, temp_setpoint=None,
                temp_error=None, lamp_pwm=None, hold_wall_elapsed_s=None,
                hold_qualified_elapsed_s=None, qualified=None, detected_plateau_temp=None)
     # Field 8 is the unchanged legacy/reserved slot. Extension starts after it.
     if len(parts) >= 17:
-        row.update(mode=parts[8] or None, control_temp=float(parts[9]), temp_setpoint=float(parts[10]),
-                   temp_error=float(parts[11]), lamp_pwm=float(parts[12]),
+        row.update(mode=parts[8] or None, control_temp=finite_float(parts[9]), temp_setpoint=finite_float(parts[10]),
+                   temp_error=finite_float(parts[11]), lamp_pwm=finite_float(parts[12]),
                    hold_wall_elapsed_s=int(parts[13]), hold_qualified_elapsed_s=int(parts[14]),
                    qualified=parts[15].lower() in ("1", "true", "yes"),
-                   detected_plateau_temp=float(parts[16]))
+                   detected_plateau_temp=finite_float(parts[16]))
     return row

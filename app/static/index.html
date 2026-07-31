@@ -162,7 +162,7 @@
                 <div id="plateauFields" class="mode-fields">
                   <div class="form-group"><label>Plateau Hold Duration (minutes)</label><input type="number" id="plateauHoldMinutes" value="10" min="0.1" step="0.1"></div>
                   <div class="form-group"><label>Control Sensor</label><select id="plateauControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div>
-                  <div class="form-group"><label>Detection Window (sec)</label><input type="number" id="detectionWindow" value="120"></div>
+                  <div class="form-group"><label>Detection Window (sec)</label><input type="number" id="detectionWindow" value="60" max="60"></div>
                   <div class="form-group"><label>Max Abs Slope (°C/min)</label><input type="number" id="maxAbsSlope" value="0.2" step="0.01"></div>
                   <div class="form-group"><label>Max Peak-to-Peak (°C)</label><input type="number" id="maxPeakToPeak" value="1" step="0.1"></div>
                   <div class="form-group"><label>Confirmation Duration (sec)</label><input type="number" id="confirmationDuration" value="60"></div>
@@ -232,7 +232,7 @@ var stateMap = {
     7: "CAL_TAPE",
     8: "CAL_FULL",
     9: "ISO_RAMP", 10: "ISO_QUALIFY", 11: "ISO_HOLD",
-    12: "PLATEAU_DISCOVERY", 13: "PLATEAU_CONFIRM", 14: "PLATEAU_HOLD", 15: "POST_PLATEAU"
+    12: "PLATEAU_HEATING", 13: "PLATEAU_CONFIRM", 14: "PLATEAU_HOLD", 15: "ABORTED"
 };
 
 var stateClassMap = {
@@ -259,9 +259,9 @@ function updateModeFields() {
 function field(data, names, fallback) { for(var i=0;i<names.length;i++) if(data && data[names[i]]!==undefined && data[names[i]]!==null) return data[names[i]]; return fallback; }
 function updateModeProgress(exp, latest, stateLabel) {
     var mode=field(exp,['mode','experiment_mode'],'NORMAL_CYCLIC'); var parts=['Mode: '+mode.replaceAll('_',' '),'Phase: '+stateLabel];
-    var target=field(latest,['target_temperature','target_temp'],field(exp,['target_temperature'],null)), control=field(latest,['control_temperature','control_temp'],null);
+    var target=field(latest,['temp_setpoint'],field(exp,['target_temperature'],null)), control=field(latest,['control_temp'],null);
     if(target!==null) parts.push('Target: '+target+' °C'); if(control!==null) parts.push('Control: '+control+' °C');
-    [['qualification_progress','Qualification'],['confirmation_progress','Confirmation'],['qualified_time','Qualified hold'],['wall_hold_time','Wall hold'],['in_band','In band'],['lamp_pwm','Lamp PWM'],['detected_plateau_temp','Plateau'],['current_lux','Lux']].forEach(function(x){var v=field(latest,[x[0]],null);if(v!==null)parts.push(x[1]+': '+v);});
+    [['hold_qualified_elapsed_s','Qualified hold'],['hold_wall_elapsed_s','Wall hold'],['qualified','Qualified'],['lamp_pwm','Lamp PWM'],['detected_plateau_temp','Plateau'],['current_lux','Lux']].forEach(function(x){var v=field(latest,[x[0]],null);if(v!==null)parts.push(x[1]+': '+v);});
     document.getElementById('modeProgress').textContent=parts.join(' • ');
 }
 
@@ -627,15 +627,10 @@ function startExperiment() {
     if(targetLux < 0) return alert("Target lux harus > 0!");
     if(interval < 1) return alert("Interval minimal 1 detik!");
     
-    log("Starting experiment. Clearing IDLE data...");
-    
-    // 1. Blokir update sementara & Set Flag Tunggu Data Reset
+    log("Starting experiment...");
     isProcessingStart = true;
-    startWaitData = true;
-    isWaitingReset = false; // Clear any waiting reset flag
-    
-    // 2. Bersihkan Grafik Total - Clear ALL IDLE data immediately
-    resetChartData();
+    // Destructive resets happen only after the server accepts the request.
+    startWaitData = false;
 
     var p=buildExperimentPayload({operator_name:op,sample_name:name,duration:duration,cycles:cycles,max_temp:maxTemp,target_lux:targetLux,interval:interval,mode:mode,target_temperature:numberOf('targetTemperature'),hold_minutes:mode==='FIXED_TEMPERATURE'?numberOf('qualifiedHoldMinutes'):numberOf('plateauHoldMinutes'),tolerance:numberOf('temperatureTolerance'),qualification_dwell_s:numberOf('qualificationDwell'),control_sensor:mode==='FIXED_TEMPERATURE'?valueOf('fixedControlSensor'):valueOf('plateauControlSensor'),ramp_rate:numberOf('rampRate'),window_s:numberOf('detectionWindow'),max_slope:numberOf('maxAbsSlope'),max_range:numberOf('maxPeakToPeak'),confirmation_s:numberOf('confirmationDuration'),max_discovery_minutes:numberOf('maxDiscoveryTime'),post_mode:valueOf('postPlateauBehavior')});
     
@@ -643,10 +638,17 @@ function startExperiment() {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'}, 
         body: JSON.stringify(p) 
-    }).then(r => r.json()).then(d => {
+    }).then(async r => {
+        var d; try { d = await r.json(); } catch (_) { d = {}; }
+        if (!r.ok) throw new Error(d.detail || d.message || ('HTTP ' + r.status));
+        return d;
+    }).then(d => {
         if(d.status === 'success') { 
             log("Experiment started! ID: " + d.id + " - Waiting for Arduino reset..."); 
             currentExpId = d.id;
+            startWaitData = true;
+            isWaitingReset = false;
+            resetChartData();
             setUIState('RUNNING'); 
             
             // Buka gerbang update, tapi grafik masih nunggu data reset (startWaitData)
