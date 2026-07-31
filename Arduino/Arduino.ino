@@ -60,6 +60,8 @@ OperatingMode operatingMode = NORMAL_CYCLIC;
 String espIP = "";
 bool wifiConnected = false;
 float tempIR = 0.0, tempTC = 0.0;
+float rawTempIR = 0.0, rawTempTC = 0.0;
+bool tempIRValid = true, tempTCValid = true;
 float rawLux = 0.0, smoothedLux = 0.0;
 float userMaxTemp = 100.0;       
 int   userInterval = 1;          
@@ -327,7 +329,7 @@ void abortMode(const char*r){currentState=ABORTED;lampPWM=0;analogWrite(PIN_LAMP
 void temperatureDrive(float target){unsigned long now=millis();float dt=lastControlMs?min((now-lastControlMs)/1000.0f,2.0f):1.0f;lastControlMs=now;tempError=target-controlTemp;lampPWM=(int)piStep(tempPI,target,controlTemp,dt,TEMP_KP,TEMP_KI,255,TEMP_APPROACH_ZONE);analogWrite(PIN_LAMP,lampPWM);analogWrite(PIN_FAN,0);}
 void qualifiedHold(float target,float tolerance,unsigned long seconds){unsigned long now=millis();qualified=controlTempValid&&abs(controlTemp-target)<=tolerance;if(qualified){if(lastQualifiedMs)holdQualifiedMs+=now-lastQualifiedMs;lastQualifiedMs=now;}else lastQualifiedMs=0;temperatureDrive(target);if(holdQualifiedMs>=seconds*1000UL)currentState=DONE;}
 void runIsothermalLogic(){
- unsigned long now=millis();currentSec=(now-stateStarted)/1000;ControlSensor sensor=operatingMode==FIXED_TEMPERATURE?isoConfig.sensor:plateauConfig.sensor;controlTemp=sensor==SENSOR_TC?tempTC:tempIR;controlTempValid=isfinite(controlTemp);if(!controlTempValid){qualified=false;analogWrite(PIN_LAMP,0);analogWrite(PIN_FAN,255);if(!invalidSince)invalidSince=now;if(now-invalidSince>=10000UL)abortMode("SENSOR_INVALID");updateLCD("SENSOR INVALID");return;}invalidSince=0;if(controlTemp>userMaxTemp){abortMode("MAX_TEMP");return;}
+ unsigned long now=millis();currentSec=(now-stateStarted)/1000;ControlSensor sensor=operatingMode==FIXED_TEMPERATURE?isoConfig.sensor:plateauConfig.sensor;controlTemp=sensor==SENSOR_TC?rawTempTC:rawTempIR;controlTempValid=sensor==SENSOR_TC?tempTCValid:tempIRValid;if(!controlTempValid){qualified=false;analogWrite(PIN_LAMP,0);analogWrite(PIN_FAN,255);if(!invalidSince)invalidSince=now;if(invalidSensorAbortDue(now,invalidSince))abortMode("SENSOR_INVALID");updateLCD("SENSOR INVALID");return;}invalidSince=0;if(controlTemp>userMaxTemp){abortMode("MAX_TEMP");return;}
  if(currentState==ISO_RAMP){if(!isfinite(tempSetpoint))tempSetpoint=controlTemp;tempSetpoint=min(isoConfig.targetTemp,tempSetpoint+isoConfig.rampRate/60.0);temperatureDrive(tempSetpoint);updateLCD("ISO RAMP");if(tempSetpoint>=isoConfig.targetTemp&&abs(tempError)<=isoConfig.tolerance){currentState=ISO_QUALIFY;stateStarted=now;}}
  else if(currentState==ISO_QUALIFY){tempSetpoint=isoConfig.targetTemp;temperatureDrive(tempSetpoint);qualified=abs(tempError)<=isoConfig.tolerance;updateLCD("ISO QUALIFY");if(!qualified)stateStarted=now;else if(now-stateStarted>=isoConfig.qualificationSeconds*1000UL){currentState=ISO_HOLD;holdStarted=lastQualifiedMs=now;holdQualifiedMs=0;stateStarted=now;}}
  else if(currentState==ISO_HOLD){tempSetpoint=isoConfig.targetTemp;qualifiedHold(tempSetpoint,isoConfig.tolerance,isoConfig.holdSeconds);updateLCD("ISO HOLD");}
@@ -524,8 +526,12 @@ void showScrollingStandby() {
 
 
 void readSensors() {
-  tempIR = mlx.readObjectTempC();
-  tempTC = thermocouple.readCelsius();
+  rawTempIR = mlx.readObjectTempC();
+  rawTempTC = thermocouple.readCelsius();
+  bool legacyExposure = operatingMode == NORMAL_CYCLIC || currentState == CAL_BARE || currentState == CAL_TAPE || currentState == CAL_FULL;
+  SensorTemperatures temperatures = sensorTemperatures(rawTempIR, rawTempTC, legacyExposure);
+  tempIRValid = temperatures.irValid; tempTCValid = temperatures.tcValid;
+  tempIR = temperatures.irExposed; tempTC = temperatures.tcExposed;
   
   rawLux = lightMeter.readLightLevel();
   if(isnan(rawLux)) rawLux = 0.0;

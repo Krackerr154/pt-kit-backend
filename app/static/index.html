@@ -257,6 +257,11 @@ function updateModeFields() {
     document.getElementById('modeSummary').textContent=mode==='NORMAL_CYCLIC'?'Run the existing heat/cool cycles.':mode==='FIXED_TEMPERATURE'?'Ramp to target, qualify within tolerance, then accumulate qualified hold time.':'Illuminate each sample while detecting its natural thermal plateau, confirm it, then hold.';
 }
 function field(data, names, fallback) { for(var i=0;i<names.length;i++) if(data && data[names[i]]!==undefined && data[names[i]]!==null) return data[names[i]]; return fallback; }
+function formatSensorValue(value, digits, unit) {
+    if (value === null || value === undefined || value === '') return '-- ' + unit;
+    var number = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(number) ? number.toFixed(digits) + ' ' + unit : '-- ' + unit;
+}
 function updateModeProgress(exp, latest, stateLabel) {
     var mode=field(exp,['mode','experiment_mode'],'NORMAL_CYCLIC'); var parts=['Mode: '+mode.replaceAll('_',' '),'Phase: '+stateLabel];
     var target=field(latest,['temp_setpoint'],field(exp,['target_temperature'],null)), control=field(latest,['control_temp'],null);
@@ -481,11 +486,9 @@ function updateStatus() {
             var latest = dataList[dataList.length - 1];
 
             // UPDATE ANGKA (Selalu Update, baik IDLE maupun RUNNING)
-            document.getElementById('valIR').innerText = latest.ir_temp.toFixed(1) + " °C";
-            document.getElementById('valTC').innerText = latest.tc_temp.toFixed(1) + " °C";
-            if (latest.current_lux !== undefined) {
-                document.getElementById('valLux').innerText = latest.current_lux.toFixed(0) + " lx";
-            }
+            document.getElementById('valIR').innerText = formatSensorValue(latest.ir_temp, 1, '°C');
+            document.getElementById('valTC').innerText = formatSensorValue(latest.tc_temp, 1, '°C');
+            document.getElementById('valLux').innerText = formatSensorValue(latest.current_lux, 0, 'lx');
             
             // Format waktu menjadi MM:SS
             var totalSecs = latest.total_time || 0;

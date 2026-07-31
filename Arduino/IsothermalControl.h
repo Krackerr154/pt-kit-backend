@@ -12,6 +12,14 @@
 
 enum ControlSensor { SENSOR_TC, SENSOR_IR };
 enum PostPlateauMode { POST_PASSIVE, POST_REGULATED };
+struct SensorTemperatures { float irRaw,tcRaw,irExposed,tcExposed; bool irValid,tcValid; };
+inline SensorTemperatures sensorTemperatures(float ir,float tc,bool legacyExposure){
+  SensorTemperatures r={ir,tc,ir,tc,isfinite(ir),isfinite(tc)};
+  if(legacyExposure){if(!r.irValid)r.irExposed=0.0f;if(!r.tcValid)r.tcExposed=0.0f;}
+  return r;
+}
+inline bool selectedTemperatureValid(const SensorTemperatures&r,ControlSensor sensor){return sensor==SENSOR_TC?r.tcValid:r.irValid;}
+inline bool invalidSensorAbortDue(unsigned long now,unsigned long invalidSince,unsigned long limit=10000UL){return invalidSince!=0&&now-invalidSince>=limit;}
 struct IsoCommand { float targetTemp,tolerance,maxTemp,rampRate; unsigned long holdSeconds,qualificationSeconds,logInterval; ControlSensor sensor; };
 struct PlateauCommand { float targetLux,maxSlope,maxPeakToPeak,maxTemp; unsigned long holdSeconds,windowSeconds,confirmationSeconds,maxDiscoverySeconds,logInterval; ControlSensor sensor; PostPlateauMode postMode; };
 const int PLATEAU_CAPACITY=60;

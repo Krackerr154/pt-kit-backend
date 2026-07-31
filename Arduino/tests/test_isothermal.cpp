@@ -4,6 +4,20 @@
 #include <stdio.h>
 
 int main() {
+  SensorTemperatures legacy = sensorTemperatures(NAN, INFINITY, true);
+  assert(!legacy.irValid && !legacy.tcValid);
+  assert(legacy.irExposed == 0.0f && legacy.tcExposed == 0.0f); // normal/calibration contract
+  SensorTemperatures controlled = sensorTemperatures(NAN, INFINITY, false);
+  assert(!controlled.irValid && !controlled.tcValid);
+  assert(isnan(controlled.irExposed) && isinf(controlled.tcExposed)); // fixed/plateau must remain invalid
+  assert(!selectedTemperatureValid(controlled, SENSOR_IR));
+  assert(!selectedTemperatureValid(controlled, SENSOR_TC));
+  SensorTemperatures oneGood = sensorTemperatures(42.0f, NAN, false);
+  assert(selectedTemperatureValid(oneGood, SENSOR_IR));
+  assert(!selectedTemperatureValid(oneGood, SENSOR_TC));
+  assert(!invalidSensorAbortDue(10999UL, 1000UL));
+  assert(invalidSensorAbortDue(11000UL, 1000UL)); // selected sensor causes bounded abort
+
   IsoCommand iso;
   assert(parseIsoCommand("ISO1:45:120:0.5:10:80:2:TC:6", iso));
   assert(iso.targetTemp == 45 && iso.holdSeconds == 120 && iso.sensor == SENSOR_TC);
