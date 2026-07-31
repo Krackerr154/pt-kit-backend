@@ -2,6 +2,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from typing import Optional
+from app.protocol import (ExperimentMode, PostPlateauMode, STATE_LABELS, parse_telemetry,
+                          serialize_fixed_command, serialize_normal_command, serialize_plateau_command)
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
@@ -52,6 +55,19 @@ class ExperimentConfig(BaseModel):
     max_temp: float = 80.0
     interval: int = 1
     target_lux: float = 38000.0
+    mode: ExperimentMode = ExperimentMode.NORMAL_CYCLIC
+    target_temperature: Optional[float] = None
+    hold_duration_s: Optional[int] = None
+    temperature_tolerance: Optional[float] = None
+    qualification_dwell_s: Optional[int] = None
+    control_sensor: str = "IR"
+    ramp_rate: Optional[float] = None
+    plateau_window_s: Optional[int] = None
+    plateau_max_slope: Optional[float] = None
+    plateau_max_range: Optional[float] = None
+    plateau_confirmation_s: Optional[int] = None
+    plateau_max_discovery_s: Optional[int] = None
+    post_plateau_mode: PostPlateauMode = PostPlateauMode.PASSIVE
 
 class EspSensorData(BaseModel):
     csv_line: str 
@@ -81,6 +97,8 @@ def startup_db():
         );
     """)
     cur.execute("ALTER TABLE experiments ADD COLUMN IF NOT EXISTS target_lux FLOAT DEFAULT 0;")
+    for ddl in ["mode VARCHAR(30) DEFAULT 'NORMAL_CYCLIC'", "target_temperature FLOAT", "hold_duration_s INT", "temperature_tolerance FLOAT", "qualification_dwell_s INT", "control_sensor VARCHAR(10)", "ramp_rate FLOAT", "plateau_window_s INT", "plateau_max_slope FLOAT", "plateau_max_range FLOAT", "plateau_confirmation_s INT", "plateau_max_discovery_s INT", "post_plateau_mode VARCHAR(12)", "detected_plateau_temperature FLOAT", "hold_qualified_progress FLOAT", "completion_reason VARCHAR(100)"]:
+        cur.execute(f"ALTER TABLE experiments ADD COLUMN IF NOT EXISTS {ddl};")
     
     # 2. Buat Tabel Sensor Logs
     cur.execute("""
@@ -99,6 +117,8 @@ def startup_db():
         );
     """)
     cur.execute("ALTER TABLE sensor_logs ADD COLUMN IF NOT EXISTS current_lux FLOAT DEFAULT 0;")
+    for ddl in ["mode VARCHAR(30)", "control_temp FLOAT", "temp_setpoint FLOAT", "temp_error FLOAT", "lamp_pwm FLOAT", "hold_wall_elapsed_s INT", "hold_qualified_elapsed_s INT", "qualified BOOLEAN", "detected_plateau_temp FLOAT"]:
+        cur.execute(f"ALTER TABLE sensor_logs ADD COLUMN IF NOT EXISTS {ddl};")
 
     # 3. Buat Tabel Device Config
     cur.execute("""
@@ -144,9 +164,15 @@ def start_experiment(config: ExperimentConfig):
     cur = conn.cursor()
     cur.execute("""
         INSERT INTO experiments 
-        (operator_name, sample_name, description, target_duration, target_cycles, max_temp, log_interval, target_lux, status)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'WAITING') RETURNING id
-    """, (config.operator_name, config.sample_name, config.description, config.duration, config.cycles, config.max_temp, config.interval, config.target_lux))
+        (operator_name, sample_name, description, target_duration, target_cycles, max_temp, log_interval, target_lux, status,
+         mode, target_temperature, hold_duration_s, temperature_tolerance, qualification_dwell_s, control_sensor, ramp_rate,
+         plateau_window_s, plateau_max_slope, plateau_max_range, plateau_confirmation_s, plateau_max_discovery_s, post_plateau_mode)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'WAITING',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id
+    """, (config.operator_name, config.sample_name, config.description, config.duration, config.cycles, config.max_temp,
+          config.interval, config.target_lux, config.mode.value, config.target_temperature, config.hold_duration_s,
+          config.temperature_tolerance, config.qualification_dwell_s, config.control_sensor, config.ramp_rate,
+          config.plateau_window_s, config.plateau_max_slope, config.plateau_max_range, config.plateau_confirmation_s,
+          config.plateau_max_discovery_s, config.post_plateau_mode.value))
     
     new_id = cur.fetchone()[0]
     conn.commit()
@@ -154,7 +180,16 @@ def start_experiment(config: ExperimentConfig):
     conn.close()
     
     current_experiment_id = new_id
-    pending_command = f"SET:{config.duration}:{config.cycles}:{config.max_temp}:{config.interval}:{config.target_lux}"
+    if config.mode == ExperimentMode.FIXED_TEMPERATURE:
+        values = (config.target_temperature, config.hold_duration_s, config.temperature_tolerance, config.qualification_dwell_s, config.ramp_rate)
+        if any(v is None for v in values): raise HTTPException(422, "Missing fixed-temperature configuration")
+        pending_command = serialize_fixed_command(values[0], values[1], values[2], values[3], config.max_temp, config.interval, config.control_sensor, values[4])
+    elif config.mode == ExperimentMode.NATURAL_PLATEAU:
+        values = (config.hold_duration_s, config.plateau_window_s, config.plateau_max_slope, config.plateau_max_range, config.plateau_confirmation_s, config.plateau_max_discovery_s)
+        if any(v is None for v in values): raise HTTPException(422, "Missing natural-plateau configuration")
+        pending_command = serialize_plateau_command(config.target_lux, *values, config.max_temp, config.interval, config.control_sensor, config.post_plateau_mode)
+    else:
+        pending_command = serialize_normal_command(config.duration, config.cycles, config.max_temp, config.interval, config.target_lux)
     
     return {"status": "success", "id": new_id}
 
@@ -279,17 +314,17 @@ def insert_data(data: EspSensorData):
         parts = data.csv_line.split(',')
         if len(parts) < 7: return {"status": "error_format"}
         
-        # Parsing Data
-        total_time = int(parts[0])
-        phase_time = int(parts[1])
-        cycle_num  = int(parts[2])
-        state_code = int(parts[3])
-        ir_temp    = float(parts[4])
-        tc_temp    = float(parts[5])
-        current_lux = float(parts[6])
+        # Parsing Data (legacy prefix remains unchanged)
+        telemetry = parse_telemetry(data.csv_line)
+        total_time = telemetry["total_time"]
+        phase_time = telemetry["phase_time"]
+        cycle_num = telemetry["cycle_num"]
+        state_code = telemetry["state_code"]
+        ir_temp = telemetry["ir_temp"]
+        tc_temp = telemetry["tc_temp"]
+        current_lux = telemetry["current_lux"]
         
-        states = ["IDLE", "PRE_HEAT", "HEATING", "COOLING", "STABILIZING", "DONE", "CAL_BARE", "CAL_TAPE", "CAL_FULL"]
-        state_label = states[state_code] if 0 <= state_code < len(states) else "UNKNOWN"
+        state_label = STATE_LABELS[state_code] if 0 <= state_code < len(STATE_LABELS) else "UNKNOWN"
 
         # 1. Masukkan ke Buffer (Agar Grafik Live tetap jalan untuk Monitoring IDLE)
         # Data IDLE tetap masuk ke sini supaya user bisa liat suhu sebelum start
@@ -360,9 +395,12 @@ def insert_data(data: EspSensorData):
             cur = conn.cursor()
             cur.execute("""
                 INSERT INTO sensor_logs 
-                (experiment_id, total_time, phase_time, cycle_num, state_code, state_label, ir_temp, tc_temp, current_lux)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (current_experiment_id, total_time, phase_time, cycle_num, state_code, state_label, ir_temp, tc_temp, current_lux))
+                (experiment_id, total_time, phase_time, cycle_num, state_code, state_label, ir_temp, tc_temp, current_lux,
+                 mode, control_temp, temp_setpoint, temp_error, lamp_pwm, hold_wall_elapsed_s, hold_qualified_elapsed_s, qualified, detected_plateau_temp)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (current_experiment_id, total_time, phase_time, cycle_num, state_code, state_label, ir_temp, tc_temp, current_lux,
+                  telemetry["mode"], telemetry["control_temp"], telemetry["temp_setpoint"], telemetry["temp_error"], telemetry["lamp_pwm"],
+                  telemetry["hold_wall_elapsed_s"], telemetry["hold_qualified_elapsed_s"], telemetry["qualified"], telemetry["detected_plateau_temp"]))
             conn.commit()
             cur.close()
             conn.close()
@@ -378,7 +416,7 @@ def insert_data(data: EspSensorData):
 def list_experiments():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
-    cur.execute("SELECT id, operator_name, sample_name, started_at, status FROM experiments ORDER BY id DESC")
+    cur.execute("SELECT id, operator_name, sample_name, started_at, status, mode, target_temperature, hold_duration_s, detected_plateau_temperature, hold_qualified_progress, completion_reason FROM experiments ORDER BY id DESC")
     results = cur.fetchall()
     cur.close()
     conn.close()
@@ -389,7 +427,7 @@ def get_experiment_data(exp_id: int):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute("""
-        SELECT total_time, phase_time, cycle_num, state_label, ir_temp, tc_temp, current_lux 
+        SELECT total_time, phase_time, cycle_num, state_label, ir_temp, tc_temp, current_lux, mode, control_temp, temp_setpoint, temp_error, lamp_pwm, hold_wall_elapsed_s, hold_qualified_elapsed_s, qualified, detected_plateau_temp
         FROM sensor_logs 
         WHERE experiment_id = %s 
         ORDER BY id ASC
@@ -408,14 +446,14 @@ def export_csv(exp_id: int):
     if not info: raise HTTPException(404, "Not Found")
     
     filename = f"{info[0]}_{info[1]}.csv".replace(" ", "_")
-    cur.execute("SELECT total_time, phase_time, cycle_num, state_label, ir_temp, tc_temp, current_lux, recorded_at FROM sensor_logs WHERE experiment_id = %s ORDER BY id ASC", (exp_id,))
+    cur.execute("SELECT total_time, phase_time, cycle_num, state_label, ir_temp, tc_temp, current_lux, recorded_at, mode, control_temp, temp_setpoint, temp_error, lamp_pwm, hold_wall_elapsed_s, hold_qualified_elapsed_s, qualified, detected_plateau_temp FROM sensor_logs WHERE experiment_id = %s ORDER BY id ASC", (exp_id,))
     rows = cur.fetchall()
     cur.close()
     conn.close()
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["TotalTime", "PhaseTime", "Cycle", "State", "IR_Temp", "TC_Temp", "Lux", "Recorded At"])
+    writer.writerow(["TotalTime", "PhaseTime", "Cycle", "State", "IR_Temp", "TC_Temp", "Lux", "Recorded At", "Mode", "ControlTemp", "TempSetpoint", "TempError", "LampPWM", "HoldWallElapsedS", "HoldQualifiedElapsedS", "Qualified", "DetectedPlateauTemp"])
     writer.writerows(rows)
     output.seek(0)
     
