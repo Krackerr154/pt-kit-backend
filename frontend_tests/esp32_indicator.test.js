@@ -1,0 +1,12 @@
+const fs=require('fs'),assert=require('assert'),vm=require('vm');
+const html=fs.readFileSync('app/static/index.html','utf8');
+const match=html.match(/function getEsp32Indicator\([^]*?\n\}/);
+assert(match,'missing getEsp32Indicator');
+const ctx={};vm.createContext(ctx);vm.runInContext(match[0],ctx);
+assert.deepStrictEqual(JSON.parse(JSON.stringify(ctx.getEsp32Indicator(true,1))),{state:'connected',label:'ESP32 connected',icon:'🟢'});
+assert.deepStrictEqual(JSON.parse(JSON.stringify(ctx.getEsp32Indicator(true,5))),{state:'stale',label:'ESP32 stale',icon:'🟠'});
+assert.deepStrictEqual(JSON.parse(JSON.stringify(ctx.getEsp32Indicator(true,10))),{state:'disconnected',label:'ESP32 disconnected',icon:'🔴'});
+assert.equal(ctx.getEsp32Indicator(true,null).label,'ESP32 disconnected');
+assert.equal(ctx.getEsp32Indicator(false,1).label,'ESP32 disconnected');
+assert(/id="connStatus"[^>]*aria-live="polite"/.test(html),'indicator must announce status');
+console.log('ESP32 indicator behavior: PASS');

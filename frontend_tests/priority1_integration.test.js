@@ -33,9 +33,9 @@ test('current_status HTTP 500 uses disconnected handling and preserves readings'
   c.document.getElementById('valIR').innerText='41.0 °C'; c.document.getElementById('valTC').innerText='40.0 °C';
   h.queue(h.response(false,500,{active_experiment:{status:'WAITING',id:9},recent_data:[{ir_temp:99,tc_temp:99,current_lux:9,total_time:9,state_code:2,cycle_num:1}]}));
   c.updateStatus(); await tick(); await tick();
-  assert.equal(h.elements.get('connStatus').innerText,'🔴 Backend disconnected');
+  assert.equal(h.elements.get('connStatus').textContent,'🔴 ESP32 disconnected');
   assert.equal(h.elements.get('valIR').innerText,'41.0 °C'); assert.equal(h.elements.get('valTC').innerText,'40.0 °C');
-  assert.notEqual(h.elements.get('connStatus').innerText,'🟢 Connected');
+  assert.notEqual(h.elements.get('connStatus').textContent,'🟢 ESP32 connected');
 });
 
 test('terminal result survives cached telemetry and state 15 abort is idempotent', async()=>{

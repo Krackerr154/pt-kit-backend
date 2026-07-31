@@ -109,7 +109,7 @@
                 <span>📈 Live Monitoring</span>
                 <div>
                     <span id="cycleInfo" style="margin-right:15px; font-weight:normal; color:#555;">Cycle: - | Phase: -</span>
-                    <span id="connStatus" style="font-size:0.8rem; color:#ccc;">Connecting...</span>
+                    <span id="connStatus" aria-live="polite" style="font-size:0.8rem; color:#b42318;">🔴 ESP32 disconnected</span>
                 </div>
             </div>
             
@@ -292,6 +292,16 @@ function getHealthState(backendOnline, ageSeconds, valid) {
     if(ageSeconds>=4) return {state:'stale',label:'Stale'};
     if(!backendOnline) return {state:'stale',label:'Stale'};
     return {state:'live',label:'Live'};
+}
+function getEsp32Indicator(backendOnline, ageSeconds) {
+    if(!backendOnline || ageSeconds===null || ageSeconds===undefined || ageSeconds>=10) return {state:'disconnected',label:'ESP32 disconnected',icon:'🔴'};
+    if(ageSeconds>=4) return {state:'stale',label:'ESP32 stale',icon:'🟠'};
+    return {state:'connected',label:'ESP32 connected',icon:'🟢'};
+}
+function renderEsp32Indicator(backendOnline, ageSeconds) {
+    var status=getEsp32Indicator(backendOnline,ageSeconds), box=document.getElementById('connStatus');
+    box.textContent=status.icon+' '+status.label;
+    box.style.color=status.state==='connected'?'#137333':status.state==='stale'?'#9a6700':'#b42318';
 }
 function sampleSignature(sample) { if(!sample)return null;return JSON.stringify(['total_time','phase_time','cycle_num','state_code','ir_temp','tc_temp','current_lux'].map(function(k){return sample[k]===undefined?null:sample[k];})); }
 function advanceTelemetryState(previous,sample,now) { var signature=sampleSignature(sample);return {signature:signature,lastTelemetryAt:signature!==previous.signature?now:previous.lastTelemetryAt}; }
@@ -521,7 +531,6 @@ function updateStatus() {
         var exp = data.active_experiment;
         var dataList = data.recent_data; 
         
-        document.getElementById('connStatus').innerText = "🟢 Connected";
         if(exp) activeMode=field(exp,['mode','experiment_mode'],activeMode);
 
         // Logic Auto-Sync (Jika user lain start eksperimen)
@@ -554,7 +563,7 @@ function updateStatus() {
             document.getElementById('cycleInfo').innerText = `Cycle: ${latest.cycle_num} | Phase: ${stateLabel}`;
             var mode=resolveActiveMode(isRunning,activeMode,valueOf('experimentMode'));
             var telemetry=advanceTelemetryState({signature:lastTelemetrySignature,lastTelemetryAt:lastTelemetryAt},latest,Date.now());lastTelemetrySignature=telemetry.signature;lastTelemetryAt=telemetry.lastTelemetryAt;lastTelemetrySample=latest;var age=(Date.now()-lastTelemetryAt)/1000;
-            renderPhaseStepper(mode,stateCode); renderHealth(true,latest,age);
+            renderPhaseStepper(mode,stateCode); renderHealth(true,latest,age); renderEsp32Indicator(true,age);
             var overlay=document.getElementById('chartOverlay');
             if(stateCode===15&&!terminalUiState){overlay.hidden=false;overlay.textContent='Experiment aborted for safety. Lamp is off; recorded data is retained.';setUIState('ABORTED');}
             else if(isRunning&&startWaitData){overlay.hidden=false;overlay.textContent='Waiting for first experiment sample after start';} else overlay.hidden=true;
@@ -664,11 +673,11 @@ function updateStatus() {
                 });
                 if(chart) chart.update('none');
             }
-        } else { renderHealth(true,null,null);var emptyOverlay=document.getElementById('chartOverlay');emptyOverlay.hidden=false;emptyOverlay.textContent='Waiting for telemetry — no samples received'; }
+        } else { renderHealth(true,null,null);renderEsp32Indicator(true,null);var emptyOverlay=document.getElementById('chartOverlay');emptyOverlay.hidden=false;emptyOverlay.textContent='Waiting for telemetry — no samples received'; }
     }).catch(handleBackendFailure);
 }
 
-function handleBackendFailure() { var age=lastTelemetryAt?(Date.now()-lastTelemetryAt)/1000:null; document.getElementById('connStatus').innerText = "🔴 Backend disconnected"; renderHealth(false,lastTelemetrySample,age); var overlay=document.getElementById('chartOverlay');overlay.hidden=false;overlay.textContent='Backend disconnected • telemetry '+getHealthState(false,age,true).label.toLowerCase()+(age!==null?' • last sample '+Math.floor(age)+'s ago':''); }
+function handleBackendFailure() { var age=lastTelemetryAt?(Date.now()-lastTelemetryAt)/1000:null; renderEsp32Indicator(false,age); renderHealth(false,lastTelemetrySample,age); var overlay=document.getElementById('chartOverlay');overlay.hidden=false;overlay.textContent='Backend disconnected • telemetry '+getHealthState(false,age,true).label.toLowerCase()+(age!==null?' • last sample '+Math.floor(age)+'s ago':''); }
 
 function buildExperimentPayload(v) {
     var p={operator_name:v.operator_name,sample_name:v.sample_name,duration:v.duration,cycles:v.cycles,max_temp:v.max_temp,target_lux:v.target_lux,interval:v.interval};
