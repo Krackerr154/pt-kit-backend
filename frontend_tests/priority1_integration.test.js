@@ -17,7 +17,14 @@ function harness() {
   function elLeaf(){return {innerText:'',textContent:'',innerHTML:'',style:{},className:'',focus(){},removeAttribute(){},setAttribute(){}}}
   const document = {getElementById(id){if(!elements.has(id)) elements.set(id,el(id)); return elements.get(id)}, querySelector(){return elLeaf()},
     createElement(tag){return el(tag)}, createTextNode(text){return {textContent:text}}, addEventListener(){}};
-  class Chart { constructor(){this.data={labels:[],datasets:[{data:[]},{data:[]}]}} update(){} destroy(){} }
+  class Chart {
+    static register() {}
+    constructor(_context,config){
+      this.data=config.data; this.options=config.options; this.ctx={save(){},restore(){},fillRect(){}};
+      this.scales={x:{getPixelForValue:value=>value}}; this.chartArea={top:0,bottom:100};
+    }
+    update(){} destroy(){} resetZoom(){}
+  }
   const fetchQueue=[];
   const context={document,Chart,console,Date,Math,JSON,Number,parseInt,parseFloat,Promise,
     fetch: (...args)=>args[0]==='/api/get_config'?Promise.resolve({ok:true,status:200,json:async()=>({})}):(assert.ok(fetchQueue.length,'unexpected fetch '+args[0]),Promise.resolve(fetchQueue.shift())),
@@ -36,6 +43,52 @@ test('current_status HTTP 500 uses disconnected handling and preserves readings'
   assert.equal(h.elements.get('connStatus').textContent,'🔴 ESP32 disconnected');
   assert.equal(h.elements.get('valIR').innerText,'41.0 °C'); assert.equal(h.elements.get('valTC').innerText,'40.0 °C');
   assert.notEqual(h.elements.get('connStatus').textContent,'🟢 ESP32 connected');
+});
+
+test('real updateStatus completes an active run when the backend has already cleared active_experiment', async()=>{
+  const h=harness(), c=h.context;
+  c.currentExpId=91; c.activeMode='FIXED_TEMPERATURE'; c.setUIState('RUNNING');
+  h.queue(h.response(true,200,{active_experiment:null,recent_data:[{
+    ir_temp:42,tc_temp:41,current_lux:900,total_time:120,state_code:5,cycle_num:3,temp_setpoint:40
+  }]}));
+  c.updateStatus(); await tick(); await tick();
+
+  assert.equal(c.terminalUiState,'DONE');
+  assert.equal(c.isRunning,false);
+  assert.equal(h.elements.get('statusBadge').innerText,'COMPLETED');
+  assert.equal(h.elements.get('setupForm').style.display,'none','setup must not reopen after completion');
+  assert.equal(h.elements.get('finishedPanel').style.display,'block','terminal result actions must be exposed');
+  assert.equal(h.elements.get('downloadLink').href,'/api/export/91','completed run retains its export authority');
+  assert.match(h.elements.get('cycleInfo').innerText,/Cycle: 3 \| Phase: DONE/);
+  assert.match(h.elements.get('modeProgress').textContent,/Mode: FIXED TEMPERATURE.*Phase: DONE/,'terminal summary retains the completed run mode');
+  assert.match(h.elements.get('phaseStepper').innerHTML,/Current: Complete/);
+  assert.match(html,/id="finishedPanel"[^]*?id="downloadLink"[^]*?NEW EXPERIMENT/,'finished result exposes export and new-run actions');
+});
+
+test('real updateStatus keeps abort cycle and mode summary authoritative over cached idle telemetry', async()=>{
+  const h=harness(), c=h.context;
+  c.currentExpId=92; c.activeMode='FIXED_TEMPERATURE'; c.setUIState('RUNNING');
+  h.queue(h.response(true,200,{active_experiment:{id:92,status:'WAITING',mode:'FIXED_TEMPERATURE',target_temperature:40},recent_data:[{
+    ir_temp:47,tc_temp:46,current_lux:850,total_time:32,state_code:15,cycle_num:2,temp_setpoint:40
+  }]}));
+  c.updateStatus(); await tick(); await tick();
+
+  assert.equal(c.terminalUiState,'ABORTED');
+  const terminalCycle=h.elements.get('cycleInfo').innerText;
+  const terminalMode=h.elements.get('modeProgress').textContent;
+  assert.match(terminalCycle,/Cycle: 2 \| Phase: ABORTED/);
+  assert.match(terminalMode,/Mode: FIXED TEMPERATURE.*Phase: ABORTED/);
+
+  h.queue(h.response(true,200,{active_experiment:null,recent_data:[{
+    ir_temp:30,tc_temp:29,current_lux:0,total_time:0,state_code:0,cycle_num:0,temp_setpoint:0
+  }]}));
+  c.updateStatus(); await tick(); await tick();
+
+  assert.equal(c.terminalUiState,'ABORTED');
+  assert.equal(h.elements.get('cycleInfo').innerText,terminalCycle);
+  assert.equal(h.elements.get('modeProgress').textContent,terminalMode);
+  assert.doesNotMatch(h.elements.get('cycleInfo').innerText,/Phase: IDLE/);
+  assert.doesNotMatch(h.elements.get('modeProgress').textContent,/Phase: IDLE/);
 });
 
 test('terminal result survives cached telemetry and state 15 abort is idempotent', async()=>{

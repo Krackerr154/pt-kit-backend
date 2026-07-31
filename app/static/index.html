@@ -11,23 +11,30 @@
   
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Roboto', sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-    .dashboard-grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; max-width: 1200px; margin: auto; }
-    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
-    .card-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #2c3e50; display:flex; justify-content:space-between; align-items:center; }
+    :root { --space:8px; --ink:#17212b; --muted:#52606d; --line:#d9e0e7; --surface:#fff; --surface-soft:#f4f7f9; --navy:#173f67; }
+    * { box-sizing:border-box; }
+    html, body { max-width:100%; overflow-x:hidden; }
+    body { font-family:'Roboto',sans-serif; background:#eef2f5; margin:0; padding:16px; color:var(--ink); font-size:16px; line-height:1.45; }
+    .page-shell { max-width:1440px; margin:auto; }
+    .dashboard-grid { display:grid; grid-template-columns:minmax(0, 1fr) clamp(330px, 32vw, 360px); grid-template-areas:"monitor control"; gap:16px; align-items:start; }
+    .left-col { grid-area:monitor; min-width:0; }
+    .right-col { grid-area:control; position:sticky; top:16px; min-width:0; max-height:calc(100vh - 139px); overflow-y:auto; scrollbar-gutter:stable; }
+    .card { background:var(--surface); padding:16px; border:1px solid var(--line); border-radius:8px; box-shadow:none; margin-bottom:16px; }
+    .card-title { font-size:1.125rem; font-weight:700; margin-bottom:16px; color:#20364b; display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center; }
     
-    .status-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
-    .stat-box { background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #eee; margin-bottom:0; }
-    .stat-val { font-size: 1.5rem; font-weight: bold; color: #333; }
-    .stat-label { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+    .status-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-bottom:16px; }
+    .stat-box { background:var(--surface); padding:16px 8px; border-radius:8px; text-align:center; border:1px solid var(--line); margin-bottom:0; min-width:0; }
+    .stat-val { font-size:1.5rem; line-height:1.2; font-weight:700; color:var(--ink); overflow-wrap:anywhere; }
+    .stat-label { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px; font-weight:700; }
     
-    .c-ir { color: #007bff; } .c-tc { color: #dc3545; } .c-rate { color: #28a745; } .c-lux { color: #ffbc00; }
+    .c-ir { color:#0969a5; } .c-tc { color:#b42318; } .c-rate { color:#146c2e; } .c-lux { color:#765a00; }
     
-    .form-group { margin-bottom: 12px; }
-    .mode-fields { display:none; border-left:3px solid #e9ecef; padding-left:10px; }
+    .form-group { margin-bottom:12px; min-width:0; }
+    .form-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .mode-fields { display:none; padding:0; }
     .mode-summary, #modeProgress { background:#f8f9fa; padding:10px; border-radius:6px; font-size:.85rem; margin-bottom:12px; line-height:1.5; }
     label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; }
-    input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+    input, select { width:100%; padding:10px 12px; border:1px solid #aeb8c2; border-radius:6px; background:#fff; color:var(--ink); font:inherit; }
     
     .btn-start { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-stop { width: 100%; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; display: none; }
@@ -37,22 +44,27 @@
 
     .btn-history { display:block; text-align:center; margin-top:15px; color: #666; text-decoration:none; font-size:0.9rem; }
 
-    .chart-container { position: relative; height: 350px; width: 100%; }
-    .lux-chart-container { position:relative; height:150px; width:100%; margin-top:8px; }
-    .chart-controls { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
-    .chart-controls button { min-height:36px; border:1px solid #789; background:#fff; border-radius:5px; padding:5px 9px; }
+    .chart-container { position:relative; height:340px; width:100%; min-width:0; }
+    .lux-chart-container { position:relative; height:170px; width:100%; margin-top:8px; min-width:0; }
+    .chart-controls { display:flex; flex-wrap:wrap; align-items:end; gap:8px 16px; margin:8px 0 16px; }
+    .chart-control-group { display:flex; flex-wrap:wrap; gap:8px; border:0; padding:0; margin:0; min-width:0; }
+    .chart-control-group legend { float:left; width:100%; margin-bottom:4px; font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+    .chart-controls button { min-height:40px; border:1px solid #8090a0; background:#fff; border-radius:6px; padding:6px 10px; color:var(--ink); font-weight:500; }
     .chart-controls button[aria-pressed="true"] { background:#173f67; color:#fff; }
-    fieldset { border:1px solid #d7dee5; border-radius:8px; margin:0 0 12px; padding:12px; } legend { font-weight:700; color:#173f67; }
+    #setupForm > fieldset { border:0; border-top:1px solid var(--line); border-radius:0; margin:0; padding:16px 0 4px; }
+    #setupForm > fieldset:first-child { border-top:0; padding-top:0; }
+    #setupForm > fieldset > legend { font-weight:700; color:var(--navy); padding:0 8px 0 0; }
     .result-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0; } .result-cards div { background:#f5f7f9;padding:8px;border-radius:6px; }
     .chart-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:24px; box-sizing:border-box; background:rgba(255,255,255,.86); color:#374151; font-weight:700; z-index:2; }
     .chart-overlay[hidden], .sticky-stop[hidden], .modal-backdrop[hidden], [hidden] { display:none !important; }
-    .phase-stepper { display:flex; gap:6px; padding:8px; margin-bottom:12px; list-style:none; overflow-x:auto; }
-    .phase-stepper li { min-width:76px; flex:1; padding:8px 5px; border:2px solid #cbd5e1; border-radius:6px; text-align:center; font-size:.78rem; font-weight:600; }
-    .phase-stepper .completed { background:#e8f5e9; border-color:#287d3c; }
+    .phase-ready { padding:10px 12px; margin-bottom:12px; border-left:4px solid #376f50; background:#f1f7f3; font-weight:700; }
+    .phase-stepper { display:flex; gap:0; padding:0; margin:0 0 16px; list-style:none; overflow-x:auto; }
+    .phase-stepper li { min-width:92px; flex:1; padding:10px 6px; border:0; border-bottom:3px solid #cbd5e1; border-radius:0; text-align:center; font-size:.78rem; font-weight:600; }
+    .phase-stepper .completed { background:#f1f7f3; border-color:#287d3c; }
     .phase-stepper [aria-current="step"] { background:#173f67; border-color:#173f67; color:#fff; }
-    .health-cluster { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:12px; }
-    .health-item { border:1px solid #cbd5e1; border-radius:6px; padding:7px; font-size:.75rem; background:#fff; }
-    .health-item strong { display:block; }
+    .health-cluster { display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:8px; }
+    .health-item { display:inline-flex; align-items:baseline; gap:5px; border:0; border-radius:999px; padding:4px 8px; font-size:.78rem; background:#edf2f6; color:var(--muted); }
+    .health-item strong { display:inline; color:var(--ink); }
     .run-overview { background:#eef5fb; border:1px solid #b6cbe0; border-radius:8px; padding:12px; margin-bottom:12px; }
     .primary-metric { font-size:2rem; font-weight:700; color:#173f67; }
     .sticky-stop { position:sticky; bottom:12px; width:100%; min-height:48px; background:#b42318; color:white; border:0; border-radius:7px; font-weight:700; z-index:4; }
@@ -60,8 +72,8 @@
     .modal-backdrop { position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.65); padding:20px; }
     .modal { max-width:440px; background:#fff; border-radius:10px; padding:24px; } .modal-actions { display:flex; gap:10px; justify-content:flex-end; } .modal-actions button { padding:8px 18px; } .danger { background:#b42318; color:#fff; border:0; }
     .zoom-hint { font-size: 0.75rem; color: #999; font-style: italic; margin-top: 5px; text-align: right; }
-    .badge { padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; color: white; font-weight: bold; }
-    .bg-idle { background: #6c757d; } .bg-preheat { background: #ff9800; } .bg-heat { background: #f44336; } .bg-cool { background: #2196f3; } .bg-stabil { background: #9c27b0; } .bg-done { background: #007bff; } .bg-run { background: #28a745; box-shadow: 0 0 10px rgba(40, 167, 69, 0.4); }
+    .badge { display:inline-flex; align-items:center; min-height:28px; padding:4px 10px; border-radius:999px; font-size:.8rem; color:white; font-weight:700; }
+    .bg-idle { background:#5a6570; } .bg-preheat { background:#9a5700; } .bg-heat { background:#b42318; } .bg-cool { background:#155a9c; } .bg-stabil { background:#6f3b82; } .bg-done { background:#155a9c; } .bg-run { background:#287d3c; box-shadow:none; }
     
     .state-indicator { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 5px; background: #f8f9fa; border-radius: 6px; }
     .state-dot { width: 12px; height: 12px; border-radius: 50%; margin: 0 2px; opacity: 0.3; }
@@ -79,13 +91,64 @@
     table.cycle-table tfoot { font-weight: bold; background: #e9ecef; }
     .err-val { font-size: 0.75rem; color: #999; } 
 
-    @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } .status-grid { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 390px) { body { padding:8px; } .card { padding:12px; } .status-grid { grid-template-columns:1fr 1fr; } .stat-val { font-size:1.1rem; } }
+    .instrument-header { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:12px 16px; margin-bottom:16px; }
+    .instrument-mainline { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; }
+    .instrument-title { display:flex; align-items:baseline; gap:10px; margin-right:auto; }
+    .instrument-title h1 { margin:0; font-size:1.35rem; letter-spacing:-.01em; }
+    .instrument-title span { color:var(--muted); font-size:.85rem; }
+    .instrument-status { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; color:var(--muted); font-size:.85rem; }
+    .status-text { display:inline-flex; align-items:center; min-height:28px; font-weight:600; }
+    .monitoring-empty { min-height:330px; display:grid; place-content:center; text-align:center; padding:32px; border:1px dashed #aeb8c2; border-radius:8px; background:var(--surface-soft); }
+    .monitoring-empty-icon { font-size:2rem; line-height:1; }
+    .monitoring-empty h2 { margin:12px 0 4px; font-size:1.2rem; }
+    .monitoring-empty p { margin:0; color:var(--muted); }
+    .control-card { margin-bottom:8px; }
+    .control-card > .card-title { padding-bottom:12px; border-bottom:1px solid var(--line); }
+    .control-action-bar { position:sticky; bottom:0; z-index:3; padding:12px 0 0; background:linear-gradient(to bottom,rgba(255,255,255,0),#fff 10px); }
+    .visually-hidden { position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    .zoom-hint { font-size:.8rem; color:var(--muted); font-style:normal; margin-top:8px; text-align:right; }
+    button:disabled { cursor:not-allowed; opacity:.48; }
+    @media (max-width:900px) {
+      body { padding:12px; }
+      .dashboard-grid { grid-template-columns:minmax(0, 1fr); grid-template-areas:"monitor" "control"; }
+      .dashboard-grid[data-ui-state="IDLE"] { grid-template-areas:"control" "monitor"; }
+      .right-col { position:static; max-height:none; overflow:visible; }
+      .status-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .status-grid .stat-box:last-child { grid-column:span 2; }
+      .chart-container { height:320px; }
+      .lux-chart-container { height:180px; }
+    }
+    @media (max-width:600px) {
+      body { padding:8px; }
+      .card, .instrument-header { padding:12px; }
+      .instrument-title { width:100%; }
+      .instrument-title span { display:none; }
+      .form-pair { grid-template-columns:1fr; gap:0; }
+      .chart-container { height:280px; }
+      .lux-chart-container { height:170px; }
+      .result-cards { grid-template-columns:1fr 1fr; }
+      table.cycle-table { min-width:560px; }
+      .cycle-table-wrap { overflow-x:auto; }
+    }
   </style>
 </head>
 <body>
 
-<div class="dashboard-grid">
+<div class="page-shell">
+<header class="instrument-header" aria-label="PT-Kit instrument status">
+    <div class="instrument-mainline">
+        <div class="instrument-title"><h1>PT-Kit</h1><span>Thermal photostability instrument</span></div>
+        <div class="instrument-status">
+            <span id="stateBadge" class="badge bg-idle" aria-live="polite">IDLE</span>
+            <span id="backendStatus" class="status-text" aria-live="polite">Backend online</span>
+            <span id="connStatus" class="status-text" aria-live="polite">🔴 ESP32 disconnected</span>
+            <span id="sampleFreshness" class="status-text" aria-live="polite">Sample: waiting</span>
+        </div>
+    </div>
+    <div id="healthCluster" class="health-cluster" aria-label="System health diagnostics"></div>
+</header>
+
+<div class="dashboard-grid" data-ui-state="IDLE">
     <div class="left-col">
         <div class="status-grid">
             <div class="card stat-box">
@@ -110,27 +173,34 @@
             </div>
         </div>
 
-        <div class="card">
+        <section class="card" aria-labelledby="monitoringTitle">
             <div class="card-title">
-                <span>📈 Live Monitoring</span>
-                <div>
-                    <span id="cycleInfo" style="margin-right:15px; font-weight:normal; color:#555;">Cycle: - | Phase: -</span>
-                    <span id="connStatus" aria-live="polite" style="font-size:0.8rem; color:#b42318;">🔴 ESP32 disconnected</span>
-                </div>
+                <span id="monitoringTitle">Live monitoring</span>
+                <span id="cycleInfo" style="font-weight:normal; color:#52606d;">Cycle: - | Phase: -</span>
             </div>
             
-            <div id="healthCluster" class="health-cluster" aria-label="System health"></div>
-            <ol id="phaseStepper" class="phase-stepper" aria-label="Experiment phases"></ol>
-            <div class="chart-controls" aria-label="Chart controls"><button type="button" data-window="live">Live (latest 60s)</button><button type="button" data-window="1m">1 min</button><button type="button" data-window="5m">5 min</button><button type="button" data-window="all">All</button><button type="button" onclick="resetZoom()">Reset zoom</button><button id="toggleIR" type="button" aria-pressed="true" data-channel="ir">IR</button><button id="toggleTC" type="button" aria-pressed="true" data-channel="tc">TC</button><button id="toggleLux" type="button" aria-pressed="true" data-channel="lux">Lux</button><button id="toggleSetpoint" type="button" aria-pressed="true" data-channel="setpoint">Setpoint</button></div>
-            <div class="chart-container"><div id="chartOverlay" class="chart-overlay" aria-live="assertive">Waiting for telemetry</div><canvas id="liveChart" ondblclick="resetZoom()"></canvas></div>
-            <div class="lux-chart-container"><canvas id="luxChart" aria-label="Lux over time"></canvas></div>
+            <div id="phaseReady" class="phase-ready">Ready for experiment</div>
+            <ol id="phaseStepper" class="phase-stepper" aria-label="Experiment phases" hidden></ol>
+            <div id="monitoringEmpty" class="monitoring-empty" role="status" aria-live="polite">
+                <div class="monitoring-empty-icon" aria-hidden="true">⌁</div>
+                <h2 id="monitoringEmptyTitle">Waiting for telemetry</h2>
+                <p id="monitoringEmptyContext">Backend online • ESP32 disconnected</p>
+            </div>
+            <div id="monitoringData" hidden>
+                <div id="chartToolbar" class="chart-controls" aria-label="Scientific chart controls">
+                    <fieldset class="chart-control-group"><legend>Range</legend><button type="button" data-window="live" aria-pressed="true">Live (latest 60s)</button><button type="button" data-window="1m" aria-pressed="false">1 min</button><button type="button" data-window="5m" aria-pressed="false">5 min</button><button type="button" data-window="all" aria-pressed="false">All</button><button id="resetZoomButton" type="button" onclick="resetZoom()" hidden disabled>Reset zoom</button></fieldset>
+                    <fieldset class="chart-control-group"><legend>Series</legend><button id="toggleIR" type="button" aria-pressed="true" data-channel="ir">IR temperature</button><button id="toggleTC" type="button" aria-pressed="true" data-channel="tc">TC temperature</button><button id="toggleLux" type="button" aria-pressed="true" data-channel="lux">Illuminance</button><button id="toggleSetpoint" type="button" aria-pressed="true" data-channel="setpoint">Setpoint &amp; limits</button></fieldset>
+                </div>
+                <div class="chart-container"><div id="chartOverlay" class="chart-overlay" aria-live="assertive" hidden></div><canvas id="liveChart" aria-label="Temperature over time" ondblclick="resetZoom()"></canvas></div>
+                <div class="lux-chart-container"><canvas id="luxChart" aria-label="Illuminance over time"></canvas></div>
+                <div id="zoomHint" class="zoom-hint">Hold <b>Ctrl + scroll</b> to zoom • Drag to pan • Double click to reset</div>
+            </div>
             <div id="resultSummaryCards" class="result-cards" aria-live="polite"></div>
-            <div class="zoom-hint">🖱️ Tahan <b>Ctrl + Scroll</b> untuk Zoom • Drag Geser • Double Click Reset</div>
-        </div>
+        </section>
 
         <div class="card">
             <div class="card-title">📊 Cycle Performance History (Heating Phase)</div>
-            <table class="cycle-table">
+            <div class="cycle-table-wrap"><table class="cycle-table">
                 <thead>
                     <tr>
                         <th>Cycle</th>
@@ -152,48 +222,48 @@
                         <td>-</td>
                     </tr>
                 </tfoot>
-            </table>
+            </table></div>
         </div>
     </div>
 
     <div class="right-col">
-        <div class="card">
-            <div class="card-title">⚙️ Control Panel <span id="statusBadge" class="badge bg-idle">IDLE</span></div>
+        <div class="card control-card">
+            <div class="card-title">Experiment control <span id="statusBadge" class="visually-hidden">IDLE</span></div>
             
             <div id="setupForm">
                 <fieldset><legend>Experiment</legend>
-                <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" value="Gerald"></div>
-                <div class="form-group"><label>Sample Name</label><input type="text" id="sampleName" placeholder="Contoh: MOF-Batch-1"></div>
-                <div class="form-group"><label>Experiment Mode</label><select id="experimentMode" onchange="updateModeFields()"><option value="NORMAL_CYCLIC" selected>Normal cyclic</option><option value="FIXED_TEMPERATURE">Fixed temperature</option><option value="NATURAL_PLATEAU">Natural plateau</option></select></div></fieldset>
+                <div class="form-group"><label for="operatorName">Operator Name</label><input type="text" id="operatorName" value="Gerald"></div>
+                <div class="form-group"><label for="sampleName">Sample Name</label><input type="text" id="sampleName" placeholder="Contoh: MOF-Batch-1"></div>
+                <div class="form-group"><label for="experimentMode">Experiment Mode</label><select id="experimentMode" onchange="updateModeFields()"><option value="NORMAL_CYCLIC" selected>Normal cyclic</option><option value="FIXED_TEMPERATURE">Fixed temperature</option><option value="NATURAL_PLATEAU">Natural plateau</option></select></div></fieldset>
                 <fieldset><legend>Mode parameters</legend>
                 <div id="normalFields" class="mode-fields">
-                  <div class="form-group"><label>Target Duration (sec/cycle)</label><input type="number" id="duration" value="60"></div>
-                  <div class="form-group"><label>Total Cycles</label><input type="number" id="cycles" value="5"></div>
+                  <div class="form-pair"><div class="form-group"><label for="duration">Target Duration (sec/cycle)</label><input type="number" id="duration" value="60"></div>
+                  <div class="form-group"><label for="cycles">Total Cycles</label><input type="number" id="cycles" value="5"></div></div>
                 </div>
                 <div id="fixedFields" class="mode-fields">
-                  <div class="form-group"><label>Target Temperature (°C)</label><input type="number" id="targetTemperature" value="60"></div>
-                  <div class="form-group"><label>Qualified Hold Duration (minutes)</label><input type="number" id="qualifiedHoldMinutes" value="10" min="0.1" step="0.1"></div>
-                  <div class="form-group"><label>Tolerance (°C)</label><input type="number" id="temperatureTolerance" value="1" step="0.1"></div>
-                  <div class="form-group"><label>Qualification Dwell (sec)</label><input type="number" id="qualificationDwell" value="30"></div>
-                  <div class="form-group"><label>Control Sensor</label><select id="fixedControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div>
-                  <div class="form-group"><label>Ramp Rate (°C/min)</label><input type="number" id="rampRate" value="5" step="0.1"></div>
+                  <div class="form-pair"><div class="form-group"><label for="targetTemperature">Target Temperature (°C)</label><input type="number" id="targetTemperature" value="60"></div>
+                  <div class="form-group"><label for="qualifiedHoldMinutes">Qualified Hold Duration (minutes)</label><input type="number" id="qualifiedHoldMinutes" value="10" min="0.1" step="0.1"></div></div>
+                  <div class="form-pair"><div class="form-group"><label for="temperatureTolerance">Tolerance (°C)</label><input type="number" id="temperatureTolerance" value="1" step="0.1"></div>
+                  <div class="form-group"><label for="qualificationDwell">Qualification Dwell (sec)</label><input type="number" id="qualificationDwell" value="30"></div></div>
+                  <div class="form-pair"><div class="form-group"><label for="fixedControlSensor">Control Sensor</label><select id="fixedControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div>
+                  <div class="form-group"><label for="rampRate">Ramp Rate (°C/min)</label><input type="number" id="rampRate" value="5" step="0.1"></div></div>
                 </div>
                 <div id="plateauFields" class="mode-fields">
-                  <div class="form-group"><label>Plateau Hold Duration (minutes)</label><input type="number" id="plateauHoldMinutes" value="10" min="0.1" step="0.1"></div>
-                  <div class="form-group"><label>Control Sensor</label><select id="plateauControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div>
-                  <div class="form-group"><label>Detection Window (sec)</label><input type="number" id="detectionWindow" value="60" max="60"></div>
-                  <div class="form-group"><label>Max Abs Slope (°C/min)</label><input type="number" id="maxAbsSlope" value="0.2" step="0.01"></div>
-                  <div class="form-group"><label>Max Peak-to-Peak (°C)</label><input type="number" id="maxPeakToPeak" value="1" step="0.1"></div>
-                  <div class="form-group"><label>Confirmation Duration (sec)</label><input type="number" id="confirmationDuration" value="60"></div>
-                  <div class="form-group"><label>Max Discovery Time (minutes)</label><input type="number" id="maxDiscoveryTime" value="60"></div>
-                  <div class="form-group"><label>Post-plateau Behavior</label><select id="postPlateauBehavior"><option value="PASSIVE" selected>Passive (same illumination)</option><option value="REGULATED">Regulated</option></select></div>
+                  <div class="form-pair"><div class="form-group"><label for="plateauHoldMinutes">Plateau Hold Duration (minutes)</label><input type="number" id="plateauHoldMinutes" value="10" min="0.1" step="0.1"></div>
+                  <div class="form-group"><label for="plateauControlSensor">Control Sensor</label><select id="plateauControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div></div>
+                  <div class="form-pair"><div class="form-group"><label for="detectionWindow">Detection Window (sec)</label><input type="number" id="detectionWindow" value="60" max="60"></div>
+                  <div class="form-group"><label for="maxAbsSlope">Max Abs Slope (°C/min)</label><input type="number" id="maxAbsSlope" value="0.2" step="0.01"></div></div>
+                  <div class="form-pair"><div class="form-group"><label for="maxPeakToPeak">Max Peak-to-Peak (°C)</label><input type="number" id="maxPeakToPeak" value="1" step="0.1"></div>
+                  <div class="form-group"><label for="confirmationDuration">Confirmation Duration (sec)</label><input type="number" id="confirmationDuration" value="60"></div></div>
+                  <div class="form-pair"><div class="form-group"><label for="maxDiscoveryTime">Max Discovery Time (minutes)</label><input type="number" id="maxDiscoveryTime" value="60"></div>
+                  <div class="form-group"><label for="postPlateauBehavior">Post-plateau Behavior</label><select id="postPlateauBehavior"><option value="PASSIVE" selected>Passive (same illumination)</option><option value="REGULATED">Regulated</option></select></div></div>
                 </div></fieldset>
                 <fieldset><legend>Illumination &amp; acquisition</legend>
-                <div class="form-group"><label>Target Lux (lx) <small id="maxLuxHint" style="color:#999;"></small></label><input type="number" id="targetLux" value="38000"></div>
-                <div class="form-group"><label>Logging Interval (sec)</label><input type="number" id="interval" value="1" min="1"></div></fieldset>
-                <fieldset><legend>Safety</legend><div class="form-group"><label>Max Temp (°C)</label><input type="number" id="maxTemp" value="100"></div></fieldset>
+                <div class="form-pair"><div class="form-group"><label for="targetLux">Target Lux (lx) <small id="maxLuxHint" style="color:#52606d;"></small></label><input type="number" id="targetLux" value="38000"></div>
+                <div class="form-group"><label for="interval">Logging Interval (sec)</label><input type="number" id="interval" value="1" min="1"></div></div></fieldset>
+                <fieldset><legend>Safety</legend><div class="form-group"><label for="maxTemp">Max Temp (°C)</label><input type="number" id="maxTemp" value="100"></div></fieldset>
                 <div id="modeSummary" class="mode-summary"></div>
-                <button class="btn-start" onclick="openReviewModal()">🚀 START EXPERIMENT</button>
+                <div class="control-action-bar"><button class="btn-start" onclick="openReviewModal()">Review &amp; start experiment</button></div>
             </div>
 
             <div id="runOverview" class="run-overview" hidden><strong>Run overview — configuration locked</strong><div id="controlMetric" class="primary-metric">Control temperature: -- °C</div><div id="runSummary">Waiting for run details…</div></div>
@@ -220,12 +290,13 @@
         </div>
     </div>
 </div>
+</div>
 
 <div id="stopModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="stopModalTitle" aria-describedby="stopModalDescription"><h2 id="stopModalTitle">Stop this experiment?</h2><p id="stopModalDescription">The lamp will be turned off. Data already recorded will be retained.</p><div class="modal-actions"><button id="cancelStop" type="button" onclick="closeStopModal()">Cancel</button><button id="confirmStop" class="danger" type="button" onclick="stopExperiment()">Stop now</button></div></div></div>
 <div id="reviewModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="reviewTitle"><h2 id="reviewTitle">Review experiment settings</h2><dl id="reviewDetails"></dl><div class="modal-actions"><button id="cancelReview" type="button" onclick="closeReviewModal()">Cancel</button><button id="confirmReview" type="button" onclick="confirmReviewedStart()">Confirm and start</button></div></div></div>
 
 <script>
-var chart, luxChart, pendingReviewPayload=null, scientificSeries={samples:[]}, chartWindow='live';
+var chart, luxChart, pendingReviewPayload=null, scientificSeries={samples:[]}, chartWindow='live', chartZoomActive=false;
 var MAX_SCIENTIFIC_POINTS=10000; // One bounded, synchronized scientific record buffer.
 var reviewModalOpener=null;
 var DATASET_INDEX={IR:0,TC:1,TOLERANCE_LOWER:2,TOLERANCE_UPPER:3,SETPOINT:4,SAFETY:5,PLATEAU:6};
@@ -302,7 +373,7 @@ function buildSynchronizedPoints(s){var x=finiteOrNull(s.total_time);return {ir:
 function emptyScientificSeries(){return {samples:[]};}
 function appendScientificSample(buffer,s,exp,mode){var sig=sampleSignature(s);if(buffer.samples.some(function(sample){return sample.signature===sig;}))return false;var x=finiteOrNull(s.total_time),ov=buildOverlayModel(mode,exp||{},s),target=finiteOrNull(field(exp,['target_lux'],null));buffer.samples.push({x:x,ir:finiteOrNull(s.ir_temp),tc:finiteOrNull(s.tc_temp),lux:finiteOrNull(s.current_lux),setpoint:ov.setpoint,toleranceLower:ov.tolerance&&ov.tolerance.lower,toleranceUpper:ov.tolerance&&ov.tolerance.upper,safety:ov.safety,plateau:ov.plateau,targetLux:target,stateCode:finiteOrNull(s.state_code),signature:sig});if(buffer.samples.length>MAX_SCIENTIFIC_POINTS)buffer.samples.splice(0,buffer.samples.length-MAX_SCIENTIFIC_POINTS);return true;}
 function selectScientificView(buffer,w){var a=buffer.samples.slice();if(!a.length||w==='all')return a;var span=w==='5m'?300:60,max=a[a.length-1].x;return a.filter(function(p){return p.x>=max-span;});}
-function phaseInfo(code,mode){var labels=getPhaseModel(mode),step=getPhaseStep(mode,code).current,colors=['rgba(80,90,100,.05)','rgba(255,170,0,.08)','rgba(0,123,255,.07)','rgba(40,167,69,.07)','rgba(108,117,125,.08)','rgba(20,20,20,.05)'];return {label:labels[step]||stateMap[code]||'Unknown',color:colors[step%colors.length]};}
+function phaseInfo(code,mode){var model=getPhaseStep(mode,code),step=model.current,colors=['rgba(80,90,100,.05)','rgba(255,170,0,.08)','rgba(0,123,255,.07)','rgba(40,167,69,.07)','rgba(108,117,125,.08)','rgba(20,20,20,.05)'];return {label:model.steps[step]||stateMap[code]||'Unknown',color:colors[step%colors.length]};}
 function derivePhaseRegions(samples,mode){var out=[];samples.forEach(function(s,i){var prev=out[out.length-1];if(!prev||prev.stateCode!==s.stateCode){var info=phaseInfo(s.stateCode,mode);if(prev)prev.end=s.x;out.push({start:s.x,end:s.x,stateCode:s.stateCode,label:info.label,color:info.color});}else prev.end=s.x;});return out;}
 function validateSetupValues(v){if(!v.operator_name||!v.sample_name)return 'Operator and sample name are required.';if(v.mode==='NORMAL_CYCLIC'&&!(v.duration>0))return 'Duration must be greater than 0 seconds.';if(v.mode==='NORMAL_CYCLIC'&&!(v.cycles>0))return 'Cycles must be greater than 0.';if(!(v.max_temp>=50))return 'Maximum temperature must be at least 50 °C.';if(!(v.target_lux>=0))return 'Target lux must be 0 or greater.';if(!(v.interval>=1))return 'Interval must be at least 1 second.';return null;}
 function getControlVisibility(v){return {temperature:[v.ir!==false,v.tc!==false],lux:v.lux!==false,setpoint:v.setpoint!==false};}
@@ -311,12 +382,16 @@ function formatSensorValue(value, digits, unit) {
     var number = typeof value === 'number' ? value : Number(value);
     return Number.isFinite(number) ? number.toFixed(digits) + ' ' + unit : '-- ' + unit;
 }
-function getPhaseModel(mode) {
-    return mode==='FIXED_TEMPERATURE'?['Ready','Ramp','Qualify','Hold','Complete']:mode==='NATURAL_PLATEAU'?['Ready','Heating','Confirm','Hold','Complete']:['Ready','Pre-heat','Heating','Cooling','Stabilizing','Complete'];
+function getPhaseModel(mode, terminalState) {
+    var steps=mode==='FIXED_TEMPERATURE'?['Ready','Ramp','Qualify','Hold','Complete']:mode==='NATURAL_PLATEAU'?['Ready','Heating','Confirm','Hold','Complete']:['Ready','Pre-heat','Heating','Cooling','Stabilizing','Complete'];
+    if(terminalState==='ABORTED') steps[steps.length-1]='Aborted';
+    return steps;
 }
-function getPhaseStep(mode, stateCode) {
-    var maps={NORMAL_CYCLIC:{0:0,1:1,2:2,3:3,4:4,5:5},FIXED_TEMPERATURE:{0:0,9:1,10:2,11:3,5:4},NATURAL_PLATEAU:{0:0,12:1,13:2,14:3,5:4}};
-    return {steps:getPhaseModel(mode),current:(maps[mode]||maps.NORMAL_CYCLIC)[stateCode]||0};
+function getPhaseStep(mode, stateCode, terminalState) {
+    var maps={NORMAL_CYCLIC:{0:0,1:1,2:2,3:3,4:4,5:5,15:5},FIXED_TEMPERATURE:{0:0,9:1,10:2,11:3,5:4,15:4},NATURAL_PLATEAU:{0:0,12:1,13:2,14:3,5:4,15:4}};
+    var terminal=terminalState||(Number(stateCode)===15?'ABORTED':null), steps=getPhaseModel(mode,terminal);
+    if(terminal==='DONE'||terminal==='ABORTED') return {steps:steps,current:steps.length-1};
+    return {steps:steps,current:(maps[mode]||maps.NORMAL_CYCLIC)[stateCode]||0};
 }
 function getHealthState(backendOnline, ageSeconds, valid) {
     if(ageSeconds===null || ageSeconds===undefined) return {state:'no-data',label:'No data'};
@@ -338,7 +413,7 @@ function renderEsp32Indicator(backendOnline, ageSeconds) {
 }
 function sampleSignature(sample) { if(!sample)return null;return JSON.stringify(['total_time','phase_time','cycle_num','state_code','ir_temp','tc_temp','current_lux'].map(function(k){return sample[k]===undefined?null:sample[k];})); }
 function advanceTelemetryState(previous,sample,now) { var signature=sampleSignature(sample);return {signature:signature,lastTelemetryAt:signature!==previous.signature?now:previous.lastTelemetryAt}; }
-function getChannelHealth(backendOnline,ageSeconds,value) { return getHealthState(backendOnline,ageSeconds,Number.isFinite(Number(value))); }
+function getChannelHealth(backendOnline,ageSeconds,value) { return getHealthState(backendOnline,ageSeconds,value!==null&&value!==''&&Number.isFinite(Number(value))); }
 function resolveActiveMode(running,backendMode,setupMode) { return running&&backendMode?backendMode:setupMode; }
 function validateStopResponse(response,body) { if(!response.ok||!body||body.status!=='stopped')throw new Error((body&&(body.detail||body.message))||('Stop rejected (HTTP '+response.status+')'));return body; }
 function getRuntimeViewModel(state) {
@@ -347,18 +422,61 @@ function getRuntimeViewModel(state) {
 function formatRemainingHold(seconds) {
     var n=Number(seconds); if(!Number.isFinite(n)) return '--:--'; n=Math.max(0,Math.ceil(n)); return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
 }
-function renderPhaseStepper(mode,stateCode) {
-    var model=getPhaseStep(mode,stateCode), box=document.getElementById('phaseStepper');
+function renderMonitoringVisibility(hasSamples,state,backendOnline) {
+    var empty=document.getElementById('monitoringEmpty'), data=document.getElementById('monitoringData'), reset=document.getElementById('resetZoomButton');
+    reset.dataset=reset.dataset||{};
+    empty.hidden=hasSamples; data.hidden=!hasSamples; reset.hidden=!hasSamples; reset.disabled=!hasSamples||reset.dataset.zoomed!=='true';
+    if(!hasSamples){
+        var running=state==='RUNNING'||state==='STOPPING';
+        document.getElementById('monitoringEmptyTitle').textContent=backendOnline?(running?'Waiting for first experiment sample':'Waiting for telemetry'):'ESP32 disconnected';
+        document.getElementById('monitoringEmptyContext').textContent=(backendOnline?'Backend online':'Backend offline')+' • ESP32 disconnected'+(running?' • experiment '+state.toLowerCase():'');
+    }
+}
+function renderPhaseVisibility(state) {
+    var showStepper=state==='RUNNING'||state==='STOPPING'||state==='DONE'||state==='ABORTED';
+    document.getElementById('phaseReady').hidden=showStepper;
+    document.getElementById('phaseStepper').hidden=!showStepper;
+}
+function isValidTelemetrySample(sample) {
+    return !!sample&&[sample.total_time,sample.ir_temp,sample.tc_temp,sample.current_lux].every(function(v){return v!==null&&v!==''&&Number.isFinite(Number(v));});
+}
+function hasValidScientificSamples() {
+    return scientificSeries.samples.some(function(s){return [s.x,s.ir,s.tc,s.lux].every(function(v){return v!==null&&Number.isFinite(Number(v));});});
+}
+function setZoomResetAvailable(available) {
+    var reset=document.getElementById('resetZoomButton');reset.dataset=reset.dataset||{};reset.dataset.zoomed=available?'true':'false';reset.disabled=!available;
+}
+function setChartZoomActive(active) {
+    chartZoomActive=!!active;
+    setZoomResetAvailable(chartZoomActive);
+}
+function showMonitoringNotice(message,state) {
+    var hasSamples=hasValidScientificSamples();renderMonitoringVisibility(hasSamples,state,true);
+    if(hasSamples){var overlay=document.getElementById('chartOverlay');overlay.hidden=false;overlay.textContent=message;}
+    else {document.getElementById('monitoringEmptyTitle').textContent='Instrument notice';document.getElementById('monitoringEmptyContext').textContent=message;}
+}
+function renderStateBadge(label,className) {
+    ['statusBadge','stateBadge'].forEach(function(id){var badge=document.getElementById(id);badge.className=(id==='statusBadge'?'visually-hidden ':'')+'badge '+className;badge.innerText=label;});
+}
+function renderPhaseStepper(mode,stateCode,terminalState) {
+    var model=getPhaseStep(mode,stateCode,terminalState), box=document.getElementById('phaseStepper');
     box.innerHTML=model.steps.map(function(label,i){return '<li class="'+(i<model.current?'completed':'upcoming')+'"'+(i===model.current?' aria-current="step"':'')+'>'+(i<model.current?'Completed: ':i===model.current?'Current: ':'Upcoming: ')+label+'</li>';}).join('');
 }
 function renderHealth(backendOnline,latest,age) {
-    var valid=latest&&[latest.ir_temp,latest.tc_temp,latest.current_lux].every(function(v){return Number.isFinite(Number(v));}), health=getHealthState(backendOnline,latest?age:null,valid);
+    var valid=latest&&[latest.ir_temp,latest.tc_temp,latest.current_lux].every(function(v){return v!==null&&v!==''&&Number.isFinite(Number(v));}), health=getHealthState(backendOnline,latest?age:null,valid);
     var channel=function(label,value){var h=getChannelHealth(backendOnline,latest?age:null,value);return [label,h.label+(latest?' • '+formatSensorValue(value,label==='Lux'?0:1,label==='Lux'?'lx':'°C'):'')];};
     var values=[['Backend',backendOnline?'Online':'Disconnected'],['Telemetry',health.label],channel('IR',latest&&latest.ir_temp),channel('TC',latest&&latest.tc_temp),channel('Lux',latest&&latest.current_lux),['Last sample',latest?Math.max(0,Math.floor(age))+'s ago':'No data']];
     var box=document.getElementById('healthCluster');box.replaceChildren();values.forEach(function(x){var item=document.createElement('div'),label=document.createElement('span'),strong=document.createElement('strong');item.className='health-item';label.textContent=x[0];strong.textContent=x[1];item.append(label,strong);box.appendChild(item);});
+    document.getElementById('backendStatus').textContent=backendOnline?'Backend online':'Backend offline';
+    document.getElementById('sampleFreshness').textContent=latest?'Sample: '+Math.max(0,Math.floor(age))+'s ago':'Sample: waiting';
 }
-function openStopModal(){stopModalOpener=document.activeElement;var m=document.getElementById('stopModal');m.hidden=false;document.querySelector('.dashboard-grid').setAttribute('aria-hidden','true');document.getElementById('confirmStop').focus();}
-function closeStopModal(){document.getElementById('stopModal').hidden=true;document.querySelector('.dashboard-grid').removeAttribute('aria-hidden');if(stopModalOpener&&stopModalOpener.focus)stopModalOpener.focus();}
+function setPageModalIsolation(isolated) {
+    var shell=document.querySelector('.page-shell');
+    if(isolated){shell.setAttribute('aria-hidden','true');shell.inert=true;}
+    else {shell.removeAttribute('aria-hidden');shell.inert=false;}
+}
+function openStopModal(){stopModalOpener=document.activeElement;var m=document.getElementById('stopModal');m.hidden=false;setPageModalIsolation(true);document.getElementById('confirmStop').focus();}
+function closeStopModal(){document.getElementById('stopModal').hidden=true;setPageModalIsolation(false);if(stopModalOpener&&stopModalOpener.focus)stopModalOpener.focus();}
 function handleStopModalKeydown(e){if(document.getElementById('stopModal').hidden)return;if(e.key==='Escape'){e.preventDefault();closeStopModal();return;}if(e.key==='Tab'){var a=[document.getElementById('cancelStop'),document.getElementById('confirmStop')],i=a.indexOf(document.activeElement),next=e.shiftKey?(i<=0?a.length-1:i-1):(i<0||i===a.length-1?0:i+1);e.preventDefault();a[next].focus();}}
 document.getElementById('stopModal').addEventListener('keydown',handleStopModalKeydown);
 document.getElementById('stopModal').addEventListener('click',function(e){if(e.target===this)closeStopModal();});
@@ -389,7 +507,7 @@ function initChart() {
         options: {
             responsive: true, maintainAspectRatio: false, animation: false, 
             scales: { x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Time (s)' } }, y: { title: { display: true, text: 'Temperature (°C)' }, suggestedMin: 25, suggestedMax: 100 } },
-            plugins: { zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, pinch: { enabled: true }, mode: 'x' } }, tooltip: { mode: 'index', intersect: false } }
+            plugins: { zoom: { pan: { enabled: true, mode: 'x', onPanComplete:function(){setChartZoomActive(true);} }, zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, pinch: { enabled: true }, mode: 'x', onZoomComplete:function(){setChartZoomActive(true);} } }, tooltip: { mode: 'index', intersect: false } }
         }
     });
     luxChart=new Chart(document.getElementById('luxChart').getContext('2d'),{type:'line',data:{datasets:[{label:'Lux',data:[],borderColor:'#b77900',pointRadius:0},{label:'Target lux',data:[],borderColor:'#745b00',borderDash:[6,4],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,animation:false,scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{title:{display:true,text:'Illuminance (lx)'}}}}});
@@ -405,8 +523,34 @@ function applyChannelVisibility(){
         if(luxChart&&c==='lux')luxChart.data.datasets[0].hidden=hidden;
     });
 }
-function applyChartView(){var view=selectScientificView(scientificSeries,chartWindow);if(chart){['ir','tc','toleranceLower','toleranceUpper','setpoint','safety','plateau'].forEach(function(k,i){chart.data.datasets[i].data=pointData(view,k);});chart.options.plugins.phaseRegions={regions:derivePhaseRegions(view,activeMode||valueOf('experimentMode'))};var d=chartDomain(view.map(function(p){return {x:p.x};}),'all');chart.options.scales.x.min=d.min;chart.options.scales.x.max=d.max;chart.update('none');}if(luxChart){luxChart.data.datasets[0].data=pointData(view,'lux');luxChart.data.datasets[1].data=pointData(view,'targetLux');luxChart.data.datasets[1].hidden=!luxChart.data.datasets[1].data.length;var d=chartDomain(view.map(function(p){return {x:p.x};}),'all');luxChart.options.scales.x.min=d.min;luxChart.options.scales.x.max=d.max;luxChart.update('none');}}
-function resetZoom() { if(chart&&chart.resetZoom) chart.resetZoom(); if(luxChart&&luxChart.resetZoom)luxChart.resetZoom(); applyChartView(); }
+function applyChartView(){
+    var view=selectScientificView(scientificSeries,chartWindow), domain=chartDomain(view.map(function(p){return {x:p.x};}),'all');
+    if(chart){
+        ['ir','tc','toleranceLower','toleranceUpper','setpoint','safety','plateau'].forEach(function(k,i){chart.data.datasets[i].data=pointData(view,k);});
+        chart.options.plugins.phaseRegions={regions:derivePhaseRegions(view,activeMode||valueOf('experimentMode'))};
+        if(!chartZoomActive){chart.options.scales.x.min=domain.min;chart.options.scales.x.max=domain.max;}
+        chart.update('none');
+    }
+    if(luxChart){
+        luxChart.data.datasets[0].data=pointData(view,'lux');luxChart.data.datasets[1].data=pointData(view,'targetLux');luxChart.data.datasets[1].hidden=!luxChart.data.datasets[1].data.length;
+        if(!chartZoomActive){luxChart.options.scales.x.min=domain.min;luxChart.options.scales.x.max=domain.max;}
+        luxChart.update('none');
+    }
+}
+function resetZoom() {
+    if(chart&&chart.resetZoom) chart.resetZoom();
+    if(luxChart&&luxChart.resetZoom) luxChart.resetZoom();
+    setChartZoomActive(false);
+    applyChartView();
+}
+function selectChartWindow(windowName) {
+    chartWindow=windowName;
+    if(chart&&chart.resetZoom) chart.resetZoom();
+    if(luxChart&&luxChart.resetZoom) luxChart.resetZoom();
+    setChartZoomActive(false);
+    document.querySelectorAll('[data-window]').forEach(function(button){button.setAttribute('aria-pressed',String(button.dataset.window===chartWindow));});
+    applyChartView();
+}
 var phaseRegionPlugin={id:'phaseRegions',beforeDatasetsDraw:function(c,a,o){if(!o||!o.regions)return;var ctx=c.ctx,x=c.scales.x,area=c.chartArea;ctx.save();o.regions.forEach(function(r){ctx.fillStyle=r.color||'rgba(23,63,103,.05)';ctx.fillRect(x.getPixelForValue(r.start),area.top,x.getPixelForValue(r.end)-x.getPixelForValue(r.start),area.bottom-area.top);});ctx.restore();}};
 if(typeof Chart!=='undefined'&&Chart.register)Chart.register(phaseRegionPlugin);
 function log(msg) { var box=document.getElementById('sysLog'),row=document.createElement('div'),t=new Date().toLocaleTimeString();row.textContent='['+t+'] '+String(msg);box.appendChild(row);box.scrollTop=box.scrollHeight; }
@@ -572,7 +716,7 @@ function addCycleToTable(cycle, rIR, rTC, dur, endTemp) {
 
 function updateStateIndicator(stateCode) {
     var mode=resolveActiveMode(isRunning,activeMode,document.getElementById('experimentMode')?valueOf('experimentMode'):'NORMAL_CYCLIC');
-    renderPhaseStepper(mode,stateCode);
+    renderPhaseStepper(mode,stateCode,terminalUiState);
 }
 
 // --- UPDATE STATUS UTAMA ---
@@ -582,7 +726,9 @@ function updateStatus() {
 
     fetch('/api/current_status').then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(data => {
         var exp = data.active_experiment;
-        var dataList = data.recent_data; 
+        var dataList = data.recent_data;
+        var terminalAtUpdateStart = terminalUiState;
+        var latestStateCode = dataList && dataList.length > 0 ? Number(dataList[dataList.length - 1].state_code) || 0 : 0;
         
         if(exp) activeMode=field(exp,['mode','experiment_mode'],activeMode);
 
@@ -591,7 +737,7 @@ function updateStatus() {
              currentExpId = exp.id;
              setUIState('RUNNING');
         } 
-        else if ((!exp || exp.status !== 'WAITING') && isRunning && document.getElementById('finishedPanel').style.display === 'none') {
+        else if ((!exp || exp.status !== 'WAITING') && isRunning && latestStateCode !== 5 && document.getElementById('finishedPanel').style.display === 'none') {
              log("Syncing: Stopped remotely.");
              setUIState('IDLE');
         }
@@ -613,19 +759,21 @@ function updateStatus() {
             // Update cycle info dengan state yang sesuai
             var stateCode = latest.state_code || 0;
             var stateLabel = stateMap[stateCode] || "UNKNOWN";
-            document.getElementById('cycleInfo').innerText = `Cycle: ${latest.cycle_num} | Phase: ${stateLabel}`;
+            if (!terminalAtUpdateStart) document.getElementById('cycleInfo').innerText = `Cycle: ${latest.cycle_num} | Phase: ${stateLabel}`;
             var mode=resolveActiveMode(isRunning,activeMode,valueOf('experimentMode'));
             dataList.forEach(function(sensor){appendScientificSample(scientificSeries,sensor,exp||{},mode);});
             applyChartView();
             var telemetry=advanceTelemetryState({signature:lastTelemetrySignature,lastTelemetryAt:lastTelemetryAt},latest,Date.now());lastTelemetrySignature=telemetry.signature;lastTelemetryAt=telemetry.lastTelemetryAt;lastTelemetrySample=latest;var age=(Date.now()-lastTelemetryAt)/1000;
-            renderPhaseStepper(mode,stateCode); renderHealth(true,latest,age); renderEsp32Indicator(true,age);
+            var hasSamples=hasValidScientificSamples();
+            renderMonitoringVisibility(hasSamples,terminalUiState||(isRunning?'RUNNING':'IDLE'),true);
+            renderPhaseStepper(mode,stateCode,terminalUiState); renderPhaseVisibility(terminalUiState||(isRunning?'RUNNING':'IDLE')); renderHealth(true,latest,age); renderEsp32Indicator(true,age);
             var overlay=document.getElementById('chartOverlay');
-            if(stateCode===15&&!terminalUiState){overlay.hidden=false;overlay.textContent='Experiment aborted for safety. Lamp is off; recorded data is retained.';setUIState('ABORTED');}
-            else if(isRunning&&startWaitData){overlay.hidden=false;overlay.textContent='Waiting for first experiment sample after start';} else overlay.hidden=true;
+            if(stateCode===15&&!terminalUiState){setUIState('ABORTED');showMonitoringNotice('Experiment aborted for safety. Lamp is off; recorded data is retained.','ABORTED');}
+            else if(isRunning&&startWaitData&&hasSamples){overlay.hidden=false;overlay.textContent='Waiting for first experiment sample after start';} else overlay.hidden=true;
             var control=field(latest,['control_temp'],field(exp,['control_sensor'],'TC')==='IR'?latest.ir_temp:latest.tc_temp);
             document.getElementById('controlMetric').textContent=mode==='NORMAL_CYCLIC'?'IR / TC: '+formatSensorValue(latest.ir_temp,1,'°C')+' / '+formatSensorValue(latest.tc_temp,1,'°C'):'Control temperature: '+formatSensorValue(control,1,'°C');
             document.getElementById('runSummary').textContent=(mode==='NORMAL_CYCLIC'?'Cycle '+latest.cycle_num+' / '+field(exp,['cycles'],'—')+' • ':'')+'Target '+field(latest,['temp_setpoint'],field(exp,['target_temperature'],'—'))+' °C • Lux '+formatSensorValue(latest.current_lux,0,'lx')+' / '+field(exp,['target_lux'],'—')+' lx • Safety max '+field(exp,['max_temp'],'—')+' °C • Hold remaining '+formatRemainingHold(field(latest,['hold_remaining_s'],NaN));
-            updateModeProgress(exp, latest, stateLabel);
+            if (!terminalAtUpdateStart) updateModeProgress(exp || {mode:mode}, latest, stateLabel);
             var result=buildResultSummary(mode,exp||{},latest),resultBox=document.getElementById('resultSummaryCards');resultBox.replaceChildren();Object.keys(result).forEach(function(k){var d=document.createElement('div');d.textContent=k.replaceAll('_',' ')+': '+shown(result[k]);resultBox.appendChild(d);});
 
             
@@ -633,13 +781,10 @@ function updateStatus() {
             updateStateIndicator(stateCode);
             
             // Update badge color sesuai state
-            var badge = document.getElementById('statusBadge');
             if (!terminalUiState && isRunning) {
-                badge.className = 'badge bg-run';
-                badge.innerText = "RUNNING";
+                renderStateBadge('RUNNING','bg-run');
             } else if (!terminalUiState) {
-                badge.className = 'badge ' + (stateCode == 5 ? 'bg-done' : 'bg-idle');
-                badge.innerText = stateLabel;
+                renderStateBadge(stateLabel,stateCode == 5 ? 'bg-done' : 'bg-idle');
             }
 
             // Deteksi jika DONE dan kita sedang RUNNING
@@ -702,11 +847,11 @@ function updateStatus() {
                     }
                 });
             }
-        } else { renderHealth(true,null,null);renderEsp32Indicator(true,null);var emptyOverlay=document.getElementById('chartOverlay');emptyOverlay.hidden=false;emptyOverlay.textContent='Waiting for telemetry — no samples received'; }
+        } else { renderHealth(true,null,null);renderEsp32Indicator(true,null);renderMonitoringVisibility(hasValidScientificSamples(),terminalUiState||(isRunning?'RUNNING':'IDLE'),true); }
     }).catch(handleBackendFailure);
 }
 
-function handleBackendFailure() { var age=lastTelemetryAt?(Date.now()-lastTelemetryAt)/1000:null; renderEsp32Indicator(false,age); renderHealth(false,lastTelemetrySample,age); var overlay=document.getElementById('chartOverlay');overlay.hidden=false;overlay.textContent='Backend disconnected • telemetry '+getHealthState(false,age,true).label.toLowerCase()+(age!==null?' • last sample '+Math.floor(age)+'s ago':''); }
+function handleBackendFailure() { var age=lastTelemetryAt?(Date.now()-lastTelemetryAt)/1000:null,hasSamples=hasValidScientificSamples();renderEsp32Indicator(false,age);renderHealth(false,lastTelemetrySample,age);renderMonitoringVisibility(hasSamples,terminalUiState||(isRunning?'RUNNING':'IDLE'),false);document.getElementById('chartOverlay').hidden=true; }
 
 function buildExperimentPayload(v) {
     var p={operator_name:v.operator_name,sample_name:v.sample_name,duration:v.duration,cycles:v.cycles,max_temp:v.max_temp,target_lux:v.target_lux,interval:v.interval};
@@ -715,9 +860,9 @@ function buildExperimentPayload(v) {
     return p;
 }
 function currentSetupValues(){var mode=valueOf('experimentMode');return {operator_name:valueOf('operatorName'),sample_name:valueOf('sampleName'),duration:parseInt(valueOf('duration')),cycles:parseInt(valueOf('cycles')),max_temp:numberOf('maxTemp'),target_lux:numberOf('targetLux'),interval:parseInt(valueOf('interval')),mode:mode,target_temperature:numberOf('targetTemperature'),hold_minutes:mode==='FIXED_TEMPERATURE'?numberOf('qualifiedHoldMinutes'):numberOf('plateauHoldMinutes'),tolerance:numberOf('temperatureTolerance'),qualification_dwell_s:numberOf('qualificationDwell'),control_sensor:mode==='FIXED_TEMPERATURE'?valueOf('fixedControlSensor'):valueOf('plateauControlSensor'),ramp_rate:numberOf('rampRate'),window_s:numberOf('detectionWindow'),max_slope:numberOf('maxAbsSlope'),max_range:numberOf('maxPeakToPeak'),confirmation_s:numberOf('confirmationDuration'),max_discovery_minutes:numberOf('maxDiscoveryTime'),post_mode:valueOf('postPlateauBehavior')};}
-function openReviewModal(){var values=currentSetupValues(),error=validateSetupValues(values);if(error){var overlay=document.getElementById('chartOverlay');overlay.hidden=false;overlay.textContent=error;return;}reviewModalOpener=document.activeElement;var model=buildReviewModel(values),box=document.getElementById('reviewDetails');pendingReviewPayload=model.payload;box.replaceChildren();model.rows.forEach(function(r){var dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=r[0];dd.textContent=r[1];box.append(dt,dd);});document.getElementById('reviewModal').hidden=false;document.querySelector('.dashboard-grid').setAttribute('aria-hidden','true');document.getElementById('confirmReview').focus();}
-function closeReviewModal(){pendingReviewPayload=null;document.getElementById('reviewModal').hidden=true;document.querySelector('.dashboard-grid').removeAttribute('aria-hidden');if(reviewModalOpener&&reviewModalOpener.focus)reviewModalOpener.focus();}
-function confirmReviewedStart(){var payload=pendingReviewPayload;if(!payload)return;pendingReviewPayload=null;document.getElementById('reviewModal').hidden=true;document.querySelector('.dashboard-grid').removeAttribute('aria-hidden');startExperiment(payload);}
+function openReviewModal(){var values=currentSetupValues(),error=validateSetupValues(values);if(error){showMonitoringNotice(error,'IDLE');return;}reviewModalOpener=document.activeElement;var model=buildReviewModel(values),box=document.getElementById('reviewDetails');pendingReviewPayload=model.payload;box.replaceChildren();model.rows.forEach(function(r){var dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=r[0];dd.textContent=r[1];box.append(dt,dd);});document.getElementById('reviewModal').hidden=false;setPageModalIsolation(true);document.getElementById('confirmReview').focus();}
+function closeReviewModal(){pendingReviewPayload=null;document.getElementById('reviewModal').hidden=true;setPageModalIsolation(false);if(reviewModalOpener&&reviewModalOpener.focus)reviewModalOpener.focus();}
+function confirmReviewedStart(){var payload=pendingReviewPayload;if(!payload)return;pendingReviewPayload=null;document.getElementById('reviewModal').hidden=true;setPageModalIsolation(false);startExperiment(payload);}
 function handleReviewModalKeydown(e){if(document.getElementById('reviewModal').hidden)return;if(e.key==='Escape'){e.preventDefault();closeReviewModal();return;}if(e.key==='Tab'){var a=[document.getElementById('cancelReview'),document.getElementById('confirmReview')],i=a.indexOf(document.activeElement),next=e.shiftKey?(i<=0?a.length-1:i-1):(i<0||i===a.length-1?0:i+1);e.preventDefault();a[next].focus();}}
 document.getElementById('reviewModal').addEventListener('keydown',handleReviewModalKeydown);
 function startExperiment(payload) {
@@ -765,8 +910,8 @@ function stopExperiment() {
     isStopping=true; closeStopModal(); document.getElementById('confirmStop').disabled=true; setUIState('STOPPING');
     fetch('/api/stop_experiment', {method:'POST'}).then(async r=>{var d;try{d=await r.json();}catch(_){d={};}return validateStopResponse(r,d);}).then(d=>{
         var stoppedExpId=currentExpId;log("Stopped by User. Data retained; waiting for reset...");if(stoppedExpId)document.getElementById('downloadLink').href='/api/export/'+stoppedExpId;currentExpId=null; isWaitingReset=true; isStopping=false; document.getElementById('confirmStop').disabled=false; setUIState('ABORTED');
-        var overlay=document.getElementById('chartOverlay'); overlay.hidden=false; overlay.textContent='Experiment aborted safely. Lamp is off; recorded data is retained.';
-    }).catch(err=>{isStopping=false;document.getElementById('confirmStop').disabled=false;setUIState('RUNNING');var overlay=document.getElementById('chartOverlay');overlay.hidden=false;overlay.textContent='STOP FAILED — experiment may still be running. Try again.';log('Stop failed: '+err);});
+        showMonitoringNotice('Experiment aborted safely. Lamp is off; recorded data is retained.','ABORTED');
+    }).catch(err=>{isStopping=false;document.getElementById('confirmStop').disabled=false;setUIState('RUNNING');showMonitoringNotice('STOP FAILED — experiment may still be running. Try again.','RUNNING');log('Stop failed: '+err);});
 }
 
 function experimentFinished() {
@@ -820,6 +965,8 @@ function resetChartData() {
     
     // Reset state indicator
     updateStateIndicator(0);
+    setChartZoomActive(false);
+    renderMonitoringVisibility(false,terminalUiState||(isRunning?'RUNNING':'IDLE'),true);
 }
 
 function setUIState(state, clearTerminal) {
@@ -828,31 +975,34 @@ function setUIState(state, clearTerminal) {
     var form = document.getElementById('setupForm');
     var stop = document.getElementById('stopBtn');
     var done = document.getElementById('finishedPanel');
-    var badge = document.getElementById('statusBadge');
     var view=getRuntimeViewModel(state);
     document.getElementById('runOverview').hidden=!view.showStop;
     document.getElementById('stickyStop').hidden=!view.showStop;
+    document.querySelector('.dashboard-grid').setAttribute('data-ui-state',state);
 
     if (state === 'IDLE') {
         isRunning = false;
         form.style.display = 'block'; stop.style.display = 'none'; done.style.display = 'none';
-        badge.className = 'badge bg-idle'; badge.innerText = "IDLE";
+        renderStateBadge('IDLE','bg-idle');
     } else if (state === 'RUNNING' || state === 'STOPPING') {
         isRunning = true;
         form.style.display = 'none'; stop.style.display = 'block'; done.style.display = 'none';
-        badge.className = 'badge bg-run'; badge.innerText = state;
+        renderStateBadge(state,'bg-run');
     } else if (state === 'DONE' || state === 'ABORTED') {
         terminalUiState=state;
         isRunning = false;
         form.style.display = 'none'; stop.style.display = 'none'; done.style.display = 'block';
         done.querySelector('div').textContent=state==='ABORTED'?'⚠ Experiment aborted — data retained':'✅ Eksperimen Selesai!';
-        badge.className = 'badge bg-done'; badge.innerText = state==='DONE'?"COMPLETED":"ABORTED";
+        renderStateBadge(state==='DONE'?"COMPLETED":"ABORTED",'bg-done');
     }
+    if(state==='DONE'||state==='ABORTED') renderPhaseStepper(activeMode||valueOf('experimentMode'),state==='ABORTED'?15:5,state);
+    renderPhaseVisibility(state);
+    renderMonitoringVisibility(hasValidScientificSamples(),state,true);
 }
 
-if(document.querySelectorAll){document.querySelectorAll('[data-window]').forEach(function(b){b.addEventListener('click',function(){chartWindow=b.dataset.window;applyChartView();});});
+if(document.querySelectorAll){document.querySelectorAll('[data-window]').forEach(function(b){b.addEventListener('click',function(){selectChartWindow(b.dataset.window);});});
 document.querySelectorAll('[data-channel]').forEach(function(b){b.addEventListener('click',function(){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));applyChannelVisibility();applyChartView();});});}
-updateModeFields(); initChart(); renderPhaseStepper('NORMAL_CYCLIC',0); renderHealth(true,null,null); setInterval(updateStatus, 1000);
+updateModeFields(); initChart(); renderPhaseStepper('NORMAL_CYCLIC',0); renderPhaseVisibility('IDLE'); renderHealth(true,null,null); renderMonitoringVisibility(false,'IDLE',true); setInterval(updateStatus, 1000);
 
 // Load calibrated max lux hint on page load
 fetch('/api/get_config').then(function(r) { return r.json(); }).then(function(conf) {
