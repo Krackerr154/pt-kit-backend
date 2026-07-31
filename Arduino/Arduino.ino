@@ -16,6 +16,7 @@
 #include <max6675.h>
 #include <BH1750.h>
 #include <EEPROM.h>
+#include "IsothermalControl.h"
 
 
 // --- PIN MAPPING ---
@@ -49,8 +50,10 @@ BH1750 lightMeter;
 
 
 // Status Mesin
-enum State { IDLE, PRE_HEAT, HEATING, COOLING, STABILIZING, DONE, CAL_BARE, CAL_TAPE, CAL_FULL };
+enum State { IDLE, PRE_HEAT, HEATING, COOLING, STABILIZING, DONE, CAL_BARE, CAL_TAPE, CAL_FULL, ISO_RAMP, ISO_QUALIFY, ISO_HOLD, PLATEAU_HEATING, PLATEAU_CONFIRM, PLATEAU_HOLD, ABORTED };
 State currentState = IDLE;
+enum OperatingMode { NORMAL_CYCLIC, FIXED_TEMPERATURE, NATURAL_PLATEAU };
+OperatingMode operatingMode = NORMAL_CYCLIC;
 
 
 // Data Variabel
@@ -61,6 +64,12 @@ float rawLux = 0.0, smoothedLux = 0.0;
 float userMaxTemp = 100.0;       
 int   userInterval = 1;          
 float targetLux = 38000.0;
+IsoCommand isoConfig; PlateauCommand plateauConfig; PIController tempPI; PlateauWindow plateauWindow;
+float controlTemp=NAN, tempSetpoint=NAN, tempError=NAN, detectedPlateauTemp=NAN;
+bool controlTempValid=false, qualified=false;
+unsigned long modeStarted=0,stateStarted=0,holdStarted=0,holdQualifiedMs=0,lastQualifiedMs=0,confirmStarted=0;
+const float TEMP_KP=18.0, TEMP_KI=0.35, TEMP_APPROACH_ZONE=2.0;
+const unsigned long EXCURSION_GRACE_MS=3000;
 
 // Lux Control Vars
 int lampPWM = 0;
@@ -146,6 +155,7 @@ void loop() {
       delay(2000); lcd.clear();
     }
     else if (data.startsWith("SET:")) {
+      operatingMode = NORMAL_CYCLIC;
       // === PARSING BARU (METODE POTONG KUE) ===
       // Format: SET:Durasi:Siklus:MaxTemp:Interval:TargetLux
       // Contoh: SET:60:5:80.0:1:5000
@@ -199,6 +209,12 @@ void loop() {
       lampPWM = constrain((targetLux / maxHardwareLux) * 255.0, 0, 255); // open loop start
       currentState = PRE_HEAT; 
       lcd.clear();
+    }
+    else if (data.startsWith("ISO1:")) {
+      IsoCommand p; if(parseIsoCommand(data.c_str(),p)){ isoConfig=p; operatingMode=FIXED_TEMPERATURE; userMaxTemp=p.maxTemp; userInterval=p.logInterval; totalMasterSec=currentSec=0; currentCycleNum=1; modeStarted=stateStarted=millis(); holdStarted=holdQualifiedMs=lastQualifiedMs=0; tempSetpoint=NAN; piReset(tempPI); currentState=ISO_RAMP; lastLogTime=millis(); lcd.clear(); } else comm.println("ERR:ISO1");
+    }
+    else if (data.startsWith("PLAT1:")) {
+      PlateauCommand p; if(parsePlateauCommand(data.c_str(),p)){ plateauConfig=p; operatingMode=NATURAL_PLATEAU; targetLux=p.targetLux; userMaxTemp=p.maxTemp; userInterval=p.logInterval; totalMasterSec=currentSec=0; currentCycleNum=1; modeStarted=stateStarted=millis(); holdStarted=holdQualifiedMs=confirmStarted=0; detectedPlateauTemp=NAN; plateauReset(plateauWindow); piReset(tempPI); lampPWM=constrain((targetLux/maxHardwareLux)*255.0,0,255); currentState=PLATEAU_HEATING; lastLogTime=millis(); lcd.clear(); } else comm.println("ERR:PLAT1");
     }
     else if (data == "CAL_BARE") {
       // Phase 1: Bare sensor measurement at 50% PWM
@@ -260,8 +276,10 @@ void loop() {
       // Route calibration states to calibration logic
       if (currentState == CAL_BARE || currentState == CAL_TAPE || currentState == CAL_FULL) {
         runCalibrationLogic();
-      } else {
+      } else if (operatingMode == NORMAL_CYCLIC) {
         runExperimentLogic();
+      } else {
+        runIsothermalLogic();
       }
     } 
     else if (currentState == DONE) {
@@ -304,6 +322,19 @@ void loop() {
 
 
 // --- LOGIC FUNCTIONS ---
+void luxControl(){float e=targetLux-smoothedLux;if(abs(e)>LUX_TOLERANCE)lampPWM=constrain(lampPWM+e*KP,0,255);}
+void abortMode(const char*r){currentState=ABORTED;lampPWM=0;analogWrite(PIN_LAMP,0);analogWrite(PIN_FAN,255);comm.print("ABORT:");comm.println(r);}
+void temperatureDrive(float target){tempError=target-controlTemp;lampPWM=(int)piStep(tempPI,target,controlTemp,1,TEMP_KP,TEMP_KI,255,TEMP_APPROACH_ZONE);analogWrite(PIN_LAMP,lampPWM);analogWrite(PIN_FAN,0);}
+void qualifiedHold(float target,float tolerance,unsigned long seconds){unsigned long now=millis();qualified=controlTempValid&&abs(controlTemp-target)<=tolerance;if(qualified){if(lastQualifiedMs)holdQualifiedMs+=now-lastQualifiedMs;lastQualifiedMs=now;}else if(lastQualifiedMs&&now-lastQualifiedMs>EXCURSION_GRACE_MS)lastQualifiedMs=0;temperatureDrive(target);if(holdQualifiedMs>=seconds*1000UL)currentState=DONE;}
+void runIsothermalLogic(){
+ unsigned long now=millis();currentSec=(now-stateStarted)/1000;ControlSensor sensor=operatingMode==FIXED_TEMPERATURE?isoConfig.sensor:plateauConfig.sensor;controlTemp=sensor==SENSOR_TC?tempTC:tempIR;controlTempValid=isfinite(controlTemp);if(!controlTempValid){qualified=false;analogWrite(PIN_LAMP,0);updateLCD("SENSOR INVALID");return;}if(controlTemp>userMaxTemp){abortMode("MAX_TEMP");return;}
+ if(currentState==ISO_RAMP){if(!isfinite(tempSetpoint))tempSetpoint=controlTemp;tempSetpoint=min(isoConfig.targetTemp,tempSetpoint+isoConfig.rampRate/60.0);temperatureDrive(tempSetpoint);updateLCD("ISO RAMP");if(tempSetpoint>=isoConfig.targetTemp&&abs(tempError)<=isoConfig.tolerance){currentState=ISO_QUALIFY;stateStarted=now;}}
+ else if(currentState==ISO_QUALIFY){tempSetpoint=isoConfig.targetTemp;temperatureDrive(tempSetpoint);qualified=abs(tempError)<=isoConfig.tolerance;updateLCD("ISO QUALIFY");if(!qualified)stateStarted=now;else if(now-stateStarted>=isoConfig.qualificationSeconds*1000UL){currentState=ISO_HOLD;holdStarted=lastQualifiedMs=now;holdQualifiedMs=0;stateStarted=now;}}
+ else if(currentState==ISO_HOLD){tempSetpoint=isoConfig.targetTemp;qualifiedHold(tempSetpoint,isoConfig.tolerance,isoConfig.holdSeconds);updateLCD("ISO HOLD");}
+ else if(currentState==PLATEAU_HEATING||currentState==PLATEAU_CONFIRM){luxControl();analogWrite(PIN_LAMP,lampPWM);plateauAdd(plateauWindow,(now-modeStarted)/1000.0,controlTemp);PlateauStats s=plateauStats(plateauWindow,plateauConfig.windowSeconds);bool ok=s.valid&&abs(s.slopePerMin)<=plateauConfig.maxSlope&&s.peakToPeak<=plateauConfig.maxPeakToPeak;if(currentState==PLATEAU_HEATING&&ok){currentState=PLATEAU_CONFIRM;confirmStarted=now;}else if(currentState==PLATEAU_CONFIRM&&!ok){currentState=PLATEAU_HEATING;confirmStarted=0;}else if(currentState==PLATEAU_CONFIRM&&now-confirmStarted>=plateauConfig.confirmationSeconds*1000UL){detectedPlateauTemp=s.mean;currentState=PLATEAU_HOLD;holdStarted=lastQualifiedMs=now;holdQualifiedMs=0;piReset(tempPI);}if(now-modeStarted>=plateauConfig.maxDiscoverySeconds*1000UL&&currentState!=PLATEAU_HOLD)abortMode("DISCOVERY_TIMEOUT");updateLCD(currentState==PLATEAU_CONFIRM?"PLAT CONFIRM":"PLAT HEAT");}
+ else if(currentState==PLATEAU_HOLD){tempSetpoint=detectedPlateauTemp;if(plateauConfig.postMode==POST_PASSIVE){luxControl();analogWrite(PIN_LAMP,lampPWM);qualified=true;if(now-holdStarted>=plateauConfig.holdSeconds*1000UL)currentState=DONE;}else qualifiedHold(tempSetpoint,plateauConfig.maxPeakToPeak,plateauConfig.holdSeconds);updateLCD("PLAT HOLD");}
+ else if(currentState==ABORTED){analogWrite(PIN_LAMP,0);analogWrite(PIN_FAN,255);updateLCD("ABORTED");}
+}
 void runExperimentLogic() {
   switch (currentState) {
     case PRE_HEAT:
@@ -469,7 +500,10 @@ void sendDataToESP() {
     comm.print(tempIR, 1); comm.print(",");
     comm.print(tempTC, 1); comm.print(",");
     comm.print(smoothedLux, 1); comm.print(",");
-    comm.println(saveFlag);
+    comm.print(saveFlag); comm.print(",");
+    comm.print(operatingMode==NORMAL_CYCLIC?"NORM":operatingMode==FIXED_TEMPERATURE?"ISO":"PLAT");comm.print(",");
+    comm.print(controlTemp,2);comm.print(",");comm.print(tempSetpoint,2);comm.print(",");comm.print(tempError,2);comm.print(",");comm.print(lampPWM);comm.print(",");
+    comm.print(holdStarted?(millis()-holdStarted)/1000:0);comm.print(",");comm.print(holdQualifiedMs/1000);comm.print(",");comm.print(qualified?1:0);comm.print(",");comm.println(detectedPlateauTemp,2);
 }
 
 
@@ -490,8 +524,8 @@ void showScrollingStandby() {
 
 
 void readSensors() {
-  tempIR = mlx.readObjectTempC(); if(isnan(tempIR)) tempIR = 0.0;
-  tempTC = thermocouple.readCelsius(); if(isnan(tempTC)) tempTC = 0.0;
+  tempIR = mlx.readObjectTempC();
+  tempTC = thermocouple.readCelsius();
   
   rawLux = lightMeter.readLightLevel();
   if(isnan(rawLux)) rawLux = 0.0;
