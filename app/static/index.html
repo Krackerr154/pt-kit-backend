@@ -1,6 +1,7 @@
 <!DOCTYPE HTML>
 <html>
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard Live - PT Kit</title>
   
@@ -37,6 +38,21 @@
     .btn-history { display:block; text-align:center; margin-top:15px; color: #666; text-decoration:none; font-size:0.9rem; }
 
     .chart-container { position: relative; height: 350px; width: 100%; }
+    .chart-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:24px; box-sizing:border-box; background:rgba(255,255,255,.86); color:#374151; font-weight:700; z-index:2; }
+    .chart-overlay[hidden], .sticky-stop[hidden], .modal-backdrop[hidden], [hidden] { display:none !important; }
+    .phase-stepper { display:flex; gap:6px; padding:8px; margin-bottom:12px; list-style:none; overflow-x:auto; }
+    .phase-stepper li { min-width:76px; flex:1; padding:8px 5px; border:2px solid #cbd5e1; border-radius:6px; text-align:center; font-size:.78rem; font-weight:600; }
+    .phase-stepper .completed { background:#e8f5e9; border-color:#287d3c; }
+    .phase-stepper [aria-current="step"] { background:#173f67; border-color:#173f67; color:#fff; }
+    .health-cluster { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:12px; }
+    .health-item { border:1px solid #cbd5e1; border-radius:6px; padding:7px; font-size:.75rem; background:#fff; }
+    .health-item strong { display:block; }
+    .run-overview { background:#eef5fb; border:1px solid #b6cbe0; border-radius:8px; padding:12px; margin-bottom:12px; }
+    .primary-metric { font-size:2rem; font-weight:700; color:#173f67; }
+    .sticky-stop { position:sticky; bottom:12px; width:100%; min-height:48px; background:#b42318; color:white; border:0; border-radius:7px; font-weight:700; z-index:4; }
+    button, input, select { min-height:44px; } button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline:3px solid #1d70b8; outline-offset:2px; }
+    .modal-backdrop { position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.65); padding:20px; }
+    .modal { max-width:440px; background:#fff; border-radius:10px; padding:24px; } .modal-actions { display:flex; gap:10px; justify-content:flex-end; } .modal-actions button { padding:8px 18px; } .danger { background:#b42318; color:#fff; border:0; }
     .zoom-hint { font-size: 0.75rem; color: #999; font-style: italic; margin-top: 5px; text-align: right; }
     .badge { padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; color: white; font-weight: bold; }
     .bg-idle { background: #6c757d; } .bg-preheat { background: #ff9800; } .bg-heat { background: #f44336; } .bg-cool { background: #2196f3; } .bg-stabil { background: #9c27b0; } .bg-done { background: #007bff; } .bg-run { background: #28a745; box-shadow: 0 0 10px rgba(40, 167, 69, 0.4); }
@@ -97,17 +113,9 @@
                 </div>
             </div>
             
-            <!-- State Indicator Bar -->
-            <div class="state-indicator">
-                <div class="state-dot idle state-active" title="IDLE"></div>
-                <div class="state-dot preheat" title="PRE_HEAT"></div>
-                <div class="state-dot heat" title="HEATING"></div>
-                <div class="state-dot cool" title="COOLING"></div>
-                <div class="state-dot stabil" title="STABILIZING"></div>
-                <div class="state-dot done" title="DONE"></div>
-            </div>
-            
-            <div class="chart-container"><canvas id="liveChart" ondblclick="resetZoom()"></canvas></div>
+            <div id="healthCluster" class="health-cluster" aria-label="System health"></div>
+            <ol id="phaseStepper" class="phase-stepper" aria-label="Experiment phases"></ol>
+            <div class="chart-container"><div id="chartOverlay" class="chart-overlay" aria-live="assertive">Waiting for telemetry</div><canvas id="liveChart" ondblclick="resetZoom()"></canvas></div>
             <div class="zoom-hint">🖱️ Tahan <b>Ctrl + Scroll</b> untuk Zoom • Drag Geser • Double Click Reset</div>
         </div>
 
@@ -176,7 +184,9 @@
                 <button class="btn-start" onclick="startExperiment()">🚀 START EXPERIMENT</button>
             </div>
 
-            <button id="stopBtn" class="btn-stop" onclick="stopExperiment()">⛔ EMERGENCY STOP</button>
+            <div id="runOverview" class="run-overview" hidden><strong>Run overview — configuration locked</strong><div id="controlMetric" class="primary-metric">Control temperature: -- °C</div><div id="runSummary">Waiting for run details…</div></div>
+            <button id="stopBtn" class="btn-stop" onclick="openStopModal()">⛔ EMERGENCY STOP</button>
+            <button id="stickyStop" class="sticky-stop" type="button" hidden onclick="openStopModal()">Stop experiment safely</button>
 
             <div id="finishedPanel" style="display:none;">
                 <div style="text-align:center; margin-bottom:15px; color:#28a745; font-weight:bold;">✅ Eksperimen Selesai!</div>
@@ -199,10 +209,16 @@
     </div>
 </div>
 
+<div id="stopModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="stopModalTitle" aria-describedby="stopModalDescription"><h2 id="stopModalTitle">Stop this experiment?</h2><p id="stopModalDescription">The lamp will be turned off. Data already recorded will be retained.</p><div class="modal-actions"><button id="cancelStop" type="button" onclick="closeStopModal()">Cancel</button><button id="confirmStop" class="danger" type="button" onclick="stopExperiment()">Stop now</button></div></div></div>
+
 <script>
 var chart;
 var isRunning = false;
 var currentExpId = null;
+var lastTelemetryAt = null;
+var isStopping = false;
+var terminalUiState = null;
+var lastTelemetrySignature = null, lastTelemetrySample = null, activeMode = null, stopModalOpener = null;
 
 // [VARIABEL PENTING] 
 var isProcessingStart = false; // "Satpam" untuk memblokir update saat proses Start
@@ -262,6 +278,47 @@ function formatSensorValue(value, digits, unit) {
     var number = typeof value === 'number' ? value : Number(value);
     return Number.isFinite(number) ? number.toFixed(digits) + ' ' + unit : '-- ' + unit;
 }
+function getPhaseModel(mode) {
+    return mode==='FIXED_TEMPERATURE'?['Ready','Ramp','Qualify','Hold','Complete']:mode==='NATURAL_PLATEAU'?['Ready','Heating','Confirm','Hold','Complete']:['Ready','Pre-heat','Heating','Cooling','Stabilizing','Complete'];
+}
+function getPhaseStep(mode, stateCode) {
+    var maps={NORMAL_CYCLIC:{0:0,1:1,2:2,3:3,4:4,5:5},FIXED_TEMPERATURE:{0:0,9:1,10:2,11:3,5:4},NATURAL_PLATEAU:{0:0,12:1,13:2,14:3,5:4}};
+    return {steps:getPhaseModel(mode),current:(maps[mode]||maps.NORMAL_CYCLIC)[stateCode]||0};
+}
+function getHealthState(backendOnline, ageSeconds, valid) {
+    if(ageSeconds===null || ageSeconds===undefined) return {state:'no-data',label:'No data'};
+    if(!valid) return {state:'invalid',label:'Invalid'};
+    if(ageSeconds>=10) return {state:'offline',label:'Offline'};
+    if(ageSeconds>=4) return {state:'stale',label:'Stale'};
+    if(!backendOnline) return {state:'stale',label:'Stale'};
+    return {state:'live',label:'Live'};
+}
+function sampleSignature(sample) { if(!sample)return null;return JSON.stringify(['total_time','phase_time','cycle_num','state_code','ir_temp','tc_temp','current_lux'].map(function(k){return sample[k]===undefined?null:sample[k];})); }
+function advanceTelemetryState(previous,sample,now) { var signature=sampleSignature(sample);return {signature:signature,lastTelemetryAt:signature!==previous.signature?now:previous.lastTelemetryAt}; }
+function getChannelHealth(backendOnline,ageSeconds,value) { return getHealthState(backendOnline,ageSeconds,Number.isFinite(Number(value))); }
+function resolveActiveMode(running,backendMode,setupMode) { return running&&backendMode?backendMode:setupMode; }
+function validateStopResponse(response,body) { if(!response.ok||!body||body.status!=='stopped')throw new Error((body&&(body.detail||body.message))||('Stop rejected (HTTP '+response.status+')'));return body; }
+function getRuntimeViewModel(state) {
+    return {showSetup:state==='IDLE',showStop:state==='RUNNING'||state==='STOPPING',showResult:state==='DONE'||state==='ABORTED',aborted:state==='ABORTED'};
+}
+function formatRemainingHold(seconds) {
+    var n=Number(seconds); if(!Number.isFinite(n)) return '--:--'; n=Math.max(0,Math.ceil(n)); return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
+}
+function renderPhaseStepper(mode,stateCode) {
+    var model=getPhaseStep(mode,stateCode), box=document.getElementById('phaseStepper');
+    box.innerHTML=model.steps.map(function(label,i){return '<li class="'+(i<model.current?'completed':'upcoming')+'"'+(i===model.current?' aria-current="step"':'')+'>'+(i<model.current?'Completed: ':i===model.current?'Current: ':'Upcoming: ')+label+'</li>';}).join('');
+}
+function renderHealth(backendOnline,latest,age) {
+    var valid=latest&&[latest.ir_temp,latest.tc_temp,latest.current_lux].every(function(v){return Number.isFinite(Number(v));}), health=getHealthState(backendOnline,latest?age:null,valid);
+    var channel=function(label,value){var h=getChannelHealth(backendOnline,latest?age:null,value);return [label,h.label+(latest?' • '+formatSensorValue(value,label==='Lux'?0:1,label==='Lux'?'lx':'°C'):'')];};
+    var values=[['Backend',backendOnline?'Online':'Disconnected'],['Telemetry',health.label],channel('IR',latest&&latest.ir_temp),channel('TC',latest&&latest.tc_temp),channel('Lux',latest&&latest.current_lux),['Last sample',latest?Math.max(0,Math.floor(age))+'s ago':'No data']];
+    var box=document.getElementById('healthCluster');box.replaceChildren();values.forEach(function(x){var item=document.createElement('div'),label=document.createElement('span'),strong=document.createElement('strong');item.className='health-item';label.textContent=x[0];strong.textContent=x[1];item.append(label,strong);box.appendChild(item);});
+}
+function openStopModal(){stopModalOpener=document.activeElement;var m=document.getElementById('stopModal');m.hidden=false;document.querySelector('.dashboard-grid').setAttribute('aria-hidden','true');document.getElementById('confirmStop').focus();}
+function closeStopModal(){document.getElementById('stopModal').hidden=true;document.querySelector('.dashboard-grid').removeAttribute('aria-hidden');if(stopModalOpener&&stopModalOpener.focus)stopModalOpener.focus();}
+function handleStopModalKeydown(e){if(document.getElementById('stopModal').hidden)return;if(e.key==='Escape'){e.preventDefault();closeStopModal();return;}if(e.key==='Tab'){var a=[document.getElementById('cancelStop'),document.getElementById('confirmStop')],i=a.indexOf(document.activeElement),next=e.shiftKey?(i<=0?a.length-1:i-1):(i<0||i===a.length-1?0:i+1);e.preventDefault();a[next].focus();}}
+document.getElementById('stopModal').addEventListener('keydown',handleStopModalKeydown);
+document.getElementById('stopModal').addEventListener('click',function(e){if(e.target===this)closeStopModal();});
 function updateModeProgress(exp, latest, stateLabel) {
     var mode=field(exp,['mode','experiment_mode'],'NORMAL_CYCLIC'); var parts=['Mode: '+mode.replaceAll('_',' '),'Phase: '+stateLabel];
     var target=field(latest,['temp_setpoint'],field(exp,['target_temperature'],null)), control=field(latest,['control_temp'],null);
@@ -289,7 +346,7 @@ function initChart() {
     });
 }
 function resetZoom() { if(chart) chart.resetZoom(); }
-function log(msg) { var box = document.getElementById('sysLog'); var t = new Date().toLocaleTimeString(); box.innerHTML += `<div>[${t}] ${msg}</div>`; box.scrollTop = box.scrollHeight; }
+function log(msg) { var box=document.getElementById('sysLog'),row=document.createElement('div'),t=new Date().toLocaleTimeString();row.textContent='['+t+'] '+String(msg);box.appendChild(row);box.scrollTop=box.scrollHeight; }
 
 function calculateSlopeAndError(dataPoints) {
     var n = dataPoints.length;
@@ -451,14 +508,8 @@ function addCycleToTable(cycle, rIR, rTC, dur, endTemp) {
 }
 
 function updateStateIndicator(stateCode) {
-    // Reset semua state dot
-    document.querySelectorAll('.state-dot').forEach(dot => {
-        dot.classList.remove('state-active');
-    });
-    
-    // Aktifkan state yang sesuai
-    var stateClass = stateClassMap[stateCode] || 'idle';
-    document.querySelector('.state-dot.' + stateClass).classList.add('state-active');
+    var mode=resolveActiveMode(isRunning,activeMode,document.getElementById('experimentMode')?valueOf('experimentMode'):'NORMAL_CYCLIC');
+    renderPhaseStepper(mode,stateCode);
 }
 
 // --- UPDATE STATUS UTAMA ---
@@ -466,11 +517,12 @@ function updateStatus() {
     // 1. SATPAM: Blokir jika sedang proses Start (tunggu server clear data)
     if (isProcessingStart) return; 
 
-    fetch('/api/current_status').then(r => r.json()).then(data => {
+    fetch('/api/current_status').then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(data => {
         var exp = data.active_experiment;
         var dataList = data.recent_data; 
         
         document.getElementById('connStatus').innerText = "🟢 Connected";
+        if(exp) activeMode=field(exp,['mode','experiment_mode'],activeMode);
 
         // Logic Auto-Sync (Jika user lain start eksperimen)
         if (exp && exp.status === 'WAITING' && !isRunning) {
@@ -500,6 +552,15 @@ function updateStatus() {
             var stateCode = latest.state_code || 0;
             var stateLabel = stateMap[stateCode] || "UNKNOWN";
             document.getElementById('cycleInfo').innerText = `Cycle: ${latest.cycle_num} | Phase: ${stateLabel}`;
+            var mode=resolveActiveMode(isRunning,activeMode,valueOf('experimentMode'));
+            var telemetry=advanceTelemetryState({signature:lastTelemetrySignature,lastTelemetryAt:lastTelemetryAt},latest,Date.now());lastTelemetrySignature=telemetry.signature;lastTelemetryAt=telemetry.lastTelemetryAt;lastTelemetrySample=latest;var age=(Date.now()-lastTelemetryAt)/1000;
+            renderPhaseStepper(mode,stateCode); renderHealth(true,latest,age);
+            var overlay=document.getElementById('chartOverlay');
+            if(stateCode===15&&!terminalUiState){overlay.hidden=false;overlay.textContent='Experiment aborted for safety. Lamp is off; recorded data is retained.';setUIState('ABORTED');}
+            else if(isRunning&&startWaitData){overlay.hidden=false;overlay.textContent='Waiting for first experiment sample after start';} else overlay.hidden=true;
+            var control=field(latest,['control_temp'],field(exp,['control_sensor'],'TC')==='IR'?latest.ir_temp:latest.tc_temp);
+            document.getElementById('controlMetric').textContent=mode==='NORMAL_CYCLIC'?'IR / TC: '+formatSensorValue(latest.ir_temp,1,'°C')+' / '+formatSensorValue(latest.tc_temp,1,'°C'):'Control temperature: '+formatSensorValue(control,1,'°C');
+            document.getElementById('runSummary').textContent=(mode==='NORMAL_CYCLIC'?'Cycle '+latest.cycle_num+' / '+field(exp,['cycles'],'—')+' • ':'')+'Target '+field(latest,['temp_setpoint'],field(exp,['target_temperature'],'—'))+' °C • Lux '+formatSensorValue(latest.current_lux,0,'lx')+' / '+field(exp,['target_lux'],'—')+' lx • Safety max '+field(exp,['max_temp'],'—')+' °C • Hold remaining '+formatRemainingHold(field(latest,['hold_remaining_s'],NaN));
             updateModeProgress(exp, latest, stateLabel);
             
             // Update state indicator
@@ -507,10 +568,10 @@ function updateStatus() {
             
             // Update badge color sesuai state
             var badge = document.getElementById('statusBadge');
-            if (isRunning) {
+            if (!terminalUiState && isRunning) {
                 badge.className = 'badge bg-run';
                 badge.innerText = "RUNNING";
-            } else {
+            } else if (!terminalUiState) {
                 badge.className = 'badge ' + (stateCode == 5 ? 'bg-done' : 'bg-idle');
                 badge.innerText = stateLabel;
             }
@@ -603,9 +664,11 @@ function updateStatus() {
                 });
                 if(chart) chart.update('none');
             }
-        }
-    }).catch(e => { document.getElementById('connStatus').innerText = "🔴 Disconnected"; });
+        } else { renderHealth(true,null,null);var emptyOverlay=document.getElementById('chartOverlay');emptyOverlay.hidden=false;emptyOverlay.textContent='Waiting for telemetry — no samples received'; }
+    }).catch(handleBackendFailure);
 }
+
+function handleBackendFailure() { var age=lastTelemetryAt?(Date.now()-lastTelemetryAt)/1000:null; document.getElementById('connStatus').innerText = "🔴 Backend disconnected"; renderHealth(false,lastTelemetrySample,age); var overlay=document.getElementById('chartOverlay');overlay.hidden=false;overlay.textContent='Backend disconnected • telemetry '+getHealthState(false,age,true).label.toLowerCase()+(age!==null?' • last sample '+Math.floor(age)+'s ago':''); }
 
 function buildExperimentPayload(v) {
     var p={operator_name:v.operator_name,sample_name:v.sample_name,duration:v.duration,cycles:v.cycles,max_temp:v.max_temp,target_lux:v.target_lux,interval:v.interval};
@@ -649,10 +712,11 @@ function startExperiment() {
         if(d.status === 'success') { 
             log("Experiment started! ID: " + d.id + " - Waiting for Arduino reset..."); 
             currentExpId = d.id;
+            activeMode=field(d,['mode','experiment_mode'],mode);
             startWaitData = true;
             isWaitingReset = false;
             resetChartData();
-            setUIState('RUNNING'); 
+            setUIState('RUNNING', true);
             
             // Buka gerbang update, tapi grafik masih nunggu data reset (startWaitData)
             setTimeout(() => { isProcessingStart = false; }, 1000); 
@@ -666,14 +730,13 @@ function startExperiment() {
     });
 }
 
-function stopExperiment() { 
-    if(!confirm("YAKIN MAU STOP EKSPERIMEN INI?")) return; 
-    fetch('/api/stop_experiment', {method: 'POST'}).then(r=>r.json()).then(d=>{ 
-        log("Stopped by User. Waiting for reset..."); 
-        currentExpId = null; // [FIX] Putus hubungan dengan ID lama
-        isWaitingReset = true; // Set flag untuk menunggu Arduino reset
-        setUIState('IDLE'); 
-    }); 
+function stopExperiment() {
+    if(isStopping) return;
+    isStopping=true; closeStopModal(); document.getElementById('confirmStop').disabled=true; setUIState('STOPPING');
+    fetch('/api/stop_experiment', {method:'POST'}).then(async r=>{var d;try{d=await r.json();}catch(_){d={};}return validateStopResponse(r,d);}).then(d=>{
+        var stoppedExpId=currentExpId;log("Stopped by User. Data retained; waiting for reset...");if(stoppedExpId)document.getElementById('downloadLink').href='/api/export/'+stoppedExpId;currentExpId=null; isWaitingReset=true; isStopping=false; document.getElementById('confirmStop').disabled=false; setUIState('ABORTED');
+        var overlay=document.getElementById('chartOverlay'); overlay.hidden=false; overlay.textContent='Experiment aborted safely. Lamp is off; recorded data is retained.';
+    }).catch(err=>{isStopping=false;document.getElementById('confirmStop').disabled=false;setUIState('RUNNING');var overlay=document.getElementById('chartOverlay');overlay.hidden=false;overlay.textContent='STOP FAILED — experiment may still be running. Try again.';log('Stop failed: '+err);});
 }
 
 function experimentFinished() {
@@ -688,7 +751,7 @@ function experimentFinished() {
 function resetUI() {
     currentExpId = null; // [FIX] Putus hubungan dengan ID lama
     isWaitingReset = false; // Clear waiting flag
-    setUIState('IDLE'); 
+    setUIState('IDLE', true);
     resetChartData(); 
     log("UI Reset. Ready for new experiment.");
 }
@@ -730,28 +793,35 @@ function resetChartData() {
     updateStateIndicator(0);
 }
 
-function setUIState(state) {
+function setUIState(state, clearTerminal) {
+    if(clearTerminal) terminalUiState=null;
+    if(terminalUiState && state !== terminalUiState) return;
     var form = document.getElementById('setupForm');
     var stop = document.getElementById('stopBtn');
     var done = document.getElementById('finishedPanel');
     var badge = document.getElementById('statusBadge');
+    var view=getRuntimeViewModel(state);
+    document.getElementById('runOverview').hidden=!view.showStop;
+    document.getElementById('stickyStop').hidden=!view.showStop;
 
     if (state === 'IDLE') {
         isRunning = false;
         form.style.display = 'block'; stop.style.display = 'none'; done.style.display = 'none';
         badge.className = 'badge bg-idle'; badge.innerText = "IDLE";
-    } else if (state === 'RUNNING') {
+    } else if (state === 'RUNNING' || state === 'STOPPING') {
         isRunning = true;
         form.style.display = 'none'; stop.style.display = 'block'; done.style.display = 'none';
-        badge.className = 'badge bg-run'; badge.innerText = "RUNNING";
-    } else if (state === 'DONE') {
-        isRunning = false; 
+        badge.className = 'badge bg-run'; badge.innerText = state;
+    } else if (state === 'DONE' || state === 'ABORTED') {
+        terminalUiState=state;
+        isRunning = false;
         form.style.display = 'none'; stop.style.display = 'none'; done.style.display = 'block';
-        badge.className = 'badge bg-done'; badge.innerText = "COMPLETED";
+        done.querySelector('div').textContent=state==='ABORTED'?'⚠ Experiment aborted — data retained':'✅ Eksperimen Selesai!';
+        badge.className = 'badge bg-done'; badge.innerText = state==='DONE'?"COMPLETED":"ABORTED";
     }
 }
 
-updateModeFields(); initChart(); setInterval(updateStatus, 1000);
+updateModeFields(); initChart(); renderPhaseStepper('NORMAL_CYCLIC',0); renderHealth(true,null,null); setInterval(updateStatus, 1000);
 
 // Load calibrated max lux hint on page load
 fetch('/api/get_config').then(function(r) { return r.json(); }).then(function(conf) {
