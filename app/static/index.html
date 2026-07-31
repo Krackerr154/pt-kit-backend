@@ -23,6 +23,8 @@
     .c-ir { color: #007bff; } .c-tc { color: #dc3545; } .c-rate { color: #28a745; } .c-lux { color: #ffbc00; }
     
     .form-group { margin-bottom: 12px; }
+    .mode-fields { display:none; border-left:3px solid #e9ecef; padding-left:10px; }
+    .mode-summary, #modeProgress { background:#f8f9fa; padding:10px; border-radius:6px; font-size:.85rem; margin-bottom:12px; line-height:1.5; }
     label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; }
     input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
     
@@ -56,6 +58,7 @@
     .err-val { font-size: 0.75rem; color: #999; } 
 
     @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } .status-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 390px) { body { padding:8px; } .card { padding:12px; } .status-grid { grid-template-columns:1fr 1fr; } .stat-val { font-size:1.1rem; } }
   </style>
 </head>
 <body>
@@ -143,11 +146,33 @@
             <div id="setupForm">
                 <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" value="Gerald"></div>
                 <div class="form-group"><label>Sample Name</label><input type="text" id="sampleName" placeholder="Contoh: MOF-Batch-1"></div>
-                <div class="form-group"><label>Target Duration (sec/cycle)</label><input type="number" id="duration" value="60"></div>
-                <div class="form-group"><label>Total Cycles</label><input type="number" id="cycles" value="5"></div>
+                <div class="form-group"><label>Experiment Mode</label><select id="experimentMode" onchange="updateModeFields()"><option value="NORMAL_CYCLIC" selected>Normal cyclic</option><option value="FIXED_TEMPERATURE">Fixed temperature</option><option value="NATURAL_PLATEAU">Natural plateau</option></select></div>
+                <div id="normalFields" class="mode-fields">
+                  <div class="form-group"><label>Target Duration (sec/cycle)</label><input type="number" id="duration" value="60"></div>
+                  <div class="form-group"><label>Total Cycles</label><input type="number" id="cycles" value="5"></div>
+                </div>
+                <div id="fixedFields" class="mode-fields">
+                  <div class="form-group"><label>Target Temperature (°C)</label><input type="number" id="targetTemperature" value="60"></div>
+                  <div class="form-group"><label>Qualified Hold Duration (minutes)</label><input type="number" id="qualifiedHoldMinutes" value="10" min="0.1" step="0.1"></div>
+                  <div class="form-group"><label>Tolerance (°C)</label><input type="number" id="temperatureTolerance" value="1" step="0.1"></div>
+                  <div class="form-group"><label>Qualification Dwell (sec)</label><input type="number" id="qualificationDwell" value="30"></div>
+                  <div class="form-group"><label>Control Sensor</label><select id="fixedControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div>
+                  <div class="form-group"><label>Ramp Rate (°C/min)</label><input type="number" id="rampRate" value="5" step="0.1"></div>
+                </div>
+                <div id="plateauFields" class="mode-fields">
+                  <div class="form-group"><label>Plateau Hold Duration (minutes)</label><input type="number" id="plateauHoldMinutes" value="10" min="0.1" step="0.1"></div>
+                  <div class="form-group"><label>Control Sensor</label><select id="plateauControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div>
+                  <div class="form-group"><label>Detection Window (sec)</label><input type="number" id="detectionWindow" value="120"></div>
+                  <div class="form-group"><label>Max Abs Slope (°C/min)</label><input type="number" id="maxAbsSlope" value="0.2" step="0.01"></div>
+                  <div class="form-group"><label>Max Peak-to-Peak (°C)</label><input type="number" id="maxPeakToPeak" value="1" step="0.1"></div>
+                  <div class="form-group"><label>Confirmation Duration (sec)</label><input type="number" id="confirmationDuration" value="60"></div>
+                  <div class="form-group"><label>Max Discovery Time (minutes)</label><input type="number" id="maxDiscoveryTime" value="60"></div>
+                  <div class="form-group"><label>Post-plateau Behavior</label><select id="postPlateauBehavior"><option value="PASSIVE" selected>Passive (same illumination)</option><option value="REGULATED">Regulated</option></select></div>
+                </div>
                 <div class="form-group"><label>Max Temp (°C)</label><input type="number" id="maxTemp" value="100"></div>
                 <div class="form-group"><label>Target Lux (lx) <small id="maxLuxHint" style="color:#999;"></small></label><input type="number" id="targetLux" value="38000"></div>
                 <div class="form-group"><label>Logging Interval (sec)</label><input type="number" id="interval" value="1" min="1"></div>
+                <div id="modeSummary" class="mode-summary"></div>
                 <button class="btn-start" onclick="startExperiment()">🚀 START EXPERIMENT</button>
             </div>
 
@@ -160,6 +185,7 @@
             </div>
 
             <div style="margin-top:20px; text-align:center;">
+                <div id="modeProgress" aria-live="polite">Mode: Normal cyclic</div>
                 <div class="stat-label">Total Time</div>
                 <div class="stat-val" style="font-size:1.2rem; color:#666;" id="valTime">00:00</div>
             </div>
@@ -204,7 +230,9 @@ var stateMap = {
     5: "DONE",
     6: "CAL_BARE",
     7: "CAL_TAPE",
-    8: "CAL_FULL"
+    8: "CAL_FULL",
+    9: "ISO_RAMP", 10: "ISO_QUALIFY", 11: "ISO_HOLD",
+    12: "PLATEAU_DISCOVERY", 13: "PLATEAU_CONFIRM", 14: "PLATEAU_HOLD", 15: "POST_PLATEAU"
 };
 
 var stateClassMap = {
@@ -216,8 +244,26 @@ var stateClassMap = {
     5: "done",
     6: "idle",
     7: "idle",
-    8: "idle"
+    8: "idle", 9: "heat", 10: "stabil", 11: "stabil", 12: "heat", 13: "stabil", 14: "stabil", 15: "done"
 };
+
+function valueOf(id) { return document.getElementById(id).value; }
+function numberOf(id) { return parseFloat(valueOf(id)); }
+function updateModeFields() {
+    var mode=valueOf('experimentMode');
+    document.getElementById('normalFields').style.display=mode==='NORMAL_CYCLIC'?'block':'none';
+    document.getElementById('fixedFields').style.display=mode==='FIXED_TEMPERATURE'?'block':'none';
+    document.getElementById('plateauFields').style.display=mode==='NATURAL_PLATEAU'?'block':'none';
+    document.getElementById('modeSummary').textContent=mode==='NORMAL_CYCLIC'?'Run the existing heat/cool cycles.':mode==='FIXED_TEMPERATURE'?'Ramp to target, qualify within tolerance, then accumulate qualified hold time.':'Illuminate each sample while detecting its natural thermal plateau, confirm it, then hold.';
+}
+function field(data, names, fallback) { for(var i=0;i<names.length;i++) if(data && data[names[i]]!==undefined && data[names[i]]!==null) return data[names[i]]; return fallback; }
+function updateModeProgress(exp, latest, stateLabel) {
+    var mode=field(exp,['mode','experiment_mode'],'NORMAL_CYCLIC'); var parts=['Mode: '+mode.replaceAll('_',' '),'Phase: '+stateLabel];
+    var target=field(latest,['target_temperature','target_temp'],field(exp,['target_temperature'],null)), control=field(latest,['control_temperature','control_temp'],null);
+    if(target!==null) parts.push('Target: '+target+' °C'); if(control!==null) parts.push('Control: '+control+' °C');
+    [['qualification_progress','Qualification'],['confirmation_progress','Confirmation'],['qualified_time','Qualified hold'],['wall_hold_time','Wall hold'],['in_band','In band'],['lamp_pwm','Lamp PWM'],['detected_plateau_temp','Plateau'],['current_lux','Lux']].forEach(function(x){var v=field(latest,[x[0]],null);if(v!==null)parts.push(x[1]+': '+v);});
+    document.getElementById('modeProgress').textContent=parts.join(' • ');
+}
 
 function initChart() {
     var ctx = document.getElementById('liveChart').getContext('2d');
@@ -451,6 +497,7 @@ function updateStatus() {
             var stateCode = latest.state_code || 0;
             var stateLabel = stateMap[stateCode] || "UNKNOWN";
             document.getElementById('cycleInfo').innerText = `Cycle: ${latest.cycle_num} | Phase: ${stateLabel}`;
+            updateModeProgress(exp, latest, stateLabel);
             
             // Update state indicator
             updateStateIndicator(stateCode);
@@ -567,8 +614,9 @@ function startExperiment() {
         interval = parseInt(document.getElementById('interval').value);
     
     if(!name || !op) return alert("Operator & Nama Sampel wajib diisi!");
-    if(duration <= 0) return alert("Durasi harus > 0 detik!");
-    if(cycles <= 0) return alert("Jumlah siklus harus > 0!");
+    var mode=valueOf('experimentMode');
+    if(mode === 'NORMAL_CYCLIC' && duration <= 0) return alert("Durasi harus > 0 detik!");
+    if(mode === 'NORMAL_CYCLIC' && cycles <= 0) return alert("Jumlah siklus harus > 0!");
     if(maxTemp < 50) return alert("Max temp minimal 50°C!");
     if(targetLux < 0) return alert("Target lux harus > 0!");
     if(interval < 1) return alert("Interval minimal 1 detik!");
@@ -592,6 +640,9 @@ function startExperiment() {
         target_lux: targetLux,
         interval: interval  // Ditambahkan sesuai Arduino
     };
+    // NORMAL_CYCLIC intentionally keeps the exact legacy payload above.
+    if(mode === 'FIXED_TEMPERATURE') Object.assign(p, {mode:mode, target_temperature:numberOf('targetTemperature'), qualified_hold_minutes:numberOf('qualifiedHoldMinutes'), tolerance:numberOf('temperatureTolerance'), qualification_dwell:numberOf('qualificationDwell'), control_sensor:valueOf('fixedControlSensor'), ramp_rate:numberOf('rampRate')});
+    if(mode === 'NATURAL_PLATEAU') Object.assign(p, {mode:mode, plateau_hold_minutes:numberOf('plateauHoldMinutes'), control_sensor:valueOf('plateauControlSensor'), detection_window:numberOf('detectionWindow'), max_abs_slope:numberOf('maxAbsSlope'), max_peak_to_peak:numberOf('maxPeakToPeak'), confirmation_duration:numberOf('confirmationDuration'), max_discovery_time:numberOf('maxDiscoveryTime'), post_plateau_behavior:valueOf('postPlateauBehavior')});
     
     fetch('/api/start_experiment', { 
         method: 'POST', 
@@ -700,7 +751,7 @@ function setUIState(state) {
     }
 }
 
-initChart(); setInterval(updateStatus, 1000);
+updateModeFields(); initChart(); setInterval(updateStatus, 1000);
 
 // Load calibrated max lux hint on page load
 fetch('/api/get_config').then(function(r) { return r.json(); }).then(function(conf) {
