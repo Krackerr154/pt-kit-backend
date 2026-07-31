@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator, validator
 from typing import Optional
 from app.protocol import (ExperimentMode, PostPlateauMode, STATE_LABELS, parse_telemetry,
                           serialize_fixed_command, serialize_normal_command, serialize_plateau_command)
@@ -68,6 +68,33 @@ class ExperimentConfig(BaseModel):
     plateau_confirmation_s: Optional[int] = None
     plateau_max_discovery_s: Optional[int] = None
     post_plateau_mode: PostPlateauMode = PostPlateauMode.PASSIVE
+
+    @validator("duration", "cycles", "interval")
+    def positive_integers(cls, value):
+        if value <= 0: raise ValueError("must be positive")
+        return value
+
+    @validator("control_sensor")
+    def valid_sensor(cls, value):
+        if value not in ("TC", "IR"): raise ValueError("control_sensor must be TC or IR")
+        return value
+
+    @root_validator(skip_on_failure=True)
+    def validate_mode(cls, values):
+        import math
+        mode = values.get("mode")
+        required = {ExperimentMode.FIXED_TEMPERATURE: ("target_temperature", "hold_duration_s", "temperature_tolerance", "qualification_dwell_s", "ramp_rate"), ExperimentMode.NATURAL_PLATEAU: ("hold_duration_s", "plateau_window_s", "plateau_max_slope", "plateau_max_range", "plateau_confirmation_s", "plateau_max_discovery_s")}.get(mode, ())
+        missing = [n for n in required if values.get(n) is None]
+        if missing: raise ValueError("missing mode configuration: " + ", ".join(missing))
+        for n in required:
+            if not math.isfinite(values[n]) or values[n] <= 0: raise ValueError(n + " must be finite and positive")
+        if mode == ExperimentMode.FIXED_TEMPERATURE and values["max_temp"] <= values["target_temperature"]: raise ValueError("max_temp must exceed target_temperature")
+        if mode == ExperimentMode.NATURAL_PLATEAU:
+            if values["plateau_window_s"] > 60: raise ValueError("plateau_window_s exceeds firmware capacity")
+            if values["plateau_max_discovery_s"] < values["plateau_window_s"]: raise ValueError("discovery must cover window")
+        for n in ("hold_duration_s", "qualification_dwell_s", "plateau_window_s", "plateau_confirmation_s", "plateau_max_discovery_s"):
+            if values.get(n) is not None and values[n] > 4294967: raise ValueError(n + " is too large")
+        return values
 
 class EspSensorData(BaseModel):
     csv_line: str 
@@ -337,14 +364,15 @@ def insert_data(data: EspSensorData):
             "state_label": state_label,
             "ir_temp": ir_temp,
             "tc_temp": tc_temp,
-            "current_lux": current_lux
+            "current_lux": current_lux,
+            **{key: telemetry[key] for key in ("mode", "control_temp", "temp_setpoint", "temp_error", "lamp_pwm", "hold_wall_elapsed_s", "hold_qualified_elapsed_s", "qualified", "detected_plateau_temp")}
         }
         
         recent_sensors_cache.append(new_data)
         # deque(maxlen=20) otomatis buang data lama
 
         # Track calibration lux readings (backup detection if CALBARE/CALTAPE messages are lost)
-        if state_code >= 6:
+        if state_code in (6, 7, 8):
             calibration_state["last_cal_lux"] = current_lux
             calibration_state["last_cal_state"] = state_code
             return {"status": "cal_live_only"}
@@ -390,6 +418,13 @@ def insert_data(data: EspSensorData):
                 current_experiment_id = None
                 return {"status": "experiment_completed"}
 
+            if state_label == "ABORTED":
+                conn = get_db_connection(); cur = conn.cursor()
+                cur.execute("UPDATE experiments SET status='ABORTED', completion_reason='FIRMWARE_ABORT', ended_at=NOW() WHERE id=%s", (current_experiment_id,))
+                conn.commit(); cur.close(); conn.close()
+                current_experiment_id = None
+                return {"status": "experiment_aborted"}
+
             # Jika status Valid (PRE_HEAT s/d STABILIZING), Simpan!
             conn = get_db_connection()
             cur = conn.cursor()
@@ -401,6 +436,9 @@ def insert_data(data: EspSensorData):
             """, (current_experiment_id, total_time, phase_time, cycle_num, state_code, state_label, ir_temp, tc_temp, current_lux,
                   telemetry["mode"], telemetry["control_temp"], telemetry["temp_setpoint"], telemetry["temp_error"], telemetry["lamp_pwm"],
                   telemetry["hold_wall_elapsed_s"], telemetry["hold_qualified_elapsed_s"], telemetry["qualified"], telemetry["detected_plateau_temp"]))
+            if telemetry["mode"]:
+                cur.execute("UPDATE experiments SET hold_qualified_progress=%s, detected_plateau_temperature=COALESCE(%s, detected_plateau_temperature) WHERE id=%s",
+                            (telemetry["hold_qualified_elapsed_s"], telemetry["detected_plateau_temp"], current_experiment_id))
             conn.commit()
             cur.close()
             conn.close()

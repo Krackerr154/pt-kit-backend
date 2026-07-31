@@ -604,6 +604,12 @@ function updateStatus() {
     }).catch(e => { document.getElementById('connStatus').innerText = "🔴 Disconnected"; });
 }
 
+function buildExperimentPayload(v) {
+    var p={operator_name:v.operator_name,sample_name:v.sample_name,duration:v.duration,cycles:v.cycles,max_temp:v.max_temp,target_lux:v.target_lux,interval:v.interval};
+    if(v.mode==='FIXED_TEMPERATURE') Object.assign(p,{mode:v.mode,target_temperature:v.target_temperature,hold_duration_s:v.hold_minutes*60,temperature_tolerance:v.tolerance,qualification_dwell_s:v.qualification_dwell_s,control_sensor:v.control_sensor,ramp_rate:v.ramp_rate});
+    if(v.mode==='NATURAL_PLATEAU') Object.assign(p,{mode:v.mode,hold_duration_s:v.hold_minutes*60,control_sensor:v.control_sensor,plateau_window_s:v.window_s,plateau_max_slope:v.max_slope,plateau_max_range:v.max_range,plateau_confirmation_s:v.confirmation_s,plateau_max_discovery_s:v.max_discovery_minutes*60,post_plateau_mode:v.post_mode});
+    return p;
+}
 function startExperiment() {
     var op = document.getElementById('operatorName').value, 
         name = document.getElementById('sampleName').value,
@@ -631,18 +637,7 @@ function startExperiment() {
     // 2. Bersihkan Grafik Total - Clear ALL IDLE data immediately
     resetChartData();
 
-    var p = { 
-        operator_name: op, 
-        sample_name: name, 
-        duration: duration, 
-        cycles: cycles,
-        max_temp: maxTemp, 
-        target_lux: targetLux,
-        interval: interval  // Ditambahkan sesuai Arduino
-    };
-    // NORMAL_CYCLIC intentionally keeps the exact legacy payload above.
-    if(mode === 'FIXED_TEMPERATURE') Object.assign(p, {mode:mode, target_temperature:numberOf('targetTemperature'), qualified_hold_minutes:numberOf('qualifiedHoldMinutes'), tolerance:numberOf('temperatureTolerance'), qualification_dwell:numberOf('qualificationDwell'), control_sensor:valueOf('fixedControlSensor'), ramp_rate:numberOf('rampRate')});
-    if(mode === 'NATURAL_PLATEAU') Object.assign(p, {mode:mode, plateau_hold_minutes:numberOf('plateauHoldMinutes'), control_sensor:valueOf('plateauControlSensor'), detection_window:numberOf('detectionWindow'), max_abs_slope:numberOf('maxAbsSlope'), max_peak_to_peak:numberOf('maxPeakToPeak'), confirmation_duration:numberOf('confirmationDuration'), max_discovery_time:numberOf('maxDiscoveryTime'), post_plateau_behavior:valueOf('postPlateauBehavior')});
+    var p=buildExperimentPayload({operator_name:op,sample_name:name,duration:duration,cycles:cycles,max_temp:maxTemp,target_lux:targetLux,interval:interval,mode:mode,target_temperature:numberOf('targetTemperature'),hold_minutes:mode==='FIXED_TEMPERATURE'?numberOf('qualifiedHoldMinutes'):numberOf('plateauHoldMinutes'),tolerance:numberOf('temperatureTolerance'),qualification_dwell_s:numberOf('qualificationDwell'),control_sensor:mode==='FIXED_TEMPERATURE'?valueOf('fixedControlSensor'):valueOf('plateauControlSensor'),ramp_rate:numberOf('rampRate'),window_s:numberOf('detectionWindow'),max_slope:numberOf('maxAbsSlope'),max_range:numberOf('maxPeakToPeak'),confirmation_s:numberOf('confirmationDuration'),max_discovery_minutes:numberOf('maxDiscoveryTime'),post_mode:valueOf('postPlateauBehavior')});
     
     fetch('/api/start_experiment', { 
         method: 'POST', 
