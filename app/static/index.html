@@ -42,7 +42,9 @@
     .btn-download { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; display: block; text-decoration: none; text-align: center; }
     .btn-reset { width: 100%; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-    .btn-history { display:block; text-align:center; margin-top:15px; color: #666; text-decoration:none; font-size:0.9rem; }
+    .instrument-utilities { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-left:4px; }
+    .instrument-utility-link { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:36px; padding:6px 10px; border:1px solid var(--line); border-radius:6px; background:var(--surface-soft); color:#29465f; text-decoration:none; font-size:.82rem; font-weight:600; white-space:nowrap; }
+    .instrument-utility-link:hover { background:#e8eef3; border-color:#aeb8c2; }
 
     .chart-container { position:relative; height:340px; width:100%; min-width:0; }
     .lux-chart-container { position:relative; height:170px; width:100%; margin-top:8px; min-width:0; }
@@ -148,6 +150,10 @@
             <span id="connStatus" class="status-text" aria-live="polite">🔴 ESP32 disconnected</span>
             <span id="sampleFreshness" class="status-text" aria-live="polite">Sample: waiting</span>
         </div>
+        <nav class="instrument-utilities" aria-label="Instrument utilities">
+            <a class="instrument-utility-link" href="/history">📁 Data archive</a>
+            <a class="instrument-utility-link" href="/static/calibration.html">🔧 Lux calibration</a>
+        </nav>
     </div>
     <div id="healthCluster" class="health-cluster" aria-label="System health diagnostics"></div>
 </header>
@@ -285,8 +291,6 @@
                 <div class="stat-label">Total Time</div>
                 <div class="stat-val" style="font-size:1.2rem; color:#666;" id="valTime">00:00</div>
             </div>
-            <a href="/history" class="btn-history">📂 Buka Data Archive (History)</a>
-            <a href="/static/calibration.html" class="btn-history" style="margin-top: 5px;">🔧 Lux Calibration (Teflon Tape)</a>
         </div>
         <div class="card">
             <div class="card-title" style="font-size:0.9rem;">ℹ️ System Log</div>

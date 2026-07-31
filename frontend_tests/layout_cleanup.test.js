@@ -122,6 +122,15 @@ test('PC shell is uncapped and uses the full available desktop width', () => {
   assert.match(html, /@media\s*\(min-width:\s*1440px\)[^]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(360px,\s*24vw,\s*420px\)/);
 });
 
+test('History and calibration are header utilities, not experiment-form actions', () => {
+  const header = html.match(/<header class="instrument-header"[^]*?<\/header>/)?.[0] || '';
+  assert.ok(header.includes('class="instrument-utilities"'));
+  assert.ok(header.includes('aria-label="Instrument utilities"'));
+  assert.ok(header.includes('href="/history"'));
+  assert.ok(header.includes('href="/static/calibration.html"'));
+  assert.equal((html.match(/class="btn-history"/g) || []).length, 0);
+});
+
 test('chart zoom callbacks are nested where chartjs-plugin-zoom executes them', () => {
   const configs = [];
   const reset = { dataset: {}, disabled: true };
