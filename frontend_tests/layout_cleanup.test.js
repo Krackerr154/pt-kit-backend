@@ -116,6 +116,12 @@ test('responsive laboratory layout uses a wide sticky panel without horizontal o
   assert.match(html, /overflow-x:\s*hidden/);
 });
 
+test('PC shell is uncapped and uses the full available desktop width', () => {
+  assert.match(html, /\.page-shell\s*\{[^}]*width:\s*100%[^}]*max-width:\s*none[^}]*margin:\s*0/);
+  assert.doesNotMatch(html, /\.page-shell\s*\{[^}]*max-width:\s*1440px/);
+  assert.match(html, /@media\s*\(min-width:\s*1440px\)[^]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(360px,\s*24vw,\s*420px\)/);
+});
+
 test('chart zoom callbacks are nested where chartjs-plugin-zoom executes them', () => {
   const configs = [];
   const reset = { dataset: {}, disabled: true };

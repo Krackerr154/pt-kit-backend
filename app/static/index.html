@@ -15,7 +15,7 @@
     * { box-sizing:border-box; }
     html, body { max-width:100%; overflow-x:hidden; }
     body { font-family:'Roboto',sans-serif; background:#eef2f5; margin:0; padding:16px; color:var(--ink); font-size:16px; line-height:1.45; }
-    .page-shell { max-width:1440px; margin:auto; }
+    .page-shell { width:100%; max-width:none; margin:0; }
     .dashboard-grid { display:grid; grid-template-columns:minmax(0, 1fr) clamp(330px, 32vw, 360px); grid-template-areas:"monitor control"; gap:16px; align-items:start; }
     .left-col { grid-area:monitor; min-width:0; }
     .right-col { grid-area:control; position:sticky; top:16px; min-width:0; max-height:calc(100vh - 139px); overflow-y:auto; scrollbar-gutter:stable; }
@@ -108,6 +108,10 @@
     .visually-hidden { position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
     .zoom-hint { font-size:.8rem; color:var(--muted); font-style:normal; margin-top:8px; text-align:right; }
     button:disabled { cursor:not-allowed; opacity:.48; }
+    @media (min-width:1440px) {
+      body { padding:16px 24px; }
+      .dashboard-grid { grid-template-columns:minmax(0, 1fr) clamp(360px, 24vw, 420px); gap:20px; }
+    }
     @media (max-width:900px) {
       body { padding:12px; }
       .dashboard-grid { grid-template-columns:minmax(0, 1fr); grid-template-areas:"monitor" "control"; }
