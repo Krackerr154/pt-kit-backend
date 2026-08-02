@@ -1,0 +1,348 @@
+{
+  "scenario": "ISO1_default_target",
+  "seed": 42,
+  "uart_transactions": [
+    {
+      "time_s": 0.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 1,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 1.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 2,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 1.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 3,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 2.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 4,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 2.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 5,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 3.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 6,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 3.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 7,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 4.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 8,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 4.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 9,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 5.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 10,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 5.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 11,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 6.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 12,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 6.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 13,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 7.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 14,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 7.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 15,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 8.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 16,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 8.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 17,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 9.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 18,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 9.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 19,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 10.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 20,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 10.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 21,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 11.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 22,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 11.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 23,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 12.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 24,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 12.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 25,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 13.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 26,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 13.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 27,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 14.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 28,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 14.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 29,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 15.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 30,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 15.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 31,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 16.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 32,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 16.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 33,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 17.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 34,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 17.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 35,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 18.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 36,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 18.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 37,
+      "payload_size": 14,
+      "latency_us": 2170.0,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 19.0,
+      "direction": "TX",
+      "packet_type": 5,
+      "sequence": 38,
+      "payload_size": 1,
+      "latency_us": 1041.6,
+      "checksum_valid": true
+    }
+  ]
+}

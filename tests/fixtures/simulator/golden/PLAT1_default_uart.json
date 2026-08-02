@@ -1,0 +1,114 @@
+{
+  "scenario": "PLAT1_default",
+  "seed": 42,
+  "uart_transactions": [
+    {
+      "time_s": 0.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 1,
+      "payload_size": 15,
+      "latency_us": 2256.8,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 1.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 2,
+      "payload_size": 15,
+      "latency_us": 2256.8,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 1.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 3,
+      "payload_size": 15,
+      "latency_us": 2256.8,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 2.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 4,
+      "payload_size": 15,
+      "latency_us": 2256.8,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 2.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 5,
+      "payload_size": 15,
+      "latency_us": 2256.8,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 3.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 6,
+      "payload_size": 15,
+      "latency_us": 2256.8,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 3.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 7,
+      "payload_size": 15,
+      "latency_us": 2256.8,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 4.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 8,
+      "payload_size": 15,
+      "latency_us": 2256.8,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 4.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 9,
+      "payload_size": 15,
+      "latency_us": 2256.8,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 5.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 10,
+      "payload_size": 15,
+      "latency_us": 2256.8,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 5.5,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 11,
+      "payload_size": 15,
+      "latency_us": 2256.8,
+      "checksum_valid": true
+    },
+    {
+      "time_s": 6.0,
+      "direction": "TX",
+      "packet_type": 1,
+      "sequence": 12,
+      "payload_size": 15,
+      "latency_us": 2256.8,
+      "checksum_valid": true
+    }
+  ]
+}

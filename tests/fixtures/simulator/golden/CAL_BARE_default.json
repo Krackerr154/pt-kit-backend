@@ -1,0 +1,3387 @@
+{
+  "scenario": "CAL_BARE_default",
+  "seed": 42,
+  "plant_config": {
+    "surface_capacity_j_per_k": 100.0,
+    "bulk_capacity_j_per_k": 200.0,
+    "surface_bulk_conductance_w_per_k": 5.0,
+    "surface_ambient_conductance_w_per_k": 2.0,
+    "bulk_ambient_conductance_w_per_k": 1.0,
+    "lamp_max_power_w": 50.0,
+    "lamp_response_time_s": 0.5,
+    "lamp_max_lux": 10000.0,
+    "fan_max_conductance_w_per_k": 10.0,
+    "fan_response_time_s": 0.2,
+    "ambient_temp_c": 25.0,
+    "max_substep_s": 0.1
+  },
+  "command": {
+    "mode": "CAL_BARE"
+  },
+  "traces": [
+    {
+      "virtual_time_s": 0.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 1,
+        "state_code": 6,
+        "surface_temp_c": 25.0,
+        "bulk_temp_c": 25.0,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 0.0,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 0.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 1.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 2,
+        "state_code": 6,
+        "surface_temp_c": 25.082696,
+        "bulk_temp_c": 25.000409,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 4954.653844,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 1.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 1.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 3,
+        "state_code": 6,
+        "surface_temp_c": 25.230744,
+        "bulk_temp_c": 25.002316,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 6778.756628,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 1.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 2.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 4,
+        "state_code": 6,
+        "surface_temp_c": 25.397724,
+        "bulk_temp_c": 25.006176,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7452.12141,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 2.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 2.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 5,
+        "state_code": 6,
+        "surface_temp_c": 25.566836,
+        "bulk_temp_c": 25.012072,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7699.976625,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 2.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 3.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 6,
+        "state_code": 6,
+        "surface_temp_c": 25.732141,
+        "bulk_temp_c": 25.019959,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7794.893098,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 3.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 3.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 7,
+        "state_code": 6,
+        "surface_temp_c": 25.891682,
+        "bulk_temp_c": 25.029743,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7819.385252,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 3.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 4.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 8,
+        "state_code": 6,
+        "surface_temp_c": 26.04496,
+        "bulk_temp_c": 25.041323,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7836.592348,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 4.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 4.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 9,
+        "state_code": 6,
+        "surface_temp_c": 26.191997,
+        "bulk_temp_c": 25.054593,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7840.331178,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 4.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 5.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 10,
+        "state_code": 6,
+        "surface_temp_c": 26.332998,
+        "bulk_temp_c": 25.069452,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.901457,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 5.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 5.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 11,
+        "state_code": 6,
+        "surface_temp_c": 26.468226,
+        "bulk_temp_c": 25.085803,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.381341,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 5.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 6.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 12,
+        "state_code": 6,
+        "surface_temp_c": 26.597955,
+        "bulk_temp_c": 25.103554,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.889907,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 6.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 6.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 13,
+        "state_code": 6,
+        "surface_temp_c": 26.722454,
+        "bulk_temp_c": 25.122617,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.459449,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 6.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 7.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 14,
+        "state_code": 6,
+        "surface_temp_c": 26.841979,
+        "bulk_temp_c": 25.14291,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.898304,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 7.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 7.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 15,
+        "state_code": 6,
+        "surface_temp_c": 26.956779,
+        "bulk_temp_c": 25.164354,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.779537,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 7.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 8.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 16,
+        "state_code": 6,
+        "surface_temp_c": 27.067087,
+        "bulk_temp_c": 25.186875,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7846.231642,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 8.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 8.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 17,
+        "state_code": 6,
+        "surface_temp_c": 27.173125,
+        "bulk_temp_c": 25.210402,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7846.295336,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 8.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 9.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 18,
+        "state_code": 6,
+        "surface_temp_c": 27.275103,
+        "bulk_temp_c": 25.234869,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.595545,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 9.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 9.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 19,
+        "state_code": 6,
+        "surface_temp_c": 27.373223,
+        "bulk_temp_c": 25.260213,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.048147,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 9.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 10.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 20,
+        "state_code": 6,
+        "surface_temp_c": 27.467673,
+        "bulk_temp_c": 25.286374,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.001374,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 10.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 10.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 21,
+        "state_code": 6,
+        "surface_temp_c": 27.558634,
+        "bulk_temp_c": 25.313295,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7840.346834,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 10.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 11.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 22,
+        "state_code": 6,
+        "surface_temp_c": 27.646276,
+        "bulk_temp_c": 25.340923,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7840.771577,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 11.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 11.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 23,
+        "state_code": 6,
+        "surface_temp_c": 27.730762,
+        "bulk_temp_c": 25.369208,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7845.081866,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 11.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 12.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 24,
+        "state_code": 6,
+        "surface_temp_c": 27.812246,
+        "bulk_temp_c": 25.398101,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.332462,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 12.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 12.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 25,
+        "state_code": 6,
+        "surface_temp_c": 27.890872,
+        "bulk_temp_c": 25.427556,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.856249,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 12.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 13.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 26,
+        "state_code": 6,
+        "surface_temp_c": 27.966781,
+        "bulk_temp_c": 25.457532,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.487065,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 13.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 13.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 27,
+        "state_code": 6,
+        "surface_temp_c": 28.040102,
+        "bulk_temp_c": 25.487987,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.979876,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 13.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 14.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 28,
+        "state_code": 6,
+        "surface_temp_c": 28.11096,
+        "bulk_temp_c": 25.518882,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.071605,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 14.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 14.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 29,
+        "state_code": 6,
+        "surface_temp_c": 28.179475,
+        "bulk_temp_c": 25.550183,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.964842,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 14.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 15.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 30,
+        "state_code": 6,
+        "surface_temp_c": 28.245757,
+        "bulk_temp_c": 25.581853,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.103844,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 15.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 15.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 31,
+        "state_code": 6,
+        "surface_temp_c": 28.309913,
+        "bulk_temp_c": 25.61386,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.913219,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 15.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 16.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 32,
+        "state_code": 6,
+        "surface_temp_c": 28.372045,
+        "bulk_temp_c": 25.646175,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7839.969706,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 16.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 16.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 33,
+        "state_code": 6,
+        "surface_temp_c": 28.432248,
+        "bulk_temp_c": 25.678767,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.598873,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 16.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 17.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 34,
+        "state_code": 6,
+        "surface_temp_c": 28.490614,
+        "bulk_temp_c": 25.711609,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7839.736389,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 17.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 17.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 35,
+        "state_code": 6,
+        "surface_temp_c": 28.547227,
+        "bulk_temp_c": 25.744675,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.566205,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 17.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 18.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 36,
+        "state_code": 6,
+        "surface_temp_c": 28.602172,
+        "bulk_temp_c": 25.777941,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7839.872012,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 18.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 18.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 37,
+        "state_code": 6,
+        "surface_temp_c": 28.655524,
+        "bulk_temp_c": 25.811384,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.525266,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 18.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 19.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 38,
+        "state_code": 6,
+        "surface_temp_c": 28.707358,
+        "bulk_temp_c": 25.844981,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.398456,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 19.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 19.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 39,
+        "state_code": 6,
+        "surface_temp_c": 28.757744,
+        "bulk_temp_c": 25.878712,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.229013,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 19.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 20.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 40,
+        "state_code": 6,
+        "surface_temp_c": 28.806749,
+        "bulk_temp_c": 25.912557,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.497923,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 20.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 20.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 41,
+        "state_code": 6,
+        "surface_temp_c": 28.854435,
+        "bulk_temp_c": 25.946498,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.89521,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 20.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 21.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 42,
+        "state_code": 6,
+        "surface_temp_c": 28.900862,
+        "bulk_temp_c": 25.980517,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.073459,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 21.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 21.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 43,
+        "state_code": 6,
+        "surface_temp_c": 28.946088,
+        "bulk_temp_c": 26.014599,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7845.039757,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 21.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 22.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 44,
+        "state_code": 6,
+        "surface_temp_c": 28.990166,
+        "bulk_temp_c": 26.048726,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7845.357974,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 22.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 22.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 45,
+        "state_code": 6,
+        "surface_temp_c": 29.033148,
+        "bulk_temp_c": 26.082886,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7839.420355,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 22.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 23.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 46,
+        "state_code": 6,
+        "surface_temp_c": 29.075081,
+        "bulk_temp_c": 26.117064,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.565549,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 23.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 23.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 47,
+        "state_code": 6,
+        "surface_temp_c": 29.116014,
+        "bulk_temp_c": 26.151247,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.282329,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 23.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 24.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 48,
+        "state_code": 6,
+        "surface_temp_c": 29.155988,
+        "bulk_temp_c": 26.185423,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7839.38721,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 24.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 24.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 49,
+        "state_code": 6,
+        "surface_temp_c": 29.195046,
+        "bulk_temp_c": 26.21958,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.686196,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 24.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 25.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 50,
+        "state_code": 6,
+        "surface_temp_c": 29.233228,
+        "bulk_temp_c": 26.253708,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.747526,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 25.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 25.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 51,
+        "state_code": 6,
+        "surface_temp_c": 29.27057,
+        "bulk_temp_c": 26.287797,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.923534,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 25.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 26.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 52,
+        "state_code": 6,
+        "surface_temp_c": 29.307109,
+        "bulk_temp_c": 26.321836,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7845.618168,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 26.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 26.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 53,
+        "state_code": 6,
+        "surface_temp_c": 29.342879,
+        "bulk_temp_c": 26.355816,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.358515,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 26.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 27.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 54,
+        "state_code": 6,
+        "surface_temp_c": 29.377911,
+        "bulk_temp_c": 26.38973,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7840.495372,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 27.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 27.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 55,
+        "state_code": 6,
+        "surface_temp_c": 29.412237,
+        "bulk_temp_c": 26.42357,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7840.592121,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 27.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 28.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 56,
+        "state_code": 6,
+        "surface_temp_c": 29.445885,
+        "bulk_temp_c": 26.457327,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.700065,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 28.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 28.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 57,
+        "state_code": 6,
+        "surface_temp_c": 29.478883,
+        "bulk_temp_c": 26.490995,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7837.797914,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 28.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 29.0,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 58,
+        "state_code": 6,
+        "surface_temp_c": 29.511257,
+        "bulk_temp_c": 26.524567,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7846.339869,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 29.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 29.5,
+      "state": "CAL_BARE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 59,
+        "state_code": 6,
+        "surface_temp_c": 29.543032,
+        "bulk_temp_c": 26.558037,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.037818,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 29.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 30.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 60,
+        "state_code": 7,
+        "surface_temp_c": 29.574232,
+        "bulk_temp_c": 26.5914,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.903578,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 30.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 30.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 61,
+        "state_code": 7,
+        "surface_temp_c": 29.604879,
+        "bulk_temp_c": 26.624649,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.964704,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 30.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 31.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 62,
+        "state_code": 7,
+        "surface_temp_c": 29.634995,
+        "bulk_temp_c": 26.657781,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.776749,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 31.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 31.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 63,
+        "state_code": 7,
+        "surface_temp_c": 29.6646,
+        "bulk_temp_c": 26.690789,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.627594,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 31.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 32.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 64,
+        "state_code": 7,
+        "surface_temp_c": 29.693713,
+        "bulk_temp_c": 26.72367,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.170484,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 32.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 32.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 65,
+        "state_code": 7,
+        "surface_temp_c": 29.722353,
+        "bulk_temp_c": 26.75642,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.184046,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 32.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 33.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 66,
+        "state_code": 7,
+        "surface_temp_c": 29.750537,
+        "bulk_temp_c": 26.789035,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.920795,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 33.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 33.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 67,
+        "state_code": 7,
+        "surface_temp_c": 29.778281,
+        "bulk_temp_c": 26.821512,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.304603,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 33.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 34.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 68,
+        "state_code": 7,
+        "surface_temp_c": 29.805603,
+        "bulk_temp_c": 26.853846,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7845.662414,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 34.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 34.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 69,
+        "state_code": 7,
+        "surface_temp_c": 29.832516,
+        "bulk_temp_c": 26.886035,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.333906,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 34.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 35.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 70,
+        "state_code": 7,
+        "surface_temp_c": 29.859035,
+        "bulk_temp_c": 26.918077,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.871737,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 35.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 35.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 71,
+        "state_code": 7,
+        "surface_temp_c": 29.885173,
+        "bulk_temp_c": 26.949968,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.677776,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 35.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 36.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 72,
+        "state_code": 7,
+        "surface_temp_c": 29.910944,
+        "bulk_temp_c": 26.981707,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.841837,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 36.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 36.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 73,
+        "state_code": 7,
+        "surface_temp_c": 29.93636,
+        "bulk_temp_c": 27.01329,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.546895,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 36.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 37.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 74,
+        "state_code": 7,
+        "surface_temp_c": 29.961433,
+        "bulk_temp_c": 27.044716,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.920459,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 37.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 37.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 75,
+        "state_code": 7,
+        "surface_temp_c": 29.986173,
+        "bulk_temp_c": 27.075984,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.967385,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 37.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 38.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 76,
+        "state_code": 7,
+        "surface_temp_c": 30.010592,
+        "bulk_temp_c": 27.10709,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.374865,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 38.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 38.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 77,
+        "state_code": 7,
+        "surface_temp_c": 30.0347,
+        "bulk_temp_c": 27.138035,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7845.425264,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 38.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 39.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 78,
+        "state_code": 7,
+        "surface_temp_c": 30.058505,
+        "bulk_temp_c": 27.168816,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.409587,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 39.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 39.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 79,
+        "state_code": 7,
+        "surface_temp_c": 30.082019,
+        "bulk_temp_c": 27.199433,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7847.722287,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 39.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 40.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 80,
+        "state_code": 7,
+        "surface_temp_c": 30.105248,
+        "bulk_temp_c": 27.229884,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.81446,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 40.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 40.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 81,
+        "state_code": 7,
+        "surface_temp_c": 30.128202,
+        "bulk_temp_c": 27.260167,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.535899,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 40.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 41.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 82,
+        "state_code": 7,
+        "surface_temp_c": 30.150889,
+        "bulk_temp_c": 27.290283,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7845.632516,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 41.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 41.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 83,
+        "state_code": 7,
+        "surface_temp_c": 30.173316,
+        "bulk_temp_c": 27.320231,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.152313,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 41.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 42.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 84,
+        "state_code": 7,
+        "surface_temp_c": 30.19549,
+        "bulk_temp_c": 27.350009,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.447433,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 42.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 42.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 85,
+        "state_code": 7,
+        "surface_temp_c": 30.217419,
+        "bulk_temp_c": 27.379618,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.223051,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 42.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 43.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 86,
+        "state_code": 7,
+        "surface_temp_c": 30.239108,
+        "bulk_temp_c": 27.409056,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.275526,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 43.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 43.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 87,
+        "state_code": 7,
+        "surface_temp_c": 30.260565,
+        "bulk_temp_c": 27.438324,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7845.546628,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 43.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 44.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 88,
+        "state_code": 7,
+        "surface_temp_c": 30.281795,
+        "bulk_temp_c": 27.46742,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7847.709253,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 44.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 44.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 89,
+        "state_code": 7,
+        "surface_temp_c": 30.302805,
+        "bulk_temp_c": 27.496346,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7839.188305,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 44.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 45.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 90,
+        "state_code": 7,
+        "surface_temp_c": 30.323598,
+        "bulk_temp_c": 27.5251,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.858891,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 45.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 45.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 91,
+        "state_code": 7,
+        "surface_temp_c": 30.344182,
+        "bulk_temp_c": 27.553683,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.555697,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 45.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 46.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 92,
+        "state_code": 7,
+        "surface_temp_c": 30.36456,
+        "bulk_temp_c": 27.582094,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7848.295804,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 46.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 46.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 93,
+        "state_code": 7,
+        "surface_temp_c": 30.384738,
+        "bulk_temp_c": 27.610334,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.957762,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 46.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 47.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 94,
+        "state_code": 7,
+        "surface_temp_c": 30.404721,
+        "bulk_temp_c": 27.638402,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7839.618661,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 47.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 47.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 95,
+        "state_code": 7,
+        "surface_temp_c": 30.424511,
+        "bulk_temp_c": 27.6663,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.529646,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 47.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 48.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 96,
+        "state_code": 7,
+        "surface_temp_c": 30.444115,
+        "bulk_temp_c": 27.694026,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.215609,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 48.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 48.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 97,
+        "state_code": 7,
+        "surface_temp_c": 30.463536,
+        "bulk_temp_c": 27.721582,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.874707,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 48.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 49.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 98,
+        "state_code": 7,
+        "surface_temp_c": 30.482777,
+        "bulk_temp_c": 27.748967,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7845.963343,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 49.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 49.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 99,
+        "state_code": 7,
+        "surface_temp_c": 30.501842,
+        "bulk_temp_c": 27.776183,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7840.48444,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 49.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 50.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 100,
+        "state_code": 7,
+        "surface_temp_c": 30.520736,
+        "bulk_temp_c": 27.803228,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7839.161652,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 50.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 50.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 101,
+        "state_code": 7,
+        "surface_temp_c": 30.53946,
+        "bulk_temp_c": 27.830104,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7839.704376,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 50.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 51.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 102,
+        "state_code": 7,
+        "surface_temp_c": 30.55802,
+        "bulk_temp_c": 27.856812,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.394539,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 51.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 51.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 103,
+        "state_code": 7,
+        "surface_temp_c": 30.576417,
+        "bulk_temp_c": 27.883351,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.524509,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 51.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 52.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 104,
+        "state_code": 7,
+        "surface_temp_c": 30.594654,
+        "bulk_temp_c": 27.909722,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7840.917462,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 52.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 52.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 105,
+        "state_code": 7,
+        "surface_temp_c": 30.612736,
+        "bulk_temp_c": 27.935925,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.169362,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 52.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 53.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 106,
+        "state_code": 7,
+        "surface_temp_c": 30.630663,
+        "bulk_temp_c": 27.961963,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7839.281371,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 53.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 53.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 107,
+        "state_code": 7,
+        "surface_temp_c": 30.64844,
+        "bulk_temp_c": 27.987833,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7840.90863,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 53.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 54.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 108,
+        "state_code": 7,
+        "surface_temp_c": 30.666068,
+        "bulk_temp_c": 28.013539,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.499833,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 54.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 54.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 109,
+        "state_code": 7,
+        "surface_temp_c": 30.68355,
+        "bulk_temp_c": 28.039079,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.61816,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 54.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 55.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 110,
+        "state_code": 7,
+        "surface_temp_c": 30.700889,
+        "bulk_temp_c": 28.064455,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.899817,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 55.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 55.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 111,
+        "state_code": 7,
+        "surface_temp_c": 30.718086,
+        "bulk_temp_c": 28.089668,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.105273,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 55.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 56.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 112,
+        "state_code": 7,
+        "surface_temp_c": 30.735145,
+        "bulk_temp_c": 28.114718,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7844.168252,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 56.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 56.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 113,
+        "state_code": 7,
+        "surface_temp_c": 30.752066,
+        "bulk_temp_c": 28.139605,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.100945,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 56.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 57.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 114,
+        "state_code": 7,
+        "surface_temp_c": 30.768852,
+        "bulk_temp_c": 28.164331,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7837.033877,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 57.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 57.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 115,
+        "state_code": 7,
+        "surface_temp_c": 30.785506,
+        "bulk_temp_c": 28.188897,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7841.413893,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 57.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 58.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 116,
+        "state_code": 7,
+        "surface_temp_c": 30.802028,
+        "bulk_temp_c": 28.213302,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7845.930223,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 58.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 58.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 117,
+        "state_code": 7,
+        "surface_temp_c": 30.818421,
+        "bulk_temp_c": 28.237549,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7840.778321,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 58.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 59.0,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 118,
+        "state_code": 7,
+        "surface_temp_c": 30.834687,
+        "bulk_temp_c": 28.261637,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.540538,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 59.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 59.5,
+      "state": "CAL_TAPE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 119,
+        "state_code": 7,
+        "surface_temp_c": 30.850827,
+        "bulk_temp_c": 28.285567,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7842.615741,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 59.5,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": false,
+        "plateau_status": null,
+        "calibration_result": null,
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": null
+    },
+    {
+      "virtual_time_s": 60.0,
+      "state": "DONE",
+      "actuator": {
+        "lamp_pwm": 200,
+        "fan_pwm": 50
+      },
+      "telemetry": {
+        "frame_number": 120,
+        "state_code": 5,
+        "surface_temp_c": 30.866842,
+        "bulk_temp_c": 28.309341,
+        "lamp_pwm": 200,
+        "fan_pwm": 50,
+        "lux_reading": 7843.796701,
+        "target_temp_c": null,
+        "hold_time_s": null,
+        "cycle_count": 0,
+        "elapsed_s": 60.0,
+        "setpoint_error_c": 0.0,
+        "qualification_passed": true,
+        "plateau_status": null,
+        "calibration_result": "BARE_DONE",
+        "supervisor_abort": false,
+        "run_id": null
+      },
+      "side_channel": {
+        "message_type": "STOP",
+        "payload": null
+      }
+    }
+  ],
+  "generated_at": "2026-08-01T14:33:23.704606Z"
+}

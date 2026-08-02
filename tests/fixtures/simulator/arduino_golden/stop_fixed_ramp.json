@@ -1,0 +1,66 @@
+[
+  {
+    "accepted": true,
+    "command": "ISO1:45:5:0.5:2:80:1:TC:6",
+    "event": "command"
+  },
+  {
+    "event": "step",
+    "now_ms": 1000,
+    "snapshot": {
+      "control_temp_c": 30.0,
+      "control_temp_valid": true,
+      "cycle": 1,
+      "detected_plateau_temp_c": null,
+      "fan_pwm": 0,
+      "hold_elapsed_seconds": 0,
+      "hold_qualified_seconds": 0,
+      "illumination_mode": 2,
+      "lamp_pwm": 1,
+      "mode": 1,
+      "now_ms": 1000,
+      "qualified": false,
+      "smoothed_lux": 0.0,
+      "state": 9,
+      "state_seconds": 1,
+      "temp_error_c": 0.10000038146972656,
+      "temp_ir_c": 30.0,
+      "temp_ir_valid": true,
+      "temp_setpoint_c": 30.100000381469727,
+      "temp_tc_c": 30.0,
+      "temp_tc_valid": true,
+      "total_seconds": 1
+    },
+    "stepped": true,
+    "uart": "1,1,1,9,30.0,30.0,0.0,1,FIXED_TEMPERATURE,30.00,30.10,0.10,1,0,0,0,nan\n"
+  },
+  {
+    "accepted": true,
+    "event": "stop",
+    "snapshot": {
+      "control_temp_c": 30.0,
+      "control_temp_valid": true,
+      "cycle": 0,
+      "detected_plateau_temp_c": null,
+      "fan_pwm": 0,
+      "hold_elapsed_seconds": 0,
+      "hold_qualified_seconds": 0,
+      "illumination_mode": 2,
+      "lamp_pwm": 0,
+      "mode": 1,
+      "now_ms": 1000,
+      "qualified": false,
+      "smoothed_lux": 0.0,
+      "state": 0,
+      "state_seconds": 0,
+      "temp_error_c": 0.10000038146972656,
+      "temp_ir_c": 30.0,
+      "temp_ir_valid": true,
+      "temp_setpoint_c": 30.100000381469727,
+      "temp_tc_c": 30.0,
+      "temp_tc_valid": true,
+      "total_seconds": 0
+    },
+    "uart": ""
+  }
+]

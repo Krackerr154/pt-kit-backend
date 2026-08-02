@@ -2,7 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.protocol import (
-    ExperimentMode, PostPlateauMode, STATE_LABELS, parse_telemetry,
+    ExperimentMode, IlluminationMode, PostPlateauMode, STATE_LABELS, parse_telemetry,
     serialize_fixed_command, serialize_normal_command, serialize_plateau_command,
 )
 
@@ -17,12 +17,25 @@ def test_legacy_command_exact():
     assert serialize_normal_command(60, 5, 80.0, 1, 38000.0) == "SET:60:5:80.0:1:38000.0"
 
 
+def test_max_output_normal_command_is_explicit_and_versioned():
+    assert serialize_normal_command(
+        60, 5, 80.0, 1, None, IlluminationMode.MAX_OUTPUT
+    ) == "SET2:60:5:80.0:1:MAX_OUTPUT"
+
+
 def test_fixed_command():
     assert serialize_fixed_command(45.0, 600, 0.5, 30, 80.0, 1, "IR", 5.0) == "ISO1:45.0:600:0.5:30:80.0:1:IR:5.0"
 
 
 def test_plateau_command_defaults_passive():
     assert serialize_plateau_command(38000.0, 600, 120, 0.2, 0.5, 30, 1800, 80.0, 1, "IR", PostPlateauMode.PASSIVE) == "PLAT1:38000.0:600:120:0.2:0.5:30:1800:80.0:1:IR:PASSIVE"
+
+
+def test_max_output_plateau_command_is_explicit_and_versioned():
+    assert serialize_plateau_command(
+        None, 600, 30, 0.2, 0.5, 10, 300, 80.0, 1, "IR",
+        PostPlateauMode.PASSIVE, IlluminationMode.MAX_OUTPUT,
+    ) == "PLAT2:MAX_OUTPUT:600:30:0.2:0.5:10:300:80.0:1:IR:PASSIVE"
 
 
 def test_legacy_eight_field_telemetry():
@@ -52,3 +65,4 @@ def test_bad_telemetry_rejected():
 def test_modes_values():
     assert ExperimentMode.NORMAL_CYCLIC.value == "NORMAL_CYCLIC"
     assert ExperimentMode.NATURAL_PLATEAU.value == "NATURAL_PLATEAU"
+    assert IlluminationMode.MAX_OUTPUT.value == "MAX_OUTPUT"

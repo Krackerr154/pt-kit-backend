@@ -1,0 +1,66 @@
+[
+  {
+    "accepted": true,
+    "command": "SET:60:1:80:1:5000",
+    "event": "command"
+  },
+  {
+    "event": "step",
+    "now_ms": 3000,
+    "snapshot": {
+      "control_temp_c": null,
+      "control_temp_valid": false,
+      "cycle": 1,
+      "detected_plateau_temp_c": null,
+      "fan_pwm": 0,
+      "hold_elapsed_seconds": 0,
+      "hold_qualified_seconds": 0,
+      "illumination_mode": 0,
+      "lamp_pwm": 127,
+      "mode": 0,
+      "now_ms": 3000,
+      "qualified": false,
+      "smoothed_lux": 1000.0,
+      "state": 1,
+      "state_seconds": 1,
+      "temp_error_c": null,
+      "temp_ir_c": 25.0,
+      "temp_ir_valid": true,
+      "temp_setpoint_c": null,
+      "temp_tc_c": 25.0,
+      "temp_tc_valid": true,
+      "total_seconds": 1
+    },
+    "stepped": true,
+    "uart": "1,1,1,1,25.0,25.0,1000.0,1,NORMAL_CYCLIC,nan,nan,nan,127,0,0,0,nan\n"
+  },
+  {
+    "accepted": true,
+    "event": "stop",
+    "snapshot": {
+      "control_temp_c": null,
+      "control_temp_valid": false,
+      "cycle": 0,
+      "detected_plateau_temp_c": null,
+      "fan_pwm": 0,
+      "hold_elapsed_seconds": 0,
+      "hold_qualified_seconds": 0,
+      "illumination_mode": 0,
+      "lamp_pwm": 0,
+      "mode": 0,
+      "now_ms": 3000,
+      "qualified": false,
+      "smoothed_lux": 1000.0,
+      "state": 0,
+      "state_seconds": 0,
+      "temp_error_c": null,
+      "temp_ir_c": 25.0,
+      "temp_ir_valid": true,
+      "temp_setpoint_c": null,
+      "temp_tc_c": 25.0,
+      "temp_tc_valid": true,
+      "total_seconds": 0
+    },
+    "uart": ""
+  }
+]
