@@ -79,7 +79,19 @@
     .sticky-stop { position:sticky; bottom:12px; width:100%; min-height:48px; background:#b42318; color:white; border:0; border-radius:7px; font-weight:700; z-index:4; }
     button, input, select { min-height:44px; } button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline:3px solid #1d70b8; outline-offset:2px; }
     .modal-backdrop { position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.65); padding:20px; }
-    .modal { max-width:440px; background:#fff; border-radius:10px; padding:24px; } .modal-actions { display:flex; gap:10px; justify-content:flex-end; } .modal-actions button { padding:8px 18px; } .danger { background:#b42318; color:#fff; border:0; }
+    .modal { width:min(100%,440px); max-height:calc(100dvh - 40px); background:#fff; border-radius:10px; padding:24px; display:flex; flex-direction:column; overflow:hidden; }
+    .modal-handle { display:none; }
+    .modal-header { flex:0 0 auto; }
+    .modal-header h2 { margin-top:0; }
+    .modal-body { min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+    .review-details { display:grid; grid-template-columns:minmax(110px,.8fr) minmax(0,1.2fr); gap:0; margin:0; }
+    .review-details dt, .review-details dd { padding:9px 0; border-bottom:1px solid var(--line); }
+    .review-details dt { color:var(--muted); font-size:.82rem; font-weight:600; }
+    .review-details dd { margin:0; color:var(--ink); font-weight:600; overflow-wrap:anywhere; }
+    .modal-actions { flex:0 0 auto; display:flex; gap:10px; justify-content:flex-end; padding-top:16px; background:#fff; }
+    .modal-actions button { min-height:44px; padding:8px 18px; }
+    .modal-actions button:disabled { cursor:wait; }
+    .danger { background:#b42318; color:#fff; border:0; }
     .zoom-hint { font-size: 0.75rem; color: #999; font-style: italic; margin-top: 5px; text-align: right; }
     .badge { display:inline-flex; align-items:center; min-height:28px; padding:4px 10px; border-radius:999px; font-size:.8rem; color:white; font-weight:700; }
     .bg-idle { background:#5a6570; } .bg-preheat { background:#9a5700; } .bg-heat { background:#b42318; } .bg-cool { background:#155a9c; } .bg-stabil { background:#6f3b82; } .bg-done { background:#155a9c; } .bg-run { background:#287d3c; box-shadow:none; }
@@ -166,6 +178,16 @@
       .mobile-review-bar .btn-start { width:auto; min-width:150px; margin:0; }
       body.mobile-review-visible { padding-bottom:86px; }
       body:not(.mobile-review-visible) .mobile-review-bar { display:none; }
+      #reviewModal { align-items:flex-end; padding:0; }
+      #reviewModal .modal { width:100%; max-width:none; max-height:min(86dvh,720px); border-radius:16px 16px 0 0; padding:0; padding-bottom:env(safe-area-inset-bottom); box-shadow:0 -10px 32px rgba(0,0,0,.24); }
+      #reviewModal .modal-handle { display:block; width:42px; height:5px; margin:9px auto 5px; border-radius:999px; background:#aeb8c2; }
+      #reviewModal .modal-header { padding:6px 20px 10px; border-bottom:1px solid var(--line); }
+      #reviewModal .modal-header h2 { margin:0; font-size:1.15rem; }
+      #reviewModal .modal-header p { margin:4px 0 0; color:var(--muted); font-size:.82rem; }
+      #reviewModal .modal-body { padding:6px 20px 12px; }
+      #reviewModal .review-details { grid-template-columns:minmax(92px,.75fr) minmax(0,1.25fr); }
+      #reviewModal .modal-actions { padding:12px 20px; border-top:1px solid var(--line); }
+      #reviewModal .modal-actions button { flex:1; }
       /* Cycle table -> stacked cards (no horizontal scroll) */
       .cycle-table-wrap { overflow-x:visible; }
       table.cycle-table { min-width:0; font-size:.9rem; }
@@ -351,12 +373,12 @@
 <div id="mobileReviewBar" class="mobile-review-bar" aria-label="Experiment review action"><div class="mobile-review-summary"><strong id="mobileReviewTitle">Normal cyclic · 5 cycles</strong><span id="mobileReviewDetail">Target lux · 38,000 lx</span></div><button class="btn-start" type="button" onclick="openReviewModal()">Review experiment</button></div>
 
 <div id="stopModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="stopModalTitle" aria-describedby="stopModalDescription"><h2 id="stopModalTitle">Stop this experiment?</h2><p id="stopModalDescription">The lamp will be turned off. Data already recorded will be retained.</p><div class="modal-actions"><button id="cancelStop" type="button" onclick="closeStopModal()">Cancel</button><button id="confirmStop" class="danger" type="button" onclick="stopExperiment()">Stop now</button></div></div></div>
-<div id="reviewModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="reviewTitle"><h2 id="reviewTitle">Review experiment settings</h2><dl id="reviewDetails"></dl><p id="reviewWarning" class="illumination-notice" hidden></p><div class="modal-actions"><button id="cancelReview" type="button" onclick="closeReviewModal()">Cancel</button><button id="confirmReview" type="button" onclick="confirmReviewedStart()">Confirm and start</button></div></div></div>
+<div id="reviewModal" class="modal-backdrop" hidden><div class="modal review-sheet" role="dialog" aria-modal="true" aria-labelledby="reviewTitle" aria-describedby="reviewDescription"><div class="modal-handle" aria-hidden="true"></div><div class="modal-header"><h2 id="reviewTitle">Review experiment settings</h2><p id="reviewDescription">Confirm the exact configuration before the instrument starts.</p></div><div class="modal-body"><dl id="reviewDetails" class="review-details"></dl><p id="reviewWarning" class="illumination-notice" hidden></p></div><div class="modal-actions"><button id="cancelReview" type="button" onclick="closeReviewModal()">Back to edit</button><button id="confirmReview" type="button" onclick="confirmReviewedStart()">Confirm and start</button></div></div></div>
 
 <script>
 var chart, luxChart, pendingReviewPayload=null, scientificSeries={samples:[]}, chartWindow='live', chartZoomActive=false;
 var MAX_SCIENTIFIC_POINTS=10000; // One bounded, synchronized scientific record buffer.
-var reviewModalOpener=null;
+var reviewModalOpener=null, reviewStartInFlight=false;
 var DATASET_INDEX={IR:0,TC:1,TOLERANCE_LOWER:2,TOLERANCE_UPPER:3,SETPOINT:4,SAFETY:5,PLATEAU:6};
 var isRunning = false;
 var currentExpId = null;
@@ -412,9 +434,9 @@ function valueOf(id) { return document.getElementById(id).value; }
 function numberOf(id) { return parseFloat(valueOf(id)); }
 function selectedIlluminationMode() { var radio=document.querySelector('input[name="illuminationMode"]:checked');return radio?radio.value:'TARGET_LUX'; }
 function isMobileSetup() { return window.matchMedia && window.matchMedia('(max-width:600px)').matches; }
-function setMobileAdvancedExpanded(fieldset,expanded,focusTarget) { var button=fieldset.querySelector('.mobile-advanced-toggle'),content=fieldset.querySelector('.mobile-advanced-content');fieldset.dataset.expanded=expanded?'true':'false';button.setAttribute('aria-expanded',String(expanded));content.hidden=isMobileSetup()&&!expanded;if(expanded&&focusTarget)setTimeout(function(){focusTarget.focus();},0); }
+function setMobileAdvancedExpanded(fieldset,expanded,focusTarget) { if(!fieldset)return;var button=fieldset.querySelector('.mobile-advanced-toggle'),content=fieldset.querySelector('.mobile-advanced-content');if(!button||!content)return;fieldset.dataset=fieldset.dataset||{};fieldset.dataset.expanded=expanded?'true':'false';button.setAttribute('aria-expanded',String(expanded));content.hidden=isMobileSetup()&&!expanded;if(expanded&&focusTarget)setTimeout(function(){focusTarget.focus();},0); }
 function toggleMobileAdvanced(id) { var fieldset=document.getElementById(id);setMobileAdvancedExpanded(fieldset,fieldset.dataset.expanded!=='true'); }
-function syncMobileAdvancedVisibility() { ['illuminationFieldset','safetyFieldset'].forEach(function(id){var fieldset=document.getElementById(id);setMobileAdvancedExpanded(fieldset,!isMobileSetup()||fieldset.dataset.expanded==='true');}); }
+function syncMobileAdvancedVisibility() { ['illuminationFieldset','safetyFieldset'].forEach(function(id){var fieldset=document.getElementById(id);if(fieldset)setMobileAdvancedExpanded(fieldset,!isMobileSetup()||(fieldset.dataset&&fieldset.dataset.expanded==='true'));}); }
 function updateMobileSetupSummary() { var mode=valueOf('experimentMode'),illum=mode==='FIXED_TEMPERATURE'?'TEMPERATURE_CONTROLLED':selectedIlluminationMode(),lux=numberOf('targetLux'),interval=valueOf('interval'),max=valueOf('maxTemp'),modeLabel=mode==='NORMAL_CYCLIC'?'Normal cyclic · '+valueOf('cycles')+' cycles':mode==='FIXED_TEMPERATURE'?'Fixed temperature · '+valueOf('targetTemperature')+' °C':'Natural plateau · '+valueOf('plateauHoldMinutes')+' min hold',illumLabel=illum==='MAX_OUTPUT'?'Maximum output':illum==='TEMPERATURE_CONTROLLED'?'Temperature controlled':'Target lux · '+(Number.isFinite(lux)?lux.toLocaleString():'—')+' lx';document.getElementById('illuminationMobileSummary').textContent=illumLabel+' · log '+interval+' s';document.getElementById('safetyMobileSummary').textContent='Maximum · '+max+' °C';document.getElementById('mobileReviewTitle').textContent=modeLabel;document.getElementById('mobileReviewDetail').textContent=illumLabel+' · safety '+max+' °C'; }
 function updateIlluminationFields() { var fixed=valueOf('experimentMode')==='FIXED_TEMPERATURE',maximum=!fixed&&selectedIlluminationMode()==='MAX_OUTPUT';document.getElementById('illuminationModeControl').hidden=fixed;document.getElementById('targetLuxGroup').hidden=fixed||maximum;document.getElementById('maxOutputNotice').hidden=!maximum;document.getElementById('temperatureControlNotice').hidden=!fixed;updateMobileSetupSummary(); }
 function updateModeFields() {
@@ -425,7 +447,7 @@ function updateModeFields() {
     document.getElementById('modeSummary').textContent=mode==='NORMAL_CYCLIC'?'Run the existing heat/cool cycles.':mode==='FIXED_TEMPERATURE'?'Ramp to target, qualify within tolerance, then accumulate qualified hold time.':'Illuminate each sample while detecting its natural thermal plateau, confirm it, then hold.';
     updateIlluminationFields();
 }
-function toggleSystemLog(forceOpen) { var card=document.getElementById('systemLogCard'),open=forceOpen===true||(forceOpen!==false&&card.dataset.collapsed==='true');card.dataset.collapsed=open?'false':'true';document.getElementById('systemLogToggle').setAttribute('aria-expanded',String(open)); }
+function toggleSystemLog(forceOpen) { var card=document.getElementById('systemLogCard'),toggle=document.getElementById('systemLogToggle');if(!card||!toggle)return;card.dataset=card.dataset||{};var open=forceOpen===true||(forceOpen!==false&&card.dataset.collapsed==='true');card.dataset.collapsed=open?'false':'true';toggle.setAttribute('aria-expanded',String(open)); }
 function revealInvalidSetupField(error) { var field=null;if(/Maximum temperature/i.test(error))field=document.getElementById('maxTemp');else if(/Target lux/i.test(error))field=document.getElementById('targetLux');else if(/Interval/i.test(error))field=document.getElementById('interval');if(field){var section=field.closest('.mobile-advanced-fieldset');if(section)setMobileAdvancedExpanded(section,true,field);} }
 function field(data, names, fallback) { for(var i=0;i<names.length;i++) if(data && data[names[i]]!==undefined && data[names[i]]!==null) return data[names[i]]; return fallback; }
 function finiteOrNull(v){var n=Number(v);return v!==null&&v!==undefined&&v!==''&&Number.isFinite(n)?n:null;}
@@ -932,12 +954,16 @@ function buildExperimentPayload(v) {
     return p;
 }
 function currentSetupValues(){var mode=valueOf('experimentMode'),illumination=mode==='FIXED_TEMPERATURE'?'TEMPERATURE_CONTROLLED':selectedIlluminationMode();return {operator_name:valueOf('operatorName'),sample_name:valueOf('sampleName'),duration:parseInt(valueOf('duration')),cycles:parseInt(valueOf('cycles')),max_temp:numberOf('maxTemp'),target_lux:illumination==='TARGET_LUX'?numberOf('targetLux'):null,illumination_mode:illumination,interval:parseInt(valueOf('interval')),mode:mode,target_temperature:numberOf('targetTemperature'),hold_minutes:mode==='FIXED_TEMPERATURE'?numberOf('qualifiedHoldMinutes'):numberOf('plateauHoldMinutes'),tolerance:numberOf('temperatureTolerance'),qualification_dwell_s:numberOf('qualificationDwell'),control_sensor:mode==='FIXED_TEMPERATURE'?valueOf('fixedControlSensor'):valueOf('plateauControlSensor'),ramp_rate:numberOf('rampRate'),window_s:numberOf('detectionWindow'),max_slope:numberOf('maxAbsSlope'),max_range:numberOf('maxPeakToPeak'),confirmation_s:numberOf('confirmationDuration'),max_discovery_minutes:numberOf('maxDiscoveryTime'),post_mode:valueOf('postPlateauBehavior')};}
-function openReviewModal(){var values=currentSetupValues(),error=validateSetupValues(values);if(error){revealInvalidSetupField(error);showMonitoringNotice(error,'IDLE');return;}reviewModalOpener=document.activeElement;var model=buildReviewModel(values),box=document.getElementById('reviewDetails'),warning=document.getElementById('reviewWarning');pendingReviewPayload=model.payload;box.replaceChildren();model.rows.forEach(function(r){var dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=r[0];dd.textContent=r[1];box.append(dt,dd);});warning.hidden=!model.warning;warning.textContent=model.warning||'';document.getElementById('reviewModal').hidden=false;setPageModalIsolation(true);document.getElementById('confirmReview').focus();}
-function closeReviewModal(){pendingReviewPayload=null;document.getElementById('reviewModal').hidden=true;setPageModalIsolation(false);if(reviewModalOpener&&reviewModalOpener.focus)reviewModalOpener.focus();}
-function confirmReviewedStart(){var payload=pendingReviewPayload;if(!payload)return;pendingReviewPayload=null;document.getElementById('reviewModal').hidden=true;setPageModalIsolation(false);startExperiment(payload);}
-function handleReviewModalKeydown(e){if(document.getElementById('reviewModal').hidden)return;if(e.key==='Escape'){e.preventDefault();closeReviewModal();return;}if(e.key==='Tab'){var a=[document.getElementById('cancelReview'),document.getElementById('confirmReview')],i=a.indexOf(document.activeElement),next=e.shiftKey?(i<=0?a.length-1:i-1):(i<0||i===a.length-1?0:i+1);e.preventDefault();a[next].focus();}}
+function setReviewSubmitting(active){reviewStartInFlight=!!active;var cancel=document.getElementById('cancelReview'),confirm=document.getElementById('confirmReview');cancel.disabled=reviewStartInFlight;confirm.disabled=reviewStartInFlight;confirm.textContent=reviewStartInFlight?'Starting…':'Confirm and start';}
+function openReviewModal(){var values=currentSetupValues(),error=validateSetupValues(values);if(error){revealInvalidSetupField(error);showMonitoringNotice(error,'IDLE');return;}reviewModalOpener=document.activeElement;var model=buildReviewModel(values),box=document.getElementById('reviewDetails'),warning=document.getElementById('reviewWarning');pendingReviewPayload=JSON.parse(JSON.stringify(model.payload));setReviewSubmitting(false);box.replaceChildren();model.rows.forEach(function(r){var dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=r[0];dd.textContent=r[1];box.append(dt,dd);});warning.hidden=!model.warning;warning.textContent=model.warning||'';document.getElementById('reviewModal').hidden=false;setPageModalIsolation(true);document.getElementById('confirmReview').focus();}
+function finishReviewModal(restoreFocus){pendingReviewPayload=null;setReviewSubmitting(false);document.getElementById('reviewModal').hidden=true;setPageModalIsolation(false);if(restoreFocus&&reviewModalOpener&&reviewModalOpener.focus)reviewModalOpener.focus();}
+function closeReviewModal(){if(reviewStartInFlight)return;finishReviewModal(true);setPageModalIsolation(false);}
+function confirmReviewedStart(){if(reviewStartInFlight||!pendingReviewPayload)return;var payload=JSON.parse(JSON.stringify(pendingReviewPayload));setReviewSubmitting(true);setPageModalIsolation(true);startExperiment(payload);}
+function handleReviewModalKeydown(e){if(document.getElementById('reviewModal').hidden)return;if(e.key==='Escape'){e.preventDefault();closeReviewModal();return;}if(e.key==='Tab'){var a=[document.getElementById('cancelReview'),document.getElementById('confirmReview')].filter(function(x){return !x.disabled;}),i=a.indexOf(document.activeElement);if(!a.length){e.preventDefault();return;}var next=e.shiftKey?(i<=0?a.length-1:i-1):(i<0||i===a.length-1?0:i+1);e.preventDefault();a[next].focus();}}
 document.getElementById('reviewModal').addEventListener('keydown',handleReviewModalKeydown);
+document.getElementById('reviewModal').addEventListener('click',function(e){if(e.target===this)closeReviewModal();});
 function startExperiment(payload) {
+    var fromReview=reviewStartInFlight&&!document.getElementById('reviewModal').hidden;
     var mode=payload.mode||'NORMAL_CYCLIC';
     
     log("Starting experiment...");
@@ -947,7 +973,7 @@ function startExperiment(payload) {
 
     var p=payload;
     
-    fetch('/api/start_experiment', { 
+    return fetch('/api/start_experiment', {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'}, 
         body: JSON.stringify(p) 
@@ -957,6 +983,7 @@ function startExperiment(payload) {
         return d;
     }).then(d => {
         if(d.status === 'success') { 
+            if(fromReview)finishReviewModal(false);
             log("Experiment started! ID: " + d.id + " - Waiting for Arduino reset..."); 
             currentExpId = d.id;
             activeMode=field(d,['mode','experiment_mode'],mode);
@@ -969,10 +996,12 @@ function startExperiment(payload) {
             setTimeout(() => { isProcessingStart = false; }, 1000); 
         } else {
             isProcessingStart = false;
+            if(fromReview)setReviewSubmitting(false);
             log("Failed to start: " + (d.message || "Unknown error"));
         }
     }).catch(err => {
         isProcessingStart = false;
+        if(fromReview)setReviewSubmitting(false);
         log("Error starting experiment: " + err);
     });
 }
@@ -1051,7 +1080,7 @@ function setUIState(state, clearTerminal) {
     document.getElementById('runOverview').hidden=!view.showStop;
     document.getElementById('stickyStop').hidden=!view.showStop;
     document.querySelector('.dashboard-grid').setAttribute('data-ui-state',state);
-    document.body.classList.toggle('mobile-review-visible',state==='IDLE');
+    if(document.body&&document.body.classList)document.body.classList.toggle('mobile-review-visible',state==='IDLE');
 
     if (state === 'IDLE') {
         isRunning = false;
@@ -1076,7 +1105,7 @@ function setUIState(state, clearTerminal) {
 if(document.querySelectorAll){document.querySelectorAll('[data-window]').forEach(function(b){b.addEventListener('click',function(){selectChartWindow(b.dataset.window);});});
 document.querySelectorAll('[data-channel]').forEach(function(b){b.addEventListener('click',function(){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));applyChannelVisibility();applyChartView();});});}
 document.getElementById('setupForm').addEventListener('input',updateMobileSetupSummary);document.getElementById('setupForm').addEventListener('change',updateMobileSetupSummary);if(window.matchMedia){var mobileSetupMedia=window.matchMedia('(max-width:600px)');if(mobileSetupMedia.addEventListener)mobileSetupMedia.addEventListener('change',syncMobileAdvancedVisibility);}
-updateModeFields(); syncMobileAdvancedVisibility(); updateMobileSetupSummary(); document.body.classList.add('mobile-review-visible'); initChart(); renderPhaseStepper('NORMAL_CYCLIC',0); renderPhaseVisibility('IDLE'); renderHealth(true,null,null); renderMonitoringVisibility(false,'IDLE',true); setInterval(updateStatus, 1000);
+updateModeFields(); syncMobileAdvancedVisibility(); updateMobileSetupSummary(); if(document.body&&document.body.classList)document.body.classList.add('mobile-review-visible'); initChart(); renderPhaseStepper('NORMAL_CYCLIC',0); renderPhaseVisibility('IDLE'); renderHealth(true,null,null); renderMonitoringVisibility(false,'IDLE',true); setInterval(updateStatus, 1000);
 
 // Load calibrated max lux hint on page load
 fetch('/api/get_config').then(function(r) { return r.json(); }).then(function(conf) {
