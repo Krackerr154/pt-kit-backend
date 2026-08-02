@@ -33,6 +33,13 @@
     .form-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
     .mode-fields { display:none; padding:0; }
     .mode-summary, #modeProgress { background:#f8f9fa; padding:10px; border-radius:6px; font-size:.85rem; margin-bottom:12px; line-height:1.5; }
+    .segmented-control { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; border:1px solid #aeb8c2; border-radius:8px; background:var(--surface-soft); }
+    .segmented-control label { margin:0; cursor:pointer; }
+    .segmented-control input { position:absolute; opacity:0; pointer-events:none; }
+    .segmented-control span { display:flex; min-height:40px; align-items:center; justify-content:center; padding:7px 8px; border-radius:5px; color:#34495e; text-align:center; }
+    .segmented-control input:checked + span { background:var(--navy); color:#fff; font-weight:700; }
+    .segmented-control input:focus-visible + span { outline:3px solid #1d70b8; outline-offset:2px; }
+    .illumination-notice { margin:0 0 12px; padding:9px 10px; border-left:4px solid #9a6700; background:#fff8e1; color:#5f4700; font-size:.84rem; }
     label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; }
     input, select { width:100%; padding:10px 12px; border:1px solid #aeb8c2; border-radius:6px; background:#fff; color:var(--ink); font:inherit; }
     
@@ -133,8 +140,23 @@
       .chart-container { height:280px; }
       .lux-chart-container { height:170px; }
       .result-cards { grid-template-columns:1fr 1fr; }
-      table.cycle-table { min-width:560px; }
-      .cycle-table-wrap { overflow-x:auto; }
+      /* Stat boxes: let them wrap fluidly instead of cramming 5 across */
+      .status-grid { grid-template-columns:repeat(auto-fit, minmax(96px, 1fr)); }
+      .status-grid .stat-box:last-child { grid-column:auto; }
+      .stat-val { font-size:1.3rem; }
+      /* Cycle table -> stacked cards (no horizontal scroll) */
+      .cycle-table-wrap { overflow-x:visible; }
+      table.cycle-table { min-width:0; font-size:.9rem; }
+      table.cycle-table thead { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+      table.cycle-table tr { display:block; margin-bottom:10px; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+      table.cycle-table tbody tr:nth-child(odd) { background:var(--surface); }
+      table.cycle-table tfoot tr { background:#e9ecef; }
+      table.cycle-table td { display:flex; justify-content:space-between; align-items:baseline; gap:12px; text-align:right; padding:8px 12px; border-bottom:1px solid #eef1f4; }
+      table.cycle-table tr td:last-child { border-bottom:0; }
+      table.cycle-table td::before { content:attr(data-label); font-weight:700; color:var(--muted); text-align:left; font-size:.72rem; text-transform:uppercase; letter-spacing:.03em; flex:0 0 auto; }
+      /* placeholder / colspan rows: no label, centered */
+      table.cycle-table td[colspan]::before { content:none; }
+      table.cycle-table td[colspan] { justify-content:center; text-align:center; }
     }
   </style>
 </head>
@@ -225,11 +247,11 @@
                 </tbody>
                 <tfoot id="cycleTableFoot" style="display:none;">
                     <tr>
-                        <td>AVG</td>
-                        <td id="avgRateIR">--</td>
-                        <td id="avgRateTC">--</td>
-                        <td>-</td>
-                        <td>-</td>
+                        <td data-label="Cycle">AVG</td>
+                        <td data-label="Rate IR (°C/s)" id="avgRateIR">--</td>
+                        <td data-label="Rate TC (°C/s)" id="avgRateTC">--</td>
+                        <td data-label="Duration">-</td>
+                        <td data-label="Peak Temp">-</td>
                     </tr>
                 </tfoot>
             </table></div>
@@ -269,7 +291,10 @@
                   <div class="form-group"><label for="postPlateauBehavior">Post-plateau Behavior</label><select id="postPlateauBehavior"><option value="PASSIVE" selected>Passive (same illumination)</option><option value="REGULATED">Regulated</option></select></div></div>
                 </div></fieldset>
                 <fieldset><legend>Illumination &amp; acquisition</legend>
-                <div class="form-pair"><div class="form-group"><label for="targetLux">Target Lux (lx) <small id="maxLuxHint" style="color:#52606d;"></small></label><input type="number" id="targetLux" value="38000"></div>
+                <div id="illuminationModeControl" class="form-group"><span id="illuminationModeLabel" style="display:block;margin-bottom:5px;font-weight:500;font-size:.9rem;">Illumination mode</span><div class="segmented-control" role="radiogroup" aria-labelledby="illuminationModeLabel"><label for="illuminationTarget"><input id="illuminationTarget" type="radio" name="illuminationMode" value="TARGET_LUX" checked onchange="updateIlluminationFields()"><span>Target lux</span></label><label for="illuminationMaximum"><input id="illuminationMaximum" type="radio" name="illuminationMode" value="MAX_OUTPUT" onchange="updateIlluminationFields()"><span>Maximum output</span></label></div></div>
+                <p id="maxOutputNotice" class="illumination-notice" hidden>Maximum output drives the lamp at 100% PWM during active illumination phases. Measured lux is still recorded.</p>
+                <p id="temperatureControlNotice" class="illumination-notice" hidden>Lamp PWM is controlled automatically to maintain the selected temperature.</p>
+                <div class="form-pair"><div id="targetLuxGroup" class="form-group"><label for="targetLux">Target Lux (lx) <small id="maxLuxHint" style="color:#52606d;"></small></label><input type="number" id="targetLux" value="38000"></div>
                 <div class="form-group"><label for="interval">Logging Interval (sec)</label><input type="number" id="interval" value="1" min="1"></div></div></fieldset>
                 <fieldset><legend>Safety</legend><div class="form-group"><label for="maxTemp">Max Temp (°C)</label><input type="number" id="maxTemp" value="100"></div></fieldset>
                 <div id="modeSummary" class="mode-summary"></div>
@@ -301,7 +326,7 @@
 </div>
 
 <div id="stopModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="stopModalTitle" aria-describedby="stopModalDescription"><h2 id="stopModalTitle">Stop this experiment?</h2><p id="stopModalDescription">The lamp will be turned off. Data already recorded will be retained.</p><div class="modal-actions"><button id="cancelStop" type="button" onclick="closeStopModal()">Cancel</button><button id="confirmStop" class="danger" type="button" onclick="stopExperiment()">Stop now</button></div></div></div>
-<div id="reviewModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="reviewTitle"><h2 id="reviewTitle">Review experiment settings</h2><dl id="reviewDetails"></dl><div class="modal-actions"><button id="cancelReview" type="button" onclick="closeReviewModal()">Cancel</button><button id="confirmReview" type="button" onclick="confirmReviewedStart()">Confirm and start</button></div></div></div>
+<div id="reviewModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="reviewTitle"><h2 id="reviewTitle">Review experiment settings</h2><dl id="reviewDetails"></dl><p id="reviewWarning" class="illumination-notice" hidden></p><div class="modal-actions"><button id="cancelReview" type="button" onclick="closeReviewModal()">Cancel</button><button id="confirmReview" type="button" onclick="confirmReviewedStart()">Confirm and start</button></div></div></div>
 
 <script>
 var chart, luxChart, pendingReviewPayload=null, scientificSeries={samples:[]}, chartWindow='live', chartZoomActive=false;
@@ -360,19 +385,23 @@ var stateClassMap = {
 
 function valueOf(id) { return document.getElementById(id).value; }
 function numberOf(id) { return parseFloat(valueOf(id)); }
+function selectedIlluminationMode() { var radio=document.querySelector('input[name="illuminationMode"]:checked');return radio?radio.value:'TARGET_LUX'; }
+function updateIlluminationFields() { var fixed=valueOf('experimentMode')==='FIXED_TEMPERATURE',maximum=!fixed&&selectedIlluminationMode()==='MAX_OUTPUT';document.getElementById('illuminationModeControl').hidden=fixed;document.getElementById('targetLuxGroup').hidden=fixed||maximum;document.getElementById('maxOutputNotice').hidden=!maximum;document.getElementById('temperatureControlNotice').hidden=!fixed; }
 function updateModeFields() {
     var mode=valueOf('experimentMode');
     document.getElementById('normalFields').style.display=mode==='NORMAL_CYCLIC'?'block':'none';
     document.getElementById('fixedFields').style.display=mode==='FIXED_TEMPERATURE'?'block':'none';
     document.getElementById('plateauFields').style.display=mode==='NATURAL_PLATEAU'?'block':'none';
     document.getElementById('modeSummary').textContent=mode==='NORMAL_CYCLIC'?'Run the existing heat/cool cycles.':mode==='FIXED_TEMPERATURE'?'Ramp to target, qualify within tolerance, then accumulate qualified hold time.':'Illuminate each sample while detecting its natural thermal plateau, confirm it, then hold.';
+    updateIlluminationFields();
 }
 function field(data, names, fallback) { for(var i=0;i<names.length;i++) if(data && data[names[i]]!==undefined && data[names[i]]!==null) return data[names[i]]; return fallback; }
 function finiteOrNull(v){var n=Number(v);return v!==null&&v!==undefined&&v!==''&&Number.isFinite(n)?n:null;}
 function buildOverlayModel(mode,exp,t){var set=finiteOrNull(field(t,['temp_setpoint'],null)),tol=finiteOrNull(field(exp,['temperature_tolerance'],null));return {setpoint:set,tolerance:mode==='FIXED_TEMPERATURE'&&set!==null&&tol!==null?{lower:set-tol,upper:set+tol}:null,safety:finiteOrNull(field(exp,['max_temp'],null)),plateau:mode==='NATURAL_PLATEAU'?finiteOrNull(field(t,['detected_plateau_temp'],null)):null};}
 function filterChartWindow(points,w){if(!points.length||w==='all')return points.slice();var span=w==='5m'?300:w==='1m'?60:60,max=points[points.length-1].x;return points.filter(function(p){return p.x>=max-span;});}
 function chartDomain(points,w){var p=filterChartWindow(points,w);return {min:p.length?p[0].x:undefined,max:p.length?p[p.length-1].x:undefined};}
-function buildReviewModel(v){var p=JSON.parse(JSON.stringify(buildExperimentPayload(v))), rows=[['Operator',v.operator_name],['Sample',v.sample_name],['Mode',v.mode],['Target lux',v.target_lux+' lx'],['Max temp',v.max_temp+' °C'],['Logging interval',v.interval+' s']];if(v.mode==='NORMAL_CYCLIC')rows.push(['Mode parameters',v.cycles+' cycles × '+v.duration+' s']);if(v.mode==='FIXED_TEMPERATURE')rows.push(['Mode parameters',v.target_temperature+' °C, ±'+v.tolerance+' °C, '+v.hold_minutes+' min hold']);if(v.mode==='NATURAL_PLATEAU')rows.push(['Mode parameters',v.window_s+' s window, '+v.hold_minutes+' min hold']);return {payload:p,rows:rows};}
+function illuminationSettingLabel(mode,targetLux){return mode==='MAX_OUTPUT'?'Maximum output (100% PWM)':mode==='TEMPERATURE_CONTROLLED'?'Temperature controlled (automatic PWM)':'Target lux ('+targetLux+' lx)';}
+function buildReviewModel(v){var p=JSON.parse(JSON.stringify(buildExperimentPayload(v))),illum=illuminationSettingLabel(p.illumination_mode,p.target_lux),rows=[['Operator',v.operator_name],['Sample',v.sample_name],['Mode',v.mode],['Illumination',illum],['Max temp',v.max_temp+' °C'],['Logging interval',v.interval+' s']];if(v.mode==='NORMAL_CYCLIC')rows.push(['Mode parameters',v.cycles+' cycles × '+v.duration+' s']);if(v.mode==='FIXED_TEMPERATURE')rows.push(['Mode parameters',v.target_temperature+' °C, ±'+v.tolerance+' °C, '+v.hold_minutes+' min hold']);if(v.mode==='NATURAL_PLATEAU')rows.push(['Mode parameters',v.window_s+' s window, '+v.hold_minutes+' min hold']);return {payload:p,rows:rows,warning:p.illumination_mode==='MAX_OUTPUT'?'Maximum output will drive the lamp at 100% during active illumination phases. Temperature cutoff and stop protection remain active.':null};}
 function shown(v){return v===null||v===undefined||v===''?'—':v;}
 function withUnit(v,u){return finiteOrNull(v)===null?'—':String(v)+' '+u;}
 function buildResultSummary(mode,exp,t){var common={lamp_pwm:finiteOrNull(t.lamp_pwm)===null?'—':String(t.lamp_pwm)+' / 255',current_lux:withUnit(t.current_lux,'lx')};if(mode==='FIXED_TEMPERATURE')return Object.assign({control:withUnit(t.control_temp,'°C'),error:withUnit(t.temp_error,'°C'),hold_elapsed:withUnit(t.hold_qualified_elapsed_s,'s')},common);if(mode==='NATURAL_PLATEAU')return Object.assign({detected_plateau:withUnit(t.detected_plateau_temp,'°C'),control:withUnit(t.control_temp,'°C'),error:withUnit(t.temp_error,'°C'),hold_elapsed:withUnit(t.hold_wall_elapsed_s,'s')},common);return Object.assign({cycle:finiteOrNull(t.cycle_num)===null?'—':String(t.cycle_num),state_code:finiteOrNull(t.state_code)===null?'—':String(t.state_code)},common);}
@@ -383,7 +412,7 @@ function appendScientificSample(buffer,s,exp,mode){var sig=sampleSignature(s);if
 function selectScientificView(buffer,w){var a=buffer.samples.slice();if(!a.length||w==='all')return a;var span=w==='5m'?300:60,max=a[a.length-1].x;return a.filter(function(p){return p.x>=max-span;});}
 function phaseInfo(code,mode){var model=getPhaseStep(mode,code),step=model.current,colors=['rgba(80,90,100,.05)','rgba(255,170,0,.08)','rgba(0,123,255,.07)','rgba(40,167,69,.07)','rgba(108,117,125,.08)','rgba(20,20,20,.05)'];return {label:model.steps[step]||stateMap[code]||'Unknown',color:colors[step%colors.length]};}
 function derivePhaseRegions(samples,mode){var out=[];samples.forEach(function(s,i){var prev=out[out.length-1];if(!prev||prev.stateCode!==s.stateCode){var info=phaseInfo(s.stateCode,mode);if(prev)prev.end=s.x;out.push({start:s.x,end:s.x,stateCode:s.stateCode,label:info.label,color:info.color});}else prev.end=s.x;});return out;}
-function validateSetupValues(v){if(!v.operator_name||!v.sample_name)return 'Operator and sample name are required.';if(v.mode==='NORMAL_CYCLIC'&&!(v.duration>0))return 'Duration must be greater than 0 seconds.';if(v.mode==='NORMAL_CYCLIC'&&!(v.cycles>0))return 'Cycles must be greater than 0.';if(!(v.max_temp>=50))return 'Maximum temperature must be at least 50 °C.';if(!(v.target_lux>=0))return 'Target lux must be 0 or greater.';if(!(v.interval>=1))return 'Interval must be at least 1 second.';return null;}
+function validateSetupValues(v){if(!v.operator_name||!v.sample_name)return 'Operator and sample name are required.';if(v.mode==='NORMAL_CYCLIC'&&(!(v.duration>0)||v.duration>4294967))return 'Duration must be from 1 to 4294967 seconds.';if(v.mode==='NORMAL_CYCLIC'&&(!(v.cycles>0)||v.cycles>32767))return 'Cycles must be from 1 to 32767.';if(!(v.max_temp>=50))return 'Maximum temperature must be at least 50 °C.';if(v.illumination_mode==='TARGET_LUX'&&!(v.target_lux>=0))return 'Target lux must be 0 or greater.';if(v.mode==='NATURAL_PLATEAU'&&v.illumination_mode==='TARGET_LUX'&&!(v.target_lux>0))return 'Natural plateau requires target lux above 0.';if(!(v.interval>=1)||v.interval>32767)return 'Interval must be from 1 to 32767 seconds.';return null;}
 function getControlVisibility(v){return {temperature:[v.ir!==false,v.tc!==false],lux:v.lux!==false,setpoint:v.setpoint!==false};}
 function formatSensorValue(value, digits, unit) {
     if (value === null || value === undefined || value === '') return '-- ' + unit;
@@ -490,6 +519,7 @@ document.getElementById('stopModal').addEventListener('keydown',handleStopModalK
 document.getElementById('stopModal').addEventListener('click',function(e){if(e.target===this)closeStopModal();});
 function updateModeProgress(exp, latest, stateLabel) {
     var mode=field(exp,['mode','experiment_mode'],'NORMAL_CYCLIC'); var parts=['Mode: '+mode.replaceAll('_',' '),'Phase: '+stateLabel];
+    var illumination=field(exp,['illumination_mode'],mode==='FIXED_TEMPERATURE'?'TEMPERATURE_CONTROLLED':'TARGET_LUX');parts.push('Illumination: '+illuminationSettingLabel(illumination,field(exp,['target_lux'],'—')));
     var target=field(latest,['temp_setpoint'],field(exp,['target_temperature'],null)), control=field(latest,['control_temp'],null);
     if(target!==null) parts.push('Target: '+target+' °C'); if(control!==null) parts.push('Control: '+control+' °C');
     [['hold_qualified_elapsed_s','Qualified hold'],['hold_wall_elapsed_s','Wall hold'],['qualified','Qualified'],['lamp_pwm','Lamp PWM'],['detected_plateau_temp','Plateau'],['current_lux','Lux']].forEach(function(x){var v=field(latest,[x[0]],null);if(v!==null)parts.push(x[1]+': '+v);});
@@ -704,11 +734,11 @@ function addCycleToTable(cycle, rIR, rTC, dur, endTemp) {
         cycleHistory.push({ir: rIR.slope, tc: rTC.slope});
 
         var row = `<tr id="row-cycle-${cycle}">
-            <td><b>#${cycle}</b></td>
-            <td><b>${rIR.slope.toFixed(3)}</b> <span class="err-val">±${rIR.error.toFixed(3)} • R²=${rIR.r2.toFixed(3)}</span></td>
-            <td><b>${rTC.slope.toFixed(3)}</b> <span class="err-val">±${rTC.error.toFixed(3)} • R²=${rTC.r2.toFixed(3)}</span></td>
-            <td>${dur}s</td>
-            <td>${endTemp.toFixed(1)}°C</td>
+            <td data-label="Cycle"><b>#${cycle}</b></td>
+            <td data-label="Rate IR (°C/s)"><b>${rIR.slope.toFixed(3)}</b> <span class="err-val">±${rIR.error.toFixed(3)} • R²=${rIR.r2.toFixed(3)}</span></td>
+            <td data-label="Rate TC (°C/s)"><b>${rTC.slope.toFixed(3)}</b> <span class="err-val">±${rTC.error.toFixed(3)} • R²=${rTC.r2.toFixed(3)}</span></td>
+            <td data-label="Duration">${dur}s</td>
+            <td data-label="Peak Temp">${endTemp.toFixed(1)}°C</td>
         </tr>`;
         tbody.innerHTML += row;
     }
@@ -780,7 +810,8 @@ function updateStatus() {
             else if(isRunning&&startWaitData&&hasSamples){overlay.hidden=false;overlay.textContent='Waiting for first experiment sample after start';} else overlay.hidden=true;
             var control=field(latest,['control_temp'],field(exp,['control_sensor'],'TC')==='IR'?latest.ir_temp:latest.tc_temp);
             document.getElementById('controlMetric').textContent=mode==='NORMAL_CYCLIC'?'IR / TC: '+formatSensorValue(latest.ir_temp,1,'°C')+' / '+formatSensorValue(latest.tc_temp,1,'°C'):'Control temperature: '+formatSensorValue(control,1,'°C');
-            document.getElementById('runSummary').textContent=(mode==='NORMAL_CYCLIC'?'Cycle '+latest.cycle_num+' / '+field(exp,['cycles'],'—')+' • ':'')+'Target '+field(latest,['temp_setpoint'],field(exp,['target_temperature'],'—'))+' °C • Lux '+formatSensorValue(latest.current_lux,0,'lx')+' / '+field(exp,['target_lux'],'—')+' lx • Safety max '+field(exp,['max_temp'],'—')+' °C • Hold remaining '+formatRemainingHold(field(latest,['hold_remaining_s'],NaN));
+            var illumination=field(exp,['illumination_mode'],mode==='FIXED_TEMPERATURE'?'TEMPERATURE_CONTROLLED':'TARGET_LUX');
+            document.getElementById('runSummary').textContent=(mode==='NORMAL_CYCLIC'?'Cycle '+latest.cycle_num+' / '+field(exp,['cycles'],'—')+' • ':'')+'Illumination '+illuminationSettingLabel(illumination,field(exp,['target_lux'],'—'))+' • Actual '+formatSensorValue(latest.current_lux,0,'lx')+' • Safety max '+field(exp,['max_temp'],'—')+' °C • Hold remaining '+formatRemainingHold(field(latest,['hold_remaining_s'],NaN));
             if (!terminalAtUpdateStart) updateModeProgress(exp || {mode:mode}, latest, stateLabel);
             var result=buildResultSummary(mode,exp||{},latest),resultBox=document.getElementById('resultSummaryCards');resultBox.replaceChildren();Object.keys(result).forEach(function(k){var d=document.createElement('div');d.textContent=k.replaceAll('_',' ')+': '+shown(result[k]);resultBox.appendChild(d);});
 
@@ -862,13 +893,14 @@ function updateStatus() {
 function handleBackendFailure() { var age=lastTelemetryAt?(Date.now()-lastTelemetryAt)/1000:null,hasSamples=hasValidScientificSamples();renderEsp32Indicator(false,age);renderHealth(false,lastTelemetrySample,age);renderMonitoringVisibility(hasSamples,terminalUiState||(isRunning?'RUNNING':'IDLE'),false);document.getElementById('chartOverlay').hidden=true; }
 
 function buildExperimentPayload(v) {
-    var p={operator_name:v.operator_name,sample_name:v.sample_name,duration:v.duration,cycles:v.cycles,max_temp:v.max_temp,target_lux:v.target_lux,interval:v.interval};
+    var illumination=v.mode==='FIXED_TEMPERATURE'?'TEMPERATURE_CONTROLLED':(v.illumination_mode||'TARGET_LUX'), target=illumination==='TARGET_LUX'?v.target_lux:null;
+    var p={operator_name:v.operator_name,sample_name:v.sample_name,duration:v.duration,cycles:v.cycles,max_temp:v.max_temp,target_lux:target,illumination_mode:illumination,interval:v.interval};
     if(v.mode==='FIXED_TEMPERATURE') Object.assign(p,{mode:v.mode,target_temperature:v.target_temperature,hold_duration_s:v.hold_minutes*60,temperature_tolerance:v.tolerance,qualification_dwell_s:v.qualification_dwell_s,control_sensor:v.control_sensor,ramp_rate:v.ramp_rate});
     if(v.mode==='NATURAL_PLATEAU') Object.assign(p,{mode:v.mode,hold_duration_s:v.hold_minutes*60,control_sensor:v.control_sensor,plateau_window_s:v.window_s,plateau_max_slope:v.max_slope,plateau_max_range:v.max_range,plateau_confirmation_s:v.confirmation_s,plateau_max_discovery_s:v.max_discovery_minutes*60,post_plateau_mode:v.post_mode});
     return p;
 }
-function currentSetupValues(){var mode=valueOf('experimentMode');return {operator_name:valueOf('operatorName'),sample_name:valueOf('sampleName'),duration:parseInt(valueOf('duration')),cycles:parseInt(valueOf('cycles')),max_temp:numberOf('maxTemp'),target_lux:numberOf('targetLux'),interval:parseInt(valueOf('interval')),mode:mode,target_temperature:numberOf('targetTemperature'),hold_minutes:mode==='FIXED_TEMPERATURE'?numberOf('qualifiedHoldMinutes'):numberOf('plateauHoldMinutes'),tolerance:numberOf('temperatureTolerance'),qualification_dwell_s:numberOf('qualificationDwell'),control_sensor:mode==='FIXED_TEMPERATURE'?valueOf('fixedControlSensor'):valueOf('plateauControlSensor'),ramp_rate:numberOf('rampRate'),window_s:numberOf('detectionWindow'),max_slope:numberOf('maxAbsSlope'),max_range:numberOf('maxPeakToPeak'),confirmation_s:numberOf('confirmationDuration'),max_discovery_minutes:numberOf('maxDiscoveryTime'),post_mode:valueOf('postPlateauBehavior')};}
-function openReviewModal(){var values=currentSetupValues(),error=validateSetupValues(values);if(error){showMonitoringNotice(error,'IDLE');return;}reviewModalOpener=document.activeElement;var model=buildReviewModel(values),box=document.getElementById('reviewDetails');pendingReviewPayload=model.payload;box.replaceChildren();model.rows.forEach(function(r){var dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=r[0];dd.textContent=r[1];box.append(dt,dd);});document.getElementById('reviewModal').hidden=false;setPageModalIsolation(true);document.getElementById('confirmReview').focus();}
+function currentSetupValues(){var mode=valueOf('experimentMode'),illumination=mode==='FIXED_TEMPERATURE'?'TEMPERATURE_CONTROLLED':selectedIlluminationMode();return {operator_name:valueOf('operatorName'),sample_name:valueOf('sampleName'),duration:parseInt(valueOf('duration')),cycles:parseInt(valueOf('cycles')),max_temp:numberOf('maxTemp'),target_lux:illumination==='TARGET_LUX'?numberOf('targetLux'):null,illumination_mode:illumination,interval:parseInt(valueOf('interval')),mode:mode,target_temperature:numberOf('targetTemperature'),hold_minutes:mode==='FIXED_TEMPERATURE'?numberOf('qualifiedHoldMinutes'):numberOf('plateauHoldMinutes'),tolerance:numberOf('temperatureTolerance'),qualification_dwell_s:numberOf('qualificationDwell'),control_sensor:mode==='FIXED_TEMPERATURE'?valueOf('fixedControlSensor'):valueOf('plateauControlSensor'),ramp_rate:numberOf('rampRate'),window_s:numberOf('detectionWindow'),max_slope:numberOf('maxAbsSlope'),max_range:numberOf('maxPeakToPeak'),confirmation_s:numberOf('confirmationDuration'),max_discovery_minutes:numberOf('maxDiscoveryTime'),post_mode:valueOf('postPlateauBehavior')};}
+function openReviewModal(){var values=currentSetupValues(),error=validateSetupValues(values);if(error){showMonitoringNotice(error,'IDLE');return;}reviewModalOpener=document.activeElement;var model=buildReviewModel(values),box=document.getElementById('reviewDetails'),warning=document.getElementById('reviewWarning');pendingReviewPayload=model.payload;box.replaceChildren();model.rows.forEach(function(r){var dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=r[0];dd.textContent=r[1];box.append(dt,dd);});warning.hidden=!model.warning;warning.textContent=model.warning||'';document.getElementById('reviewModal').hidden=false;setPageModalIsolation(true);document.getElementById('confirmReview').focus();}
 function closeReviewModal(){pendingReviewPayload=null;document.getElementById('reviewModal').hidden=true;setPageModalIsolation(false);if(reviewModalOpener&&reviewModalOpener.focus)reviewModalOpener.focus();}
 function confirmReviewedStart(){var payload=pendingReviewPayload;if(!payload)return;pendingReviewPayload=null;document.getElementById('reviewModal').hidden=true;setPageModalIsolation(false);startExperiment(payload);}
 function handleReviewModalKeydown(e){if(document.getElementById('reviewModal').hidden)return;if(e.key==='Escape'){e.preventDefault();closeReviewModal();return;}if(e.key==='Tab'){var a=[document.getElementById('cancelReview'),document.getElementById('confirmReview')],i=a.indexOf(document.activeElement),next=e.shiftKey?(i<=0?a.length-1:i-1):(i<0||i===a.length-1?0:i+1);e.preventDefault();a[next].focus();}}
