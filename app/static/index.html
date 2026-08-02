@@ -119,7 +119,7 @@
     .instrument-title span { color:var(--muted); font-size:.85rem; }
     .instrument-status { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; color:var(--muted); font-size:.85rem; }
     .status-text { display:inline-flex; align-items:center; min-height:28px; font-weight:600; }
-    .monitoring-empty { min-height:330px; display:grid; place-content:center; text-align:center; padding:32px; border:1px dashed #aeb8c2; border-radius:8px; background:var(--surface-soft); }
+    .monitoring-empty { min-height:210px; display:grid; place-content:center; text-align:center; padding:24px; border:1px dashed #aeb8c2; border-radius:8px; background:var(--surface-soft); }
     .monitoring-empty-icon { font-size:2rem; line-height:1; }
     .monitoring-empty h2 { margin:12px 0 4px; font-size:1.2rem; }
     .monitoring-empty p { margin:0; color:var(--muted); }
@@ -161,6 +161,9 @@
       .status-grid { grid-template-columns:repeat(auto-fit, minmax(96px, 1fr)); }
       .status-grid .stat-box:last-child { grid-column:auto; }
       .stat-val { font-size:1.3rem; }
+      .monitoring-empty { min-height:150px; padding:20px 16px; }
+      .monitoring-empty-icon { font-size:1.5rem; }
+      .monitoring-empty h2 { margin:8px 0 4px; font-size:1.05rem; }
       .instrument-utility-link { min-height:44px; }
       .segmented-control input[type="radio"] { width:1px; height:1px; min-height:0; margin:-1px; }
       .mobile-advanced-fieldset { padding:0 !important; border-top:1px solid var(--line) !important; }
@@ -226,7 +229,7 @@
 
 <div class="dashboard-grid" data-ui-state="IDLE">
     <div class="left-col">
-        <div class="status-grid">
+        <div id="statusGrid" class="status-grid" hidden>
             <div class="card stat-box">
                 <div class="stat-label">IR Temp</div>
                 <div class="stat-val c-ir" id="valIR">-- °C</div>
@@ -274,7 +277,7 @@
             <div id="resultSummaryCards" class="result-cards" aria-live="polite"></div>
         </section>
 
-        <div class="card">
+        <div id="cycleHistoryCard" class="card" hidden>
             <div class="card-title">📊 Cycle Performance History (Heating Phase)</div>
             <div class="cycle-table-wrap"><table class="cycle-table">
                 <thead>
@@ -514,9 +517,11 @@ function formatRemainingHold(seconds) {
     var n=Number(seconds); if(!Number.isFinite(n)) return '--:--'; n=Math.max(0,Math.ceil(n)); return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
 }
 function renderMonitoringVisibility(hasSamples,state,backendOnline) {
-    var empty=document.getElementById('monitoringEmpty'), data=document.getElementById('monitoringData'), reset=document.getElementById('resetZoomButton');
+    var empty=document.getElementById('monitoringEmpty'), data=document.getElementById('monitoringData'), reset=document.getElementById('resetZoomButton'), status=document.getElementById('statusGrid'), history=document.getElementById('cycleHistoryCard');
     reset.dataset=reset.dataset||{};
     empty.hidden=hasSamples; data.hidden=!hasSamples; reset.hidden=!hasSamples; reset.disabled=!hasSamples||reset.dataset.zoomed!=='true';
+    if(status)status.hidden=!hasSamples;
+    if(history)history.hidden=!hasSamples&&state!=='DONE'&&state!=='ABORTED';
     if(!hasSamples){
         var running=state==='RUNNING'||state==='STOPPING';
         document.getElementById('monitoringEmptyTitle').textContent=backendOnline?(running?'Waiting for first experiment sample':'Waiting for telemetry'):'ESP32 disconnected';
@@ -556,7 +561,7 @@ function renderPhaseStepper(mode,stateCode,terminalState) {
 function renderHealth(backendOnline,latest,age) {
     var valid=latest&&[latest.ir_temp,latest.tc_temp,latest.current_lux].every(function(v){return v!==null&&v!==''&&Number.isFinite(Number(v));}), health=getHealthState(backendOnline,latest?age:null,valid);
     var channel=function(label,value){var h=getChannelHealth(backendOnline,latest?age:null,value);return [label,h.label+(latest?' • '+formatSensorValue(value,label==='Lux'?0:1,label==='Lux'?'lx':'°C'):'')];};
-    var values=[['Backend',backendOnline?'Online':'Disconnected'],['Telemetry',health.label],channel('IR',latest&&latest.ir_temp),channel('TC',latest&&latest.tc_temp),channel('Lux',latest&&latest.current_lux),['Last sample',latest?Math.max(0,Math.floor(age))+'s ago':'No data']];
+    var values=latest?[['Backend',backendOnline?'Online':'Disconnected'],['Telemetry',health.label],channel('IR',latest.ir_temp),channel('TC',latest.tc_temp),channel('Lux',latest.current_lux),['Last sample',Math.max(0,Math.floor(age))+'s ago']]:[['Backend',backendOnline?'Online':'Disconnected'],['Telemetry','Waiting'],['Device','ESP32 disconnected']];
     var box=document.getElementById('healthCluster');box.replaceChildren();values.forEach(function(x){var item=document.createElement('div'),label=document.createElement('span'),strong=document.createElement('strong');item.className='health-item';label.textContent=x[0];strong.textContent=x[1];item.append(label,strong);box.appendChild(item);});
     document.getElementById('backendStatus').textContent=backendOnline?'Backend online':'Backend offline';
     document.getElementById('sampleFreshness').textContent=latest?'Sample: '+Math.max(0,Math.floor(age))+'s ago':'Sample: waiting';
