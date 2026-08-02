@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PT-Kit Simulator Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --ink:#17212b; --muted:#52606d; --line:#d9e0e7; --surface:#fff; --surface-soft:#f4f7f9; --navy:#173f67; }
+    * { box-sizing:border-box; }
+    body { font-family:'Roboto',sans-serif; background:#eef2f5; margin:0; padding:16px; color:var(--ink); font-size:16px; line-height:1.45; }
+    h1 { font-size:1.35rem; margin:0 0 4px; color:var(--navy); }
+    .sub { color:var(--muted); font-size:.85rem; margin-bottom:16px; }
+    .badge { display:inline-block; padding:2px 10px; border-radius:12px; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+    .b-idle{background:#e2e8f0;color:#475569;} .b-running{background:#dcfce7;color:#166534;}
+    .b-paused{background:#fef9c3;color:#854d0e;} .b-completed{background:#dbeafe;color:#1e40af;}
+    .b-aborted{background:#fee2e2;color:#991b1b;}
+    .grid { display:grid; grid-template-columns:minmax(0,1fr) clamp(300px,30vw,340px); gap:16px; align-items:start; }
+    .col-r { position:sticky; top:16px; }
+    .card { background:var(--surface); padding:16px; border:1px solid var(--line); border-radius:8px; margin-bottom:16px; }
+    .card-title { font-size:1.05rem; font-weight:700; margin-bottom:14px; color:#20364b; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:16px; }
+    .stat { background:var(--surface-soft); padding:12px 8px; border-radius:8px; text-align:center; border:1px solid var(--line); }
+    .stat-val { font-size:1.4rem; font-weight:700; overflow-wrap:anywhere; }
+    .stat-label { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; font-weight:700; }
+    .c-surface{color:#0969a5;} .c-bulk{color:#b42318;} .c-lux{color:#765a00;} .c-prog{color:#146c2e;}
+    .chart-box { position:relative; height:360px; width:100%; }
+    label { display:block; margin-bottom:5px; font-weight:500; font-size:.85rem; }
+    input { width:100%; padding:9px 11px; border:1px solid #aeb8c2; border-radius:6px; font:inherit; margin-bottom:10px; }
+    .pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    button { width:100%; padding:11px; border:none; border-radius:6px; font-size:.95rem; font-weight:700; cursor:pointer; margin-top:6px; color:#fff; }
+    .btn-start{background:#28a745;} .btn-pause{background:#f59e0b;} .btn-resume{background:#0ea5e9;} .btn-stop{background:#dc3545;}
+    button:disabled{opacity:.45; cursor:not-allowed;}
+    .progress-track { height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden; margin-top:4px; }
+    .progress-fill { height:100%; background:var(--navy); width:0%; transition:width .2s; }
+    .row-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .isolation-note { margin-top:10px; padding:8px 10px; border-left:4px solid #146c2e; background:#f0fdf4; color:#14532d; font-size:.78rem; }
+  </style>
+</head>
+<body>
+  <h1>⚗️ PT-Kit Simulator Dashboard</h1>
+  <div class="sub">Live digital-twin visualization · in-memory only · isolated from production ingestion</div>
+
+  <div class="grid">
+    <div class="col-l">
+      <div class="card">
+        <div class="card-title">
+          <span>Live Telemetry</span>
+          <span id="stateBadge" class="badge b-idle">IDLE</span>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><div class="stat-label">Surface °C</div><div id="vSurface" class="stat-val c-surface">--</div></div>
+          <div class="stat"><div class="stat-label">Bulk °C</div><div id="vBulk" class="stat-val c-bulk">--</div></div>
+          <div class="stat"><div class="stat-label">Lux</div><div id="vLux" class="stat-val c-lux">--</div></div>
+          <div class="stat"><div class="stat-label">Progress</div><div id="vProg" class="stat-val c-prog">--</div></div>
+        </div>
+        <div class="progress-track"><div id="progFill" class="progress-fill"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span>Temperature Trace</span><span id="vTime" class="sub" style="margin:0">t = 0.0 s</span></div>
+        <div class="chart-box"><canvas id="chart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="col-r">
+      <div class="card">
+        <div class="card-title">Run Configuration</div>
+        <label>Operator</label><input id="operator" value="operator">
+        <label>Sample</label><input id="sample" value="sample-01">
+        <div class="pair">
+          <div><label>Target °C</label><input id="target" type="number" value="80"></div>
+          <div><label>Ambient °C</label><input id="ambient" type="number" value="25"></div>
+        </div>
+        <div class="pair">
+          <div><label>Duration s</label><input id="duration" type="number" value="120"></div>
+          <div><label>Max °C</label><input id="maxtemp" type="number" value="120"></div>
+        </div>
+        <div class="pair">
+          <div><label>Tick Hz</label><input id="tick" type="number" value="10"></div>
+          <div><label>Speed ×</label><input id="speed" type="number" value="5"></div>
+        </div>
+        <button id="btnStart" class="btn-start">▶ Start Simulation</button>
+        <div class="row-actions">
+          <button id="btnPause" class="btn-pause" disabled>⏸ Pause</button>
+          <button id="btnResume" class="btn-resume" disabled>⏵ Resume</button>
+        </div>
+        <button id="btnStop" class="btn-stop" disabled>⏹ Stop</button>
+        <div class="isolation-note">✅ Telemetry stays in-memory. This dashboard never calls <code>/api/insert_data</code>.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const $ = id => document.getElementById(id);
+let ws = null, runId = null, chart = null;
+
+function initChart() {
+  const ctx = $('chart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: [], datasets: [
+      { label:'Surface °C', data:[], borderColor:'#0969a5', backgroundColor:'transparent', tension:.25, pointRadius:0, borderWidth:2 },
+      { label:'Bulk °C', data:[], borderColor:'#b42318', backgroundColor:'transparent', tension:.25, pointRadius:0, borderWidth:2 },
+      { label:'Target °C', data:[], borderColor:'#94a3b8', borderDash:[6,4], backgroundColor:'transparent', pointRadius:0, borderWidth:1.5 },
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, animation:false,
+      interaction:{mode:'index',intersect:false},
+      scales:{ x:{title:{display:true,text:'virtual time (s)'}}, y:{title:{display:true,text:'°C'}} },
+      plugins:{ legend:{position:'top'} } }
+  });
+}
+
+function setBadge(state) {
+  const b = $('stateBadge');
+  b.textContent = state;
+  b.className = 'badge b-' + state.toLowerCase();
+}
+
+function setControls(state) {
+  const running = state === 'RUNNING', paused = state === 'PAUSED';
+  const active = running || paused;
+  $('btnStart').disabled = active;
+  $('btnPause').disabled = !running;
+  $('btnResume').disabled = !paused;
+  $('btnStop').disabled = !active;
+}
+
+function onFrame(f) {
+  if (f.error) { alert(f.error); return; }
+  setBadge(f.state); setControls(f.state);
+  $('vSurface').textContent = f.surface_temp_c.toFixed(1);
+  $('vBulk').textContent = f.bulk_temp_c.toFixed(1);
+  $('vLux').textContent = Math.round(f.lux);
+  $('vProg').textContent = f.progress_pct.toFixed(0) + '%';
+  $('vTime').textContent = 't = ' + f.virtual_time_s.toFixed(1) + ' s';
+  $('progFill').style.width = f.progress_pct + '%';
+
+  chart.data.labels.push(f.virtual_time_s.toFixed(1));
+  chart.data.datasets[0].data.push(f.surface_temp_c);
+  chart.data.datasets[1].data.push(f.bulk_temp_c);
+  chart.data.datasets[2].data.push(f.target_temp_c);
+  const CAP = 600;
+  if (chart.data.labels.length > CAP) {
+    chart.data.labels.shift();
+    chart.data.datasets.forEach(d => d.data.shift());
+  }
+  chart.update('none');
+}
+
+function connectWs(id) {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws/sim/${id}`);
+  ws.onmessage = e => onFrame(JSON.parse(e.data));
+  ws.onclose = () => { ws = null; };
+}
+
+$('btnStart').onclick = async () => {
+  const body = {
+    operator_name: $('operator').value, sample_name: $('sample').value,
+    target_temp_c: +$('target').value, ambient_temp_c: +$('ambient').value,
+    duration_s: +$('duration').value, max_temp_c: +$('maxtemp').value,
+    tick_hz: +$('tick').value, speed: +$('speed').value
+  };
+  const r = await fetch('/api/sim/start', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const j = await r.json();
+  runId = j.run_id;
+  chart.data.labels = []; chart.data.datasets.forEach(d => d.data = []); chart.update('none');
+  connectWs(runId);
+  setBadge('RUNNING'); setControls('RUNNING');
+};
+
+$('btnPause').onclick = () => runId && fetch(`/api/sim/${runId}/pause`, {method:'POST'});
+$('btnResume').onclick = () => runId && fetch(`/api/sim/${runId}/resume`, {method:'POST'});
+$('btnStop').onclick = async () => {
+  if (!runId) return;
+  await fetch(`/api/sim/${runId}/stop`, {method:'POST'});
+  setControls('COMPLETED'); setBadge('COMPLETED');
+};
+
+initChart();
+setControls('IDLE');
+</script>
+</body>
+</html>
