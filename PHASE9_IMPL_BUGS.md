@@ -105,3 +105,25 @@ against itself.
 9-byte header, real CRC-16-CCITT), then add a cross-layer test asserting
 `VirtualUARTEngine.encode_packet()` output is decodable by `ESP32Bridge.unpack()` and
 vice-versa. Until then the two layers must not be wired directly together.
+
+---
+
+## CORRECTION — seed determinism (earlier claim retracted)
+
+An interim probe of `PTKitControllerIntegration` alone suggested the simulator was
+seed-independent, because that class builds `self.rng` but never uses it to perturb the
+thermal model. **That conclusion was too narrow.** Stochastic behaviour lives in the
+*sensor* layer, not the controller:
+
+```
+make_sensor(seed=42) -> [25.25, 25.0, 25.2, 25.4, 25.95]
+make_sensor(seed=43) -> [25.1, 25.05, 25.55, 25.4, 25.65]
+```
+
+Through the full pipeline (plant -> sensors -> controller -> UART), seed 42 and seed 43
+produce **different traces all the way down to the wire bytes**, while seed 42 replays
+byte-identically. `tests/test_phase9_integration.py::TestCrossLayerDeterminism` asserts
+both properties at the trace, UART-stream, API-export, sensor, and fault-injector levels.
+
+Takeaway: probe determinism through the **whole** stack, not a single layer — a
+deterministic component does not imply a deterministic system, and vice-versa.
