@@ -9,6 +9,12 @@ class ExperimentMode(str, Enum):
     NATURAL_PLATEAU = "NATURAL_PLATEAU"
 
 
+class IlluminationMode(str, Enum):
+    TARGET_LUX = "TARGET_LUX"
+    MAX_OUTPUT = "MAX_OUTPUT"
+    TEMPERATURE_CONTROLLED = "TEMPERATURE_CONTROLLED"
+
+
 class PostPlateauMode(str, Enum):
     PASSIVE = "PASSIVE"
     REGULATED = "REGULATED"
@@ -21,7 +27,17 @@ STATE_LABELS = [
 ]
 
 
-def serialize_normal_command(duration, cycles, max_temp, interval, target_lux):
+def _enum_value(value):
+    return value.value if isinstance(value, Enum) else value
+
+
+def serialize_normal_command(duration, cycles, max_temp, interval, target_lux,
+                             illumination_mode=IlluminationMode.TARGET_LUX):
+    illumination = _enum_value(illumination_mode)
+    if illumination == IlluminationMode.MAX_OUTPUT.value:
+        return f"SET2:{duration}:{cycles}:{max_temp}:{interval}:MAX_OUTPUT"
+    if illumination != IlluminationMode.TARGET_LUX.value or target_lux is None:
+        raise ValueError("normal cyclic mode requires TARGET_LUX or MAX_OUTPUT")
     return f"SET:{duration}:{cycles}:{max_temp}:{interval}:{target_lux}"
 
 
@@ -33,8 +49,14 @@ def serialize_fixed_command(target_temp_c, hold_seconds, tolerance_c, qualificat
 def serialize_plateau_command(target_lux, hold_seconds, window_seconds, max_abs_slope_c_per_min,
                               max_peak_to_peak_c, confirmation_seconds, max_discovery_seconds,
                               max_temp_c, log_interval_s, sensor,
-                              post_plateau_mode=PostPlateauMode.PASSIVE):
-    post = post_plateau_mode.value if isinstance(post_plateau_mode, Enum) else post_plateau_mode
+                              post_plateau_mode=PostPlateauMode.PASSIVE,
+                              illumination_mode=IlluminationMode.TARGET_LUX):
+    post = _enum_value(post_plateau_mode)
+    illumination = _enum_value(illumination_mode)
+    if illumination == IlluminationMode.MAX_OUTPUT.value:
+        return f"PLAT2:MAX_OUTPUT:{hold_seconds}:{window_seconds}:{max_abs_slope_c_per_min}:{max_peak_to_peak_c}:{confirmation_seconds}:{max_discovery_seconds}:{max_temp_c}:{log_interval_s}:{sensor}:{post}"
+    if illumination != IlluminationMode.TARGET_LUX.value or target_lux is None:
+        raise ValueError("natural plateau mode requires TARGET_LUX or MAX_OUTPUT")
     return f"PLAT1:{target_lux}:{hold_seconds}:{window_seconds}:{max_abs_slope_c_per_min}:{max_peak_to_peak_c}:{confirmation_seconds}:{max_discovery_seconds}:{max_temp_c}:{log_interval_s}:{sensor}:{post}"
 
 
@@ -43,9 +65,11 @@ def parse_telemetry(csv_line):
     parts = [part.strip() for part in csv_line.split(",")]
     if len(parts) < 7:
         raise ValueError("telemetry requires at least seven fields")
+
     def finite_float(value):
         parsed = float(value)
         return parsed if math.isfinite(parsed) else None
+
     row = dict(total_time=int(parts[0]), phase_time=int(parts[1]), cycle_num=int(parts[2]),
                state_code=int(parts[3]), ir_temp=finite_float(parts[4]), tc_temp=finite_float(parts[5]),
                current_lux=finite_float(parts[6]), mode=None, control_temp=None, temp_setpoint=None,

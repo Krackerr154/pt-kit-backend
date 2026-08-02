@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, root_validator, validator
 from typing import Optional
-from app.protocol import (ExperimentMode, PostPlateauMode, STATE_LABELS, parse_telemetry,
+from app.protocol import (ExperimentMode, IlluminationMode, PostPlateauMode, STATE_LABELS, parse_telemetry,
                           serialize_fixed_command, serialize_normal_command, serialize_plateau_command)
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -54,7 +54,8 @@ class ExperimentConfig(BaseModel):
     cycles: int = 5
     max_temp: float = 80.0
     interval: int = 1
-    target_lux: float = 38000.0
+    target_lux: Optional[float] = 38000.0
+    illumination_mode: IlluminationMode = IlluminationMode.TARGET_LUX
     mode: ExperimentMode = ExperimentMode.NORMAL_CYCLIC
     target_temperature: Optional[float] = None
     hold_duration_s: Optional[int] = None
@@ -69,9 +70,16 @@ class ExperimentConfig(BaseModel):
     plateau_max_discovery_s: Optional[int] = None
     post_plateau_mode: PostPlateauMode = PostPlateauMode.PASSIVE
 
-    @validator("duration", "cycles", "interval")
-    def positive_integers(cls, value):
+    @validator("duration")
+    def valid_duration(cls, value):
         if value <= 0: raise ValueError("must be positive")
+        if value > 4294967: raise ValueError("must be at most 4294967")
+        return value
+
+    @validator("cycles", "interval")
+    def valid_small_integer(cls, value):
+        if value <= 0: raise ValueError("must be positive")
+        if value > 32767: raise ValueError("must be at most 32767")
         return value
 
     @validator("control_sensor")
@@ -79,10 +87,33 @@ class ExperimentConfig(BaseModel):
         if value not in ("TC", "IR"): raise ValueError("control_sensor must be TC or IR")
         return value
 
+    @root_validator(pre=True)
+    def reject_fixed_max_output(cls, values):
+        mode = values.get("mode", ExperimentMode.NORMAL_CYCLIC)
+        illumination = values.get("illumination_mode")
+        fixed = mode in (ExperimentMode.FIXED_TEMPERATURE, ExperimentMode.FIXED_TEMPERATURE.value)
+        maximum = illumination in (IlluminationMode.MAX_OUTPUT, IlluminationMode.MAX_OUTPUT.value)
+        if fixed and maximum:
+            raise ValueError("MAX_OUTPUT is incompatible with fixed-temperature control")
+        return values
+
     @root_validator(skip_on_failure=True)
     def validate_mode(cls, values):
         import math
         mode = values.get("mode")
+        illumination = values.get("illumination_mode")
+        target_lux = values.get("target_lux")
+        if mode == ExperimentMode.FIXED_TEMPERATURE:
+            values["illumination_mode"] = IlluminationMode.TEMPERATURE_CONTROLLED
+            values["target_lux"] = None
+        elif illumination == IlluminationMode.TEMPERATURE_CONTROLLED:
+            raise ValueError("TEMPERATURE_CONTROLLED is only valid for fixed-temperature mode")
+        elif illumination == IlluminationMode.MAX_OUTPUT:
+            values["target_lux"] = None
+        elif target_lux is None or not math.isfinite(target_lux) or target_lux < 0:
+            raise ValueError("target_lux must be finite and non-negative in TARGET_LUX mode")
+        elif mode == ExperimentMode.NATURAL_PLATEAU and target_lux <= 0:
+            raise ValueError("natural plateau TARGET_LUX must be greater than zero")
         required = {ExperimentMode.FIXED_TEMPERATURE: ("target_temperature", "hold_duration_s", "temperature_tolerance", "qualification_dwell_s", "ramp_rate"), ExperimentMode.NATURAL_PLATEAU: ("hold_duration_s", "plateau_window_s", "plateau_max_slope", "plateau_max_range", "plateau_confirmation_s", "plateau_max_discovery_s")}.get(mode, ())
         missing = [n for n in required if values.get(n) is None]
         if missing: raise ValueError("missing mode configuration: " + ", ".join(missing))
@@ -119,14 +150,16 @@ def startup_db():
             max_temp FLOAT,
             log_interval INT,
             target_lux FLOAT DEFAULT 0,
+            illumination_mode VARCHAR(24) DEFAULT 'TARGET_LUX',
             status VARCHAR(20) DEFAULT 'WAITING',
             started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             ended_at TIMESTAMP
         );
     """)
     cur.execute("ALTER TABLE experiments ADD COLUMN IF NOT EXISTS target_lux FLOAT DEFAULT 0;")
-    for ddl in ["mode VARCHAR(30) DEFAULT 'NORMAL_CYCLIC'", "target_temperature FLOAT", "hold_duration_s INT", "temperature_tolerance FLOAT", "qualification_dwell_s INT", "control_sensor VARCHAR(10)", "ramp_rate FLOAT", "plateau_window_s INT", "plateau_max_slope FLOAT", "plateau_max_range FLOAT", "plateau_confirmation_s INT", "plateau_max_discovery_s INT", "post_plateau_mode VARCHAR(12)", "detected_plateau_temperature FLOAT", "hold_qualified_progress FLOAT", "completion_reason VARCHAR(100)"]:
+    for ddl in ["illumination_mode VARCHAR(24) DEFAULT 'TARGET_LUX'", "mode VARCHAR(30) DEFAULT 'NORMAL_CYCLIC'", "target_temperature FLOAT", "hold_duration_s INT", "temperature_tolerance FLOAT", "qualification_dwell_s INT", "control_sensor VARCHAR(10)", "ramp_rate FLOAT", "plateau_window_s INT", "plateau_max_slope FLOAT", "plateau_max_range FLOAT", "plateau_confirmation_s INT", "plateau_max_discovery_s INT", "post_plateau_mode VARCHAR(12)", "detected_plateau_temperature FLOAT", "hold_qualified_progress FLOAT", "completion_reason VARCHAR(100)"]:
         cur.execute(f"ALTER TABLE experiments ADD COLUMN IF NOT EXISTS {ddl};")
+    cur.execute("UPDATE experiments SET illumination_mode='TEMPERATURE_CONTROLLED', target_lux=NULL WHERE mode='FIXED_TEMPERATURE' AND illumination_mode='TARGET_LUX';")
     
     # 2. Buat Tabel Sensor Logs
     cur.execute("""
@@ -184,42 +217,46 @@ def read_history():
 @app.post("/api/start_experiment")
 def start_experiment(config: ExperimentConfig):
     global current_experiment_id, pending_command, recent_sensors_cache
-    
+
+    # Build and validate the hardware command before clearing live data or writing to the DB.
+    if config.mode == ExperimentMode.FIXED_TEMPERATURE:
+        values = (config.target_temperature, config.hold_duration_s, config.temperature_tolerance, config.qualification_dwell_s, config.ramp_rate)
+        if any(v is None for v in values): raise HTTPException(422, "Missing fixed-temperature configuration")
+        command = serialize_fixed_command(values[0], values[1], values[2], values[3], config.max_temp, config.interval, config.control_sensor, values[4])
+    elif config.mode == ExperimentMode.NATURAL_PLATEAU:
+        values = (config.hold_duration_s, config.plateau_window_s, config.plateau_max_slope, config.plateau_max_range, config.plateau_confirmation_s, config.plateau_max_discovery_s)
+        if any(v is None for v in values): raise HTTPException(422, "Missing natural-plateau configuration")
+        command = serialize_plateau_command(config.target_lux, *values, config.max_temp, config.interval, config.control_sensor, config.post_plateau_mode, config.illumination_mode)
+    else:
+        command = serialize_normal_command(config.duration, config.cycles, config.max_temp, config.interval, config.target_lux, config.illumination_mode)
+
     # [FITUR] Reset Grafik di Memori Server saat Start
     recent_sensors_cache.clear()
-    
+
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
-        INSERT INTO experiments 
-        (operator_name, sample_name, description, target_duration, target_cycles, max_temp, log_interval, target_lux, status,
+        INSERT INTO experiments
+        (operator_name, sample_name, description, target_duration, target_cycles, max_temp, log_interval, target_lux, illumination_mode, status,
          mode, target_temperature, hold_duration_s, temperature_tolerance, qualification_dwell_s, control_sensor, ramp_rate,
          plateau_window_s, plateau_max_slope, plateau_max_range, plateau_confirmation_s, plateau_max_discovery_s, post_plateau_mode)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'WAITING',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'WAITING',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id
     """, (config.operator_name, config.sample_name, config.description, config.duration, config.cycles, config.max_temp,
-          config.interval, config.target_lux, config.mode.value, config.target_temperature, config.hold_duration_s,
-          config.temperature_tolerance, config.qualification_dwell_s, config.control_sensor, config.ramp_rate,
-          config.plateau_window_s, config.plateau_max_slope, config.plateau_max_range, config.plateau_confirmation_s,
-          config.plateau_max_discovery_s, config.post_plateau_mode.value))
-    
+          config.interval, config.target_lux, config.illumination_mode.value, config.mode.value, config.target_temperature,
+          config.hold_duration_s, config.temperature_tolerance, config.qualification_dwell_s, config.control_sensor,
+          config.ramp_rate, config.plateau_window_s, config.plateau_max_slope, config.plateau_max_range,
+          config.plateau_confirmation_s, config.plateau_max_discovery_s, config.post_plateau_mode.value))
+
     new_id = cur.fetchone()[0]
     conn.commit()
     cur.close()
     conn.close()
-    
+
     current_experiment_id = new_id
-    if config.mode == ExperimentMode.FIXED_TEMPERATURE:
-        values = (config.target_temperature, config.hold_duration_s, config.temperature_tolerance, config.qualification_dwell_s, config.ramp_rate)
-        if any(v is None for v in values): raise HTTPException(422, "Missing fixed-temperature configuration")
-        pending_command = serialize_fixed_command(values[0], values[1], values[2], values[3], config.max_temp, config.interval, config.control_sensor, values[4])
-    elif config.mode == ExperimentMode.NATURAL_PLATEAU:
-        values = (config.hold_duration_s, config.plateau_window_s, config.plateau_max_slope, config.plateau_max_range, config.plateau_confirmation_s, config.plateau_max_discovery_s)
-        if any(v is None for v in values): raise HTTPException(422, "Missing natural-plateau configuration")
-        pending_command = serialize_plateau_command(config.target_lux, *values, config.max_temp, config.interval, config.control_sensor, config.post_plateau_mode)
-    else:
-        pending_command = serialize_normal_command(config.duration, config.cycles, config.max_temp, config.interval, config.target_lux)
-    
-    return {"status": "success", "id": new_id}
+    pending_command = command
+
+    return {"status": "success", "id": new_id, "mode": config.mode.value,
+            "illumination_mode": config.illumination_mode.value}
 
 @app.post("/api/stop_experiment")
 def stop_experiment():
@@ -455,7 +492,7 @@ def insert_data(data: EspSensorData):
 def list_experiments():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
-    cur.execute("SELECT id, operator_name, sample_name, started_at, status, mode, target_temperature, hold_duration_s, detected_plateau_temperature, hold_qualified_progress, completion_reason FROM experiments ORDER BY id DESC")
+    cur.execute("SELECT id, operator_name, sample_name, started_at, status, mode, illumination_mode, target_lux, target_temperature, hold_duration_s, detected_plateau_temperature, hold_qualified_progress, completion_reason FROM experiments ORDER BY id DESC")
     results = cur.fetchall()
     cur.close()
     conn.close()
@@ -485,14 +522,14 @@ def export_csv(exp_id: int):
     if not info: raise HTTPException(404, "Not Found")
     
     filename = f"{info[0]}_{info[1]}.csv".replace(" ", "_")
-    cur.execute("SELECT total_time, phase_time, cycle_num, state_label, ir_temp, tc_temp, current_lux, recorded_at, mode, control_temp, temp_setpoint, temp_error, lamp_pwm, hold_wall_elapsed_s, hold_qualified_elapsed_s, qualified, detected_plateau_temp FROM sensor_logs WHERE experiment_id = %s ORDER BY id ASC", (exp_id,))
+    cur.execute("SELECT s.total_time, s.phase_time, s.cycle_num, s.state_label, s.ir_temp, s.tc_temp, s.current_lux, s.recorded_at, s.mode, s.control_temp, s.temp_setpoint, s.temp_error, s.lamp_pwm, s.hold_wall_elapsed_s, s.hold_qualified_elapsed_s, s.qualified, s.detected_plateau_temp, e.illumination_mode, e.target_lux FROM sensor_logs s JOIN experiments e ON e.id=s.experiment_id WHERE s.experiment_id = %s ORDER BY s.id ASC", (exp_id,))
     rows = cur.fetchall()
     cur.close()
     conn.close()
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["TotalTime", "PhaseTime", "Cycle", "State", "IR_Temp", "TC_Temp", "Lux", "Recorded At", "Mode", "ControlTemp", "TempSetpoint", "TempError", "LampPWM", "HoldWallElapsedS", "HoldQualifiedElapsedS", "Qualified", "DetectedPlateauTemp"])
+    writer.writerow(["TotalTime", "PhaseTime", "Cycle", "State", "IR_Temp", "TC_Temp", "Lux", "Recorded At", "Mode", "ControlTemp", "TempSetpoint", "TempError", "LampPWM", "HoldWallElapsedS", "HoldQualifiedElapsedS", "Qualified", "DetectedPlateauTemp", "IlluminationMode", "TargetLux"])
     writer.writerows(rows)
     output.seek(0)
     
