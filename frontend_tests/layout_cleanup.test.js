@@ -123,6 +123,18 @@ test('PC shell is uncapped and uses the full available desktop width', () => {
   assert.match(html, /@media\s*\(min-width:\s*1440px\)[^]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(360px,\s*24vw,\s*420px\)/);
 });
 
+test('large desktop control panel uses named section areas and natural capped height', () => {
+  const large = html.match(/@media\s*\(min-width:\s*1360px\)\s*and\s*\(min-height:\s*800px\)\s*\{[^]*?\n\s*\}/)?.[0] || html;
+  assert.match(large, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(600px,\s*42vw,\s*720px\)/);
+  assert.match(large, /grid-template-areas:\s*"primary secondary"\s*"summary summary"\s*"action action"/);
+  assert.match(large, /\.control-card\s*\{[^}]*flex:\s*0\s+1\s+auto[^}]*max-height:\s*calc\(100%\s*-\s*70px\)[^}]*overflow-y:\s*auto/);
+  assert.match(large, /\.setup-column-primary\s*\{[^}]*grid-area:\s*primary/);
+  assert.match(large, /\.setup-column-secondary\s*\{[^}]*grid-area:\s*secondary/);
+  assert.match(large, /#systemLogCard\s*\{[^}]*flex:\s*0\s+0\s+auto[^}]*margin:\s*0/);
+  assert.match(html, /@media\s*\(min-width:\s*901px\)\s*and\s*\(max-height:\s*799px\)/);
+  assert.match(html, /\.system-log-card\[data-collapsed="true"\]\s+\.system-log-content\s*\{\s*display:\s*none/);
+});
+
 test('History and calibration are header utilities, not experiment-form actions', () => {
   const header = html.match(/<header class="instrument-header"[^]*?<\/header>/)?.[0] || '';
   assert.ok(header.includes('class="instrument-utilities"'));

@@ -61,9 +61,10 @@
     .chart-control-group legend { float:left; width:100%; margin-bottom:4px; font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
     .chart-controls button { min-height:40px; border:1px solid #8090a0; background:#fff; border-radius:6px; padding:6px 10px; color:var(--ink); font-weight:500; }
     .chart-controls button[aria-pressed="true"] { background:#173f67; color:#fff; }
-    #setupForm > fieldset { border:0; border-top:1px solid var(--line); border-radius:0; margin:0; padding:16px 0 4px; }
-    #setupForm > fieldset:first-child { border-top:0; padding-top:0; }
-    #setupForm > fieldset > legend { font-weight:700; color:var(--navy); padding:0 8px 0 0; }
+    .setup-column { display:contents; }
+    #setupForm fieldset { border:0; border-top:1px solid var(--line); border-radius:0; margin:0; padding:16px 0 4px; }
+    #setupForm .setup-column-primary > fieldset:first-child { border-top:0; padding-top:0; }
+    #setupForm fieldset > legend { font-weight:700; color:var(--navy); padding:0 8px 0 0; }
     .result-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0; } .result-cards div { background:#f5f7f9;padding:8px;border-radius:6px; }
     .chart-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:24px; box-sizing:border-box; background:rgba(255,255,255,.86); color:#374151; font-weight:700; z-index:2; }
     .chart-overlay[hidden], .sticky-stop[hidden], .modal-backdrop[hidden], [hidden] { display:none !important; }
@@ -161,18 +162,25 @@
       .dashboard-grid { grid-template-columns:minmax(0, 1fr) clamp(360px, 24vw, 420px); gap:20px; }
     }
     @media (min-width:1360px) and (min-height:800px) {
-      .dashboard-grid { grid-template-columns:minmax(0,1fr) clamp(540px,36vw,700px); height:calc(100dvh - 152px); min-height:0; }
+      .dashboard-grid { grid-template-columns:minmax(0,1fr) clamp(600px,42vw,720px); height:calc(100dvh - 152px); min-height:0; }
       .right-col { position:sticky; top:0; display:flex; flex-direction:column; gap:12px; overflow:hidden; min-height:0; }
-      .control-card { flex:1 1 auto; min-height:0; margin-bottom:0; overflow-y:auto; }
-      #setupForm { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:16px; align-items:start; }
-      #setupForm > fieldset { min-width:0; }
-      #setupForm > fieldset:first-child { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:12px; align-items:start; }
-      #setupForm > fieldset:first-child > legend, #setupForm > fieldset:first-child .form-group:last-child { grid-column:1 / -1; }
-      #modeSummary, .control-action-bar { grid-column:1 / -1; }
-      .control-timing { margin-top:12px !important; display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:10px; text-align:left !important; }
+      .control-card { flex:0 1 auto; min-height:0; max-height:calc(100% - 70px); margin-bottom:0; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:#aeb8c2 transparent; overscroll-behavior:contain; }
+      .control-card > .card-title { position:sticky; top:0; z-index:5; margin-bottom:10px; padding-bottom:10px; background:var(--surface); }
+      #setupForm { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-areas:"primary secondary" "summary summary" "action action"; column-gap:14px; row-gap:10px; align-items:start; }
+      .setup-column { display:flex; flex-direction:column; gap:10px; min-width:0; }
+      .setup-column-primary { grid-area:primary; }
+      .setup-column-secondary { grid-area:secondary; }
+      #setupForm .setup-column > fieldset { min-width:0; border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfcfd; }
+      #setupForm .setup-column-primary > fieldset:first-child { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:12px; align-items:start; }
+      #setupForm .setup-column-primary > fieldset:first-child > legend, #setupForm .setup-column-primary > fieldset:first-child .form-group:last-child { grid-column:1 / -1; }
+      .mode-fields .form-pair label, #illuminationAdvanced .form-pair label { min-height:2.7em; display:flex; align-items:flex-end; }
+      #modeSummary { grid-area:summary; margin:0; }
+      .control-action-bar { grid-area:action; padding-top:0; }
+      .control-timing { margin-top:8px !important; display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:10px; text-align:left !important; }
       .control-timing #modeProgress { margin:0; }
       .control-timing .stat-label { margin:0; white-space:nowrap; }
-      #systemLogCard { flex:0 0 auto; margin:0; }
+      #systemLogCard { flex:0 0 auto; margin:0; padding:8px 12px; }
+      #systemLogToggle { min-height:40px; }
     }
     @media (max-width:1180px) and (min-width:901px) {
       .dashboard-grid { grid-template-columns:minmax(0, 1fr) minmax(330px, 380px); }
@@ -186,7 +194,7 @@
       .monitoring-empty { min-height:clamp(220px,42vh,420px); }
     }
     /* Short desktop workspaces: keep the complete setup visible without page scrolling. */
-    @media (min-width:901px) and (max-height:760px) {
+    @media (min-width:901px) and (max-height:799px) {
       body { padding:8px; font-size:14px; overflow:hidden; }
       .instrument-header { padding:8px 12px; margin-bottom:8px; }
       .dashboard-grid { height:calc(100dvh - 120px); min-height:0; gap:10px; }
@@ -198,10 +206,10 @@
       .system-log-toggle { min-height:32px; }
       #systemLogCard[data-collapsed="true"] .system-log-content { display:none; }
       #setupForm { height:auto; overflow:visible; }
-      #setupForm > fieldset { padding:8px 0 2px; }
-      #setupForm > fieldset:first-child { display:grid; grid-template-columns:1fr 1fr; column-gap:10px; align-items:start; }
-      #setupForm > fieldset:first-child > legend { grid-column:1 / -1; }
-      #setupForm > fieldset:first-child .form-group:last-child { grid-column:1 / -1; }
+      #setupForm fieldset { padding:8px 0 2px; }
+      #setupForm .setup-column-primary > fieldset:first-child { display:grid; grid-template-columns:1fr 1fr; column-gap:10px; align-items:start; }
+      #setupForm .setup-column-primary > fieldset:first-child > legend { grid-column:1 / -1; }
+      #setupForm .setup-column-primary > fieldset:first-child .form-group:last-child { grid-column:1 / -1; }
       .form-group { margin-bottom:6px; }
       label, #illuminationModeLabel { margin-bottom:3px !important; font-size:.78rem !important; }
       input, select, .csel-btn { min-height:36px; padding:6px 8px; font-size:.86rem; }
@@ -402,6 +410,7 @@
             <div class="card-title">Experiment control <span id="statusBadge" class="visually-hidden">IDLE</span></div>
             
             <div id="setupForm">
+                <div class="setup-column setup-column-primary">
                 <fieldset><legend>Experiment</legend>
                 <div class="form-group"><label for="operatorName">Operator Name</label><input type="text" id="operatorName" value="Gerald"></div>
                 <div class="form-group"><label for="sampleName">Sample Name</label><input type="text" id="sampleName" placeholder="e.g. MOF-Batch-1"></div>
@@ -429,6 +438,8 @@
                   <div class="form-pair"><div class="form-group"><label for="maxDiscoveryTime">Max Discovery Time (minutes)</label><input type="number" id="maxDiscoveryTime" value="60"></div>
                   <div class="form-group"><label for="postPlateauBehavior">Post-plateau Behavior</label><select id="postPlateauBehavior"><option value="PASSIVE" selected>Passive (same illumination)</option><option value="REGULATED">Regulated</option></select></div></div>
                 </div></fieldset>
+                </div>
+                <div class="setup-column setup-column-secondary">
                 <fieldset id="illuminationFieldset" class="mobile-advanced-fieldset" data-expanded="false"><legend>Illumination &amp; acquisition</legend>
                 <button class="mobile-advanced-toggle" type="button" aria-expanded="false" aria-controls="illuminationAdvanced" onclick="toggleMobileAdvanced('illuminationFieldset')"><span>Illumination &amp; acquisition</span><span id="illuminationMobileSummary" class="mobile-advanced-summary">Target lux · 38,000 lx · log 1 s</span></button>
                 <div id="illuminationAdvanced" class="mobile-advanced-content">
@@ -438,6 +449,7 @@
                 <div class="form-pair"><div id="targetLuxGroup" class="form-group"><label for="targetLux">Target Lux (lx) <small id="maxLuxHint" style="color:#52606d;"></small></label><input type="number" id="targetLux" value="38000"></div>
                 <div class="form-group"><label for="interval">Logging Interval (sec)</label><input type="number" id="interval" value="1" min="1"></div></div></div></fieldset>
                 <fieldset id="safetyFieldset" class="mobile-advanced-fieldset" data-expanded="false"><legend>Safety</legend><button class="mobile-advanced-toggle" type="button" aria-expanded="false" aria-controls="safetyAdvanced" onclick="toggleMobileAdvanced('safetyFieldset')"><span>Safety</span><span id="safetyMobileSummary" class="mobile-advanced-summary">Maximum · 100 °C</span></button><div id="safetyAdvanced" class="mobile-advanced-content"><div class="form-group"><label for="maxTemp">Max Temp (°C)</label><input type="number" id="maxTemp" value="100"></div></div></fieldset>
+                </div>
                 <div id="modeSummary" class="mode-summary"></div>
                 <div class="control-action-bar"><button class="btn-start" onclick="openReviewModal()">Review &amp; start experiment</button></div>
             </div>
