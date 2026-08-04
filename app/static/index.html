@@ -72,6 +72,9 @@
     .phase-ready.phase-ready-waiting { border-left-color:#9a6700; background:#f7f4ec; color:#6b5d2a; font-weight:600; }
     .btn-start:disabled { background:#9aa5b1; cursor:not-allowed; opacity:.65; }
     .start-hint { margin-top:6px; font-size:.82rem; color:#9a6700; }
+    .troubleshooting { margin-top:12px; font-size:.85rem; color:#52606d; }
+    .troubleshooting summary { cursor:pointer; font-weight:600; color:#173f67; }
+    .troubleshooting ul { margin:8px 0 0; padding-left:20px; text-align:left; line-height:1.6; }
     .phase-stepper { display:flex; gap:0; padding:0; margin:0 0 16px; list-style:none; overflow-x:auto; }
     .phase-stepper li { min-width:92px; flex:1; padding:10px 6px; border:0; border-bottom:3px solid #cbd5e1; border-radius:0; text-align:center; font-size:.78rem; font-weight:600; }
     .phase-stepper .completed { background:#f1f7f3; border-color:#287d3c; }
@@ -368,6 +371,14 @@
                 <div class="monitoring-empty-icon" aria-hidden="true">⌁</div>
                 <h2 id="monitoringEmptyTitle">Waiting for telemetry</h2>
                 <p id="monitoringEmptyContext">Backend online • ESP32 disconnected</p>
+                <details id="troubleshootingPanel" class="troubleshooting">
+                    <summary>Troubleshooting steps</summary>
+                    <ul>
+                        <li>Check ESP32 power and USB connection</li>
+                        <li>Verify the device is provisioned and on the same network</li>
+                        <li>Restart the backend if the device was recently reconnected</li>
+                    </ul>
+                </details>
             </div>
             <div id="monitoringData" hidden>
                 <div id="chartToolbar" class="chart-controls" aria-label="Scientific chart controls">
@@ -497,6 +508,7 @@ var isStopping = false;
 var terminalUiState = null;
 var lastTelemetrySignature = null, lastTelemetrySample = null, activeMode = null, stopModalOpener = null;
 var lastEsp32State = 'disconnected';
+var lastUserLogMessage = null;
 
 // [VARIABEL PENTING] 
 var isProcessingStart = false; // "Satpam" untuk memblokir update saat proses Start
@@ -676,6 +688,8 @@ function renderEsp32Indicator(backendOnline, ageSeconds) {
     var status=getEsp32Indicator(backendOnline,ageSeconds), box=document.getElementById('connStatus');
     box.textContent=status.icon+' '+status.label;
     box.style.color=status.state==='connected'?'#137333':status.state==='stale'?'#9a6700':'#b42318';
+    if(status.state==='connected'&&lastEsp32State==='disconnected')log('ESP32 connected');
+    else if(status.state==='disconnected'&&lastEsp32State!=='disconnected')log('ESP32 disconnected — waiting for device');
     lastEsp32State=status.state;
     renderReadinessGate();
 }
@@ -685,12 +699,11 @@ function getReadinessModel(esp32State) {
         deviceReady:deviceReady,
         bannerText:deviceReady?'Ready for experiment':'Waiting for device',
         startEnabled:deviceReady,
-        hint:deviceReady?'':'Connect ESP32 to begin',
-        logStatus:deviceReady?'System ready':'Backend ready — device disconnected'
+        hint:deviceReady?'':'Connect ESP32 to begin'
     };
 }
 function renderReadinessGate() {
-    var model=getReadinessModel(lastEsp32State), banner=document.getElementById('phaseReady'), hint=document.getElementById('startHint'), logStatus=document.getElementById('systemLogStatus');
+    var model=getReadinessModel(lastEsp32State), banner=document.getElementById('phaseReady'), hint=document.getElementById('startHint');
     if(banner){banner.textContent=model.bannerText;if(banner.classList)banner.classList.toggle('phase-ready-waiting',!model.deviceReady);}
     if(hint){hint.hidden=model.deviceReady;hint.textContent=model.hint;}
     ['reviewStartBtn','mobileReviewBtn'].forEach(function(id){
@@ -699,7 +712,18 @@ function renderReadinessGate() {
         b.disabled=!model.startEnabled;
         b.title=model.hint;
     });
-    if(logStatus&&(logStatus.textContent==='System ready'||logStatus.textContent==='Backend ready — device disconnected'))logStatus.textContent=model.logStatus;
+    renderLogStatus();
+}
+function isUserRelevantLog(msg) {
+    return !/^(syncing:|new data stream detected)/i.test(String(msg));
+}
+function getLogStatusSummary(lastEvent, esp32State) {
+    if(lastEvent)return lastEvent;
+    return esp32State==='connected'?'System ready':'Waiting for device connection';
+}
+function renderLogStatus() {
+    var box=document.getElementById('systemLogStatus');
+    if(box)box.textContent=getLogStatusSummary(lastUserLogMessage,lastEsp32State);
 }
 function computePlannedDurationSeconds(v) {
     if(!v||!v.mode)return 0;
@@ -861,7 +885,7 @@ function selectChartWindow(windowName) {
 }
 var phaseRegionPlugin={id:'phaseRegions',beforeDatasetsDraw:function(c,a,o){if(!o||!o.regions)return;var ctx=c.ctx,x=c.scales.x,area=c.chartArea;ctx.save();o.regions.forEach(function(r){ctx.fillStyle=r.color||'rgba(23,63,103,.05)';ctx.fillRect(x.getPixelForValue(r.start),area.top,x.getPixelForValue(r.end)-x.getPixelForValue(r.start),area.bottom-area.top);});ctx.restore();}};
 if(typeof Chart!=='undefined'&&Chart.register)Chart.register(phaseRegionPlugin);
-function log(msg) { var box=document.getElementById('sysLog'),row=document.createElement('div'),t=new Date().toLocaleTimeString();row.textContent='['+t+'] '+String(msg);box.appendChild(row);box.scrollTop=box.scrollHeight;document.getElementById('systemLogStatus').textContent=String(msg);if(/error|failed|abort|warning/i.test(String(msg)))toggleSystemLog(true); }
+function log(msg) { var box=document.getElementById('sysLog'),row=document.createElement('div'),t=new Date().toLocaleTimeString();row.textContent='['+t+'] '+String(msg);box.appendChild(row);box.scrollTop=box.scrollHeight;if(isUserRelevantLog(msg))lastUserLogMessage=String(msg);renderLogStatus();if(/error|failed|abort|warning/i.test(String(msg)))toggleSystemLog(true); }
 
 function calculateSlopeAndError(dataPoints) {
     var n = dataPoints.length;

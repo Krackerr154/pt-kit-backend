@@ -11,14 +11,12 @@ const ready=ctx.getReadinessModel('connected');
 assert.equal(ready.bannerText,'Ready for experiment');
 assert.equal(ready.startEnabled,true);
 assert.equal(ready.hint,'');
-assert.equal(ready.logStatus,'System ready');
 for(const state of ['disconnected','stale']){
     const off=ctx.getReadinessModel(state);
     assert.equal(off.deviceReady,false,state);
     assert.equal(off.bannerText,'Waiting for device',state);
     assert.equal(off.startEnabled,false,state);
     assert.equal(off.hint,'Connect ESP32 to begin',state);
-    assert.equal(off.logStatus,'Backend ready — device disconnected',state);
 }
 
 // 1.2 TOTAL TIME computation
