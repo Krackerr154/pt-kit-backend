@@ -1,0 +1,326 @@
+/* PT-Kit Dashboard Styles - Phase 6 */
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1a1a2e;
+    color: #eee;
+    line-height: 1.6;
+}
+
+/* Layout */
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+header h1 {
+    font-size: 28px;
+    color: #e94560;
+    margin-bottom: 10px;
+}
+
+header .subtitle {
+    color: #aaa;
+    font-size: 14px;
+}
+
+/* Grid layout for dashboard panels */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* Panel cards */
+.panel {
+    background: #16213e;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border-left: 4px solid #e94560;
+}
+
+.panel h2 {
+    font-size: 18px;
+    color: #e94560;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #0f3460;
+}
+
+/* Status indicators */
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-running {
+    background-color: #4caf50;
+    animation: pulse 2s infinite;
+}
+
+.status-paused {
+    background-color: #ff9800;
+}
+
+.status-stopped {
+    background-color: #f44336;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Data display */
+.data-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #0f3460;
+}
+
+.data-row:last-child {
+    border-bottom: none;
+}
+
+.data-label {
+    color: #aaa;
+    font-size: 14px;
+}
+
+.data-value {
+    color: #fff;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.data-value.highlight {
+    color: #e94560;
+}
+
+/* Chart container */
+.chart-container {
+    background: #16213e;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.chart-container h2 {
+    font-size: 18px;
+    color: #e94560;
+    margin-bottom: 15px;
+}
+
+#telemetry-chart {
+    width: 100%;
+    height: 300px;
+    background: #0f3460;
+    border-radius: 8px;
+}
+
+/* Command console */
+.command-console {
+    background: #16213e;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.command-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group label {
+    color: #aaa;
+    font-size: 14px;
+}
+
+.form-control {
+    padding: 10px;
+    border: 1px solid #0f3460;
+    border-radius: 5px;
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 14px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #e94560;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: #e94560;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #c73e54;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(233, 69, 96, 0.4);
+}
+
+.btn-secondary {
+    background: #0f3460;
+    color: #fff;
+}
+
+.btn-secondary:hover {
+    background: #16213e;
+}
+
+/* Progress bar */
+.progress-container {
+    background: #0f3460;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.progress-bar {
+    height: 20px;
+    background: #16213e;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e94560 0%, #0f3460 100%);
+    transition: width 0.5s ease;
+}
+
+.progress-text {
+    text-align: center;
+    margin-top: 10px;
+    color: #aaa;
+    font-size: 14px;
+}
+
+/* Fault log */
+.fault-log {
+    background: #16213e;
+    border-radius: 10px;
+    padding: 20px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.fault-entry {
+    padding: 8px;
+    margin-bottom: 5px;
+    background: #0f3460;
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+.fault-entry.error {
+    border-left: 3px solid #f44336;
+}
+
+.fault-entry.warning {
+    border-left: 3px solid #ff9800;
+}
+
+.fault-timestamp {
+    color: #aaa;
+    font-size: 11px;
+    margin-right: 10px;
+}
+
+/* History viewer */
+.history-viewer {
+    background: #16213e;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.history-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.time-slider {
+    flex: 1;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    header h1 {
+        font-size: 22px;
+    }
+    
+    .data-row {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a2e;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #0f3460;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #e94560;
+}

@@ -294,34 +294,61 @@ Deviation triggers test failure unless intentional change documented.
 
 ## API Isolation Layer
 
-### Backend Communication
+> ⚠️ **CORRECTION (2026-08-03):** This section previously specified `SimulatorBackendAPIClient` calling `/api/simulator/telemetry` and `/api/simulator/runs/{run_id}/commands`. That was the **design intent**; the actual implementation differs and this section has been rewritten to match the code.
 
-All UART/ESP32 traffic flows through isolated backend API:
+### Implemented simulator API surfaces
 
-```python
-class SimulatorBackendAPIClient:
-    """Isolated backend client for simulation-only operations."""
-    
-    def __init__(self, base_url: str = "/api/simulator"):
-        self.base_url = base_url
-    
-    def post_telemetry_frame(self, frame):
-        """Submit telemetry to /api/simulator/telemetry endpoint."""
-        endpoint = f"{self.base_url}/telemetry"
-        # Use requests.Session() for connection pooling
-        return self._session.post(endpoint, json=frame.to_dict())
-    
-    def get_pending_commands(self, run_id):
-        """Fetch queued commands: GET /api/simulator/runs/{run_id}/commands"""
-        ...
-```
+PT-Kit currently has **three distinct simulator API surfaces**, each in its own module. None of them matches the exact paths originally written in this section.
 
-### No Physical Writes
+**1. Isolated backend API** — `app/simulator/isolated_backend_api.py` (`IsolatedBackendAPI`, base path `/api/simulator`, in-memory only, no database):
 
-❌ **DO NOT** call: `/api/insert_data` (physical experiment ingestion)  
-✅ **USE** instead: `/api/simulator/telemetry`, `/api/simulator/runs/*`
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/api/simulator/runs/start` | Start a run (`StartSimulationRequest` mirrors the production `ExperimentConfig` fields) |
+| POST | `/api/simulator/runs/{run_id}/stop` | Stop a run gracefully |
+| POST | `/api/simulator/runs/{run_id}/pause` | Pause (RUNNING only) |
+| POST | `/api/simulator/runs/{run_id}/resume` | Resume (PAUSED only) |
+| POST | `/api/simulator/runs/{run_id}/telemetry` | **Telemetry ingestion — NOT `/api/insert_data`** |
+| GET | `/api/simulator/runs/{run_id}` | Run detail/state |
+| GET | `/api/simulator/runs/{run_id}/telemetry` | Telemetry history |
+| POST | `/api/simulator/runs/{run_id}/commands` | Queue a command for the run |
+| GET | `/api/simulator/runs/{run_id}/commands` | List pending commands |
+| DELETE | `/api/simulator/runs/{run_id}/commands` | Clear pending commands |
+| DELETE | `/api/simulator/runs/{run_id}` | Delete run state |
+| GET | `/api/simulator/runs` | List all runs |
+| GET | `/api/simulator/health` | Health check |
 
-This ensures simulated telemetry never contaminates production databases.
+Note the telemetry endpoint is **per-run** (`/runs/{run_id}/telemetry`), not the flat `/api/simulator/telemetry` originally specified here.
+
+**2. Live dashboard (plant-driven sim)** — `app/simulator/live_dashboard.py`:
+
+`POST /api/sim/start`, `POST /api/sim/{run_id}/pause`, `POST /api/sim/{run_id}/resume`, `POST /api/sim/{run_id}/stop`, `GET /api/sim/{run_id}/status`, `GET /api/sim/{run_id}/history`, `GET /api/sim/runs`, `WS /ws/sim/{run_id}`, plus `/health`.
+
+**3. Dashboard server** — `app/simulator/dashboard_server.py` (mounted under `/simulator`, docs at `/simulator/docs`):
+
+`GET /simulator/status`, `POST /simulator/commands`, `GET /simulator/history`.
+
+### Isolation rule (unchanged)
+
+❌ **DO NOT** call: `/api/insert_data` (physical experiment ingestion)
+✅ **USE** the `/api/simulator/*` (isolated layer), `/api/sim/*` (live dashboard), or `/simulator/*` (dashboard server) families instead.
+
+Simulated telemetry is in-memory only and never contaminates the production PostgreSQL database.
+
+### ⚠️ Known unresolved divergence: ESP32-bridge wire format
+
+Per `PHASE9_IMPL_BUGS.md` (OPEN item A), the two ends of the simulated serial link **do not interoperate**:
+
+| Aspect | `virtual_uart.py` (Arduino side) | `esp32_bridge_simulator.py` (ESP32 side) |
+|---|---|---|
+| Byte order | big-endian (`abcd0101…`) | little-endian (`cdab0100…`) |
+| Header size | 9 bytes | 7 bytes |
+| Field order | sync, ver, type, seq, len | sync, **seq**, ver, type, len |
+| Checksum | true CRC-16-CCITT (poly 0x1021) | `zlib.crc32() & 0xFFFF` — **not** CCITT |
+
+This document (frame layout §"Frame Format" and §"CRC-16-CCITT") describes the **`virtual_uart.py` side**, which is the spec-conformant side. The ESP32 bridge diverges on all four axes. Aligning the bridge is a real protocol change affecting the ESP32 firmware contract and is deliberately left open pending a decision on whether the simulator mirrors this spec or the deployed ESP32 firmware.
+
+> Phase 9 also fixed a separate CRC **placement** bug (`PHASE9_IMPL_BUGS.md` item 2): the checksum must trail the payload (header → payload → checksum), matching this spec. That fix is conformant; the remaining divergence is item A above.
 
 ---
 
@@ -330,7 +357,8 @@ This ensures simulated telemetry never contaminates production databases.
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-08-01 | PT-Kit Team | Initial spec for Phase 4 |
+| 1.1 | 2026-08-03 | PT-Kit Team | Rewrote API Isolation Layer to match implemented `/api/simulator/*`, `/api/sim/*`, `/simulator/*` surfaces; documented open ESP32-bridge wire-format divergence (PHASE9 item A) |
 
 ---
 
-*End of UART Protocol Specification v1.0*
+*End of UART Protocol Specification v1.1*

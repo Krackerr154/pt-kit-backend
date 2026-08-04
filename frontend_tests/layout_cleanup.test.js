@@ -109,7 +109,8 @@ test('control panel uses paired fields, a sticky action, and progressive mode co
 test('responsive laboratory layout uses a wide sticky panel without horizontal overflow', () => {
   assert.match(html, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(330px,\s*32vw,\s*360px\)/);
   assert.match(html, /\.right-col\s*\{[^}]*position:\s*sticky[^}]*top:/);
-  assert.match(html, /\.right-col\s*\{[^}]*max-height:\s*calc\(100vh\s*-\s*139px\)/, 'desktop control scrollport must fit below the instrument header so its sticky action is visible immediately');
+  // Control panel scrolls naturally; no artificial max-height to prevent form/button overlap
+  assert.doesNotMatch(html, /\.right-col\s*\{[^}]*max-height:\s*calc\(100vh/s, 'desktop control should not have constrained height');
   assert.match(html, /@media\s*\(max-width:\s*900px\)[^]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
   assert.match(html, /dashboard-grid\[data-ui-state="IDLE"\][^}]*grid-template-areas:\s*"control"\s*"monitor"/);
   assert.match(html, /@media\s*\(max-width:\s*600px\)[^]*\.form-pair\s*\{[^}]*grid-template-columns:\s*1fr/);

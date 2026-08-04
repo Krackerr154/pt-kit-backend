@@ -1,0 +1,47 @@
+# GoReleaser Configuration for Binary Release
+
+project_name: monitoring-agent
+
+builds:
+  - id: "agent"
+    main: ./cmd/agent
+    binary: "monitoring-agent"
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "arm64" }}aarch64
+      {{- else }}{{ .Arch }}{{ end }}
+    files:
+      - README.md
+      - LICENSE
+
+release:
+  prerelease: auto
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - Merge pull request
+      - Merge branch

@@ -175,6 +175,8 @@ pt-kit-backend/
 
 ## API Reference
 
+> **Authoritative references:** [`docs/BACKEND_API.md`](docs/BACKEND_API.md) — complete REST, hardware-command, telemetry, and database reference — and [`docs/DATA_ANALYSIS.md`](docs/DATA_ANALYSIS.md) — archive statistics methodology (cycle-aware regression, R² semantics, overlay grid, compare alignment, Welch t-test). The tables below are a quick-start summary; the docs govern when they differ.
+
 ### Pages
 
 | Method | Endpoint    | Description                      |

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunar Sintering Simulator - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="dashboard-header">
+        <h1>🌙 Lunar Sintering Simulator</h1>
+        <div class="connection-status" id="connectionStatus">
+            <span class="status-indicator" id="statusIndicator"></span>
+            <span class="status-text" id="statusText">Connecting...</span>
+        </div>
+    </header>
+
+    <main class="dashboard-main">
+        <!-- Status Panel -->
+        <section class="status-panel" id="statusPanel">
+            <h2>System Status</h2>
+            <div class="status-grid">
+                <div class="status-card">
+                    <h3>Simulation State</h3>
+                    <div class="state-value" id="simState">--</div>
+                </div>
+                <div class="status-card">
+                    <h3>Vacuum Pressure</h3>
+                    <div class="value-with-unit">
+                        <span id="vacuumPressure">--</span>
+                        <span class="unit">mbar</span>
+                    </div>
+                </div>
+                <div class="status-card">
+                    <h3>Surface Temperature</h3>
+                    <div class="value-with-unit">
+                        <span id="surfaceTemp">--</span>
+                        <span class="unit">°C</span>
+                    </div>
+                </div>
+                <div class="status-card">
+                    <h3>Bulk Temperature</h3>
+                    <div class="value-with-unit">
+                        <span id="bulkTemp">--</span>
+                        <span class="unit">°C</span>
+                    </div>
+                </div>
+                <div class="status-card">
+                    <h3>Laser Power</h3>
+                    <div class="value-with-unit">
+                        <span id="laserPower">--</span>
+                        <span class="unit">W</span>
+                    </div>
+                </div>
+                <div class="status-card">
+                    <h3>Scan Speed</h3>
+                    <div class="value-with-unit">
+                        <span id="scanSpeed">--</span>
+                        <span class="unit">mm/s</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Real-time Chart Area -->
+        <section class="chart-panel" id="chartPanel">
+            <h2>Real-time Telemetry</h2>
+            <div class="chart-container">
+                <canvas id="telemetryChart" width="800" height="400"></canvas>
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <span class="legend-color surface-temp"></span>
+                        <span>Surface Temperature (°C)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color bulk-temp"></span>
+                        <span>Bulk Temperature (°C)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Command Console -->
+        <section class="command-console" id="commandConsole">
+            <h2>Command Console</h2>
+            <form id="commandForm" class="command-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="commandType">Command Type</label>
+                        <select id="commandType" name="command_type" required>
+                            <option value="">Select Command</option>
+                            <option value="STOP">STOP</option>
+                            <option value="PAUSE">PAUSE</option>
+                            <option value="RESUME">RESUME</option>
+                            <option value="RESTART">RESTART</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row" id="paramRow">
+                    <div class="form-group">
+                        <label for="scheduledMs">Scheduled Delay (ms) - Optional</label>
+                        <input type="number" id="scheduledMs" name="scheduled_ms" min="0" placeholder="e.g., 5000">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" id="submitBtn" class="btn btn-primary">
+                        <span class="btn-text">Submit Command</span>
+                        <span class="btn-loader hidden"></span>
+                    </button>
+                    <div class="error-display" id="commandError"></div>
+                </div>
+            </form>
+        </section>
+
+        <!-- History Viewer -->
+        <section class="history-viewer" id="historyViewer">
+            <h2>Historical Data</h2>
+            <div class="history-controls">
+                <label for="timeRange">Time Range:</label>
+                <select id="timeRange">
+                    <option value="60">Last 60 seconds</option>
+                    <option value="300">Last 5 minutes</option>
+                    <option value="900">Last 15 minutes</option>
+                    <option value="1800">Last 30 minutes</option>
+                </select>
+            </div>
+            <div class="history-table-container">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Time (s)</th>
+                            <th>Vacuum (mbar)</th>
+                            <th>Surface Temp (°C)</th>
+                            <th>Bulk Temp (°C)</th>
+                            <th>Laser Power (W)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Fault Log -->
+        <section class="fault-log" id="faultLog">
+            <h2>Fault Log</h2>
+            <div class="fault-list" id="faultList">
+                <div class="no-faults" id="noFaults">No active faults</div>
+                <!-- Fault entries will be populated here -->
+            </div>
+        </section>
+    </main>
+
+    <script src="components/chart.js"></script>
+    <script src="components/controls.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

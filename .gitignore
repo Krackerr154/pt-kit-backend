@@ -2,3 +2,15 @@
 __pycache__/
 *.py[cod]
 .venv/
+
+# Docker-managed data (postgres) — owned by root inside container, causes permission noise
+postgres_data/
+
+# Local runtime artifacts
+.hermes/
+.phase7-todo
+
+# Generated build outputs and local binaries
+go-monitoring-agent/go-monitoring-agent
+go-monitoring-agent/dashboard/.next/
+go-monitoring-agent/dashboard/node_modules/

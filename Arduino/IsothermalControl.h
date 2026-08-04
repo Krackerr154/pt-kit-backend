@@ -12,6 +12,7 @@
 
 enum ControlSensor { SENSOR_TC, SENSOR_IR };
 enum PostPlateauMode { POST_PASSIVE, POST_REGULATED };
+enum IlluminationMode { TARGET_LUX, MAX_OUTPUT, TEMPERATURE_CONTROLLED };
 struct SensorTemperatures { float irRaw,tcRaw,irExposed,tcExposed; bool irValid,tcValid; };
 inline SensorTemperatures sensorTemperatures(float ir,float tc,bool legacyExposure){
   SensorTemperatures r={ir,tc,ir,tc,isfinite(ir),isfinite(tc)};
@@ -21,7 +22,8 @@ inline SensorTemperatures sensorTemperatures(float ir,float tc,bool legacyExposu
 inline bool selectedTemperatureValid(const SensorTemperatures&r,ControlSensor sensor){return sensor==SENSOR_TC?r.tcValid:r.irValid;}
 inline bool invalidSensorAbortDue(unsigned long now,unsigned long invalidSince,unsigned long limit=10000UL){return invalidSince!=0&&now-invalidSince>=limit;}
 struct IsoCommand { float targetTemp,tolerance,maxTemp,rampRate; unsigned long holdSeconds,qualificationSeconds,logInterval; ControlSensor sensor; };
-struct PlateauCommand { float targetLux,maxSlope,maxPeakToPeak,maxTemp; unsigned long holdSeconds,windowSeconds,confirmationSeconds,maxDiscoverySeconds,logInterval; ControlSensor sensor; PostPlateauMode postMode; };
+struct PlateauCommand { float targetLux,maxSlope,maxPeakToPeak,maxTemp; unsigned long holdSeconds,windowSeconds,confirmationSeconds,maxDiscoverySeconds,logInterval; ControlSensor sensor; PostPlateauMode postMode; IlluminationMode illuminationMode; };
+struct MaxOutputNormalCommand { unsigned long durationSeconds,cycles,logInterval; float maxTemp; };
 const int PLATEAU_CAPACITY=60;
 const unsigned long MAX_MILLIS_SECONDS=4294967UL;
 const unsigned long MAX_PLATEAU_SECONDS=6500UL;
@@ -38,8 +40,26 @@ inline bool parseFloatField(const char*s,float&v){
   bool dot=false,digit=false; for(const char*p=s;*p;p++){if(*p=='.'&&!dot){dot=true;continue;}if(*p<'0'||*p>'9')return false;digit=true;}if(!digit)return false;
   errno=0;char*end=0;double x=strtod(s,&end);if(errno==ERANGE||!end||*end||!isfinite(x)||x>3.402823466e38)return false;v=(float)x;return isfinite(v);
 }
-inline bool parseIsoCommand(const char* text,IsoCommand&o){char f[9][20];if(splitFields(text,f,9)!=9||strcmp(f[0],"ISO1"))return false;if(!parseFloatField(f[1],o.targetTemp)||!parseUnsignedField(f[2],o.holdSeconds)||!parseFloatField(f[3],o.tolerance)||!parseUnsignedField(f[4],o.qualificationSeconds)||!parseFloatField(f[5],o.maxTemp)||!parseUnsignedField(f[6],o.logInterval)||!parseFloatField(f[8],o.rampRate))return false;return finitePositive(o.targetTemp)&&o.holdSeconds&&finitePositive(o.tolerance)&&o.qualificationSeconds&&o.maxTemp>o.targetTemp&&o.logInterval&&sensorField(f[7],o.sensor)&&finitePositive(o.rampRate);}
-inline bool parsePlateauCommand(const char*text,PlateauCommand&o){char f[12][20];if(splitFields(text,f,12)!=12||strcmp(f[0],"PLAT1"))return false;if(!parseFloatField(f[1],o.targetLux)||!parseUnsignedField(f[2],o.holdSeconds)||!parseUnsignedField(f[3],o.windowSeconds,MAX_PLATEAU_SECONDS)||!parseFloatField(f[4],o.maxSlope)||!parseFloatField(f[5],o.maxPeakToPeak)||!parseUnsignedField(f[6],o.confirmationSeconds)||!parseUnsignedField(f[7],o.maxDiscoverySeconds,MAX_PLATEAU_SECONDS)||!parseFloatField(f[8],o.maxTemp)||!parseUnsignedField(f[9],o.logInterval))return false;bool post=!strcmp(f[11],"PASSIVE")?(o.postMode=POST_PASSIVE,true):!strcmp(f[11],"REGULATED")?(o.postMode=POST_REGULATED,true):false;return finitePositive(o.targetLux)&&o.holdSeconds&&o.windowSeconds>=3&&o.windowSeconds<=PLATEAU_CAPACITY&&finitePositive(o.maxSlope)&&finitePositive(o.maxPeakToPeak)&&o.confirmationSeconds&&o.maxDiscoverySeconds>=o.windowSeconds&&finitePositive(o.maxTemp)&&o.logInterval&&sensorField(f[10],o.sensor)&&post;}
+inline bool parseIsoCommand(const char* text,IsoCommand&o){char f[9][20];if(splitFields(text,f,9)!=9||strcmp(f[0],"ISO1"))return false;if(!parseFloatField(f[1],o.targetTemp)||!parseUnsignedField(f[2],o.holdSeconds)||!parseFloatField(f[3],o.tolerance)||!parseUnsignedField(f[4],o.qualificationSeconds)||!parseFloatField(f[5],o.maxTemp)||!parseUnsignedField(f[6],o.logInterval,32767UL)||!parseFloatField(f[8],o.rampRate))return false;return finitePositive(o.targetTemp)&&o.holdSeconds&&finitePositive(o.tolerance)&&o.qualificationSeconds&&o.maxTemp>o.targetTemp&&o.logInterval&&sensorField(f[7],o.sensor)&&finitePositive(o.rampRate);}
+inline bool parseMaxOutputNormalCommand(const char*text,MaxOutputNormalCommand&o){
+  char f[6][20];
+  if(splitFields(text,f,6)!=6||strcmp(f[0],"SET2")||strcmp(f[5],"MAX_OUTPUT"))return false;
+  if(!parseUnsignedField(f[1],o.durationSeconds)||!parseUnsignedField(f[2],o.cycles,32767UL)||!parseFloatField(f[3],o.maxTemp)||!parseUnsignedField(f[4],o.logInterval,32767UL))return false;
+  return o.durationSeconds&&o.cycles&&finitePositive(o.maxTemp)&&o.logInterval;
+}
+inline bool parsePlateauCommand(const char*text,PlateauCommand&o){
+  char f[12][20];
+  if(splitFields(text,f,12)!=12)return false;
+  if(!strcmp(f[0],"PLAT1")){
+    if(!parseFloatField(f[1],o.targetLux)||!finitePositive(o.targetLux))return false;
+    o.illuminationMode=TARGET_LUX;
+  }else if(!strcmp(f[0],"PLAT2")&&!strcmp(f[1],"MAX_OUTPUT")){
+    o.targetLux=0; o.illuminationMode=MAX_OUTPUT;
+  }else return false;
+  if(!parseUnsignedField(f[2],o.holdSeconds)||!parseUnsignedField(f[3],o.windowSeconds,MAX_PLATEAU_SECONDS)||!parseFloatField(f[4],o.maxSlope)||!parseFloatField(f[5],o.maxPeakToPeak)||!parseUnsignedField(f[6],o.confirmationSeconds)||!parseUnsignedField(f[7],o.maxDiscoverySeconds,MAX_PLATEAU_SECONDS)||!parseFloatField(f[8],o.maxTemp)||!parseUnsignedField(f[9],o.logInterval,32767UL))return false;
+  bool post=!strcmp(f[11],"PASSIVE")?(o.postMode=POST_PASSIVE,true):!strcmp(f[11],"REGULATED")?(o.postMode=POST_REGULATED,true):false;
+  return o.holdSeconds&&o.windowSeconds>=3&&o.windowSeconds<=PLATEAU_CAPACITY&&finitePositive(o.maxSlope)&&finitePositive(o.maxPeakToPeak)&&o.confirmationSeconds&&o.maxDiscoverySeconds>=o.windowSeconds&&finitePositive(o.maxTemp)&&o.logInterval&&sensorField(f[10],o.sensor)&&post;
+}
 struct PlateauWindow{uint32_t t[PLATEAU_CAPACITY];float y[PLATEAU_CAPACITY];int count,next;};
 struct PlateauStats{bool valid;float slopePerMin,peakToPeak,mean;};
 inline void plateauReset(PlateauWindow&w){w.count=w.next=0;}

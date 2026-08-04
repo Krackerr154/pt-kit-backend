@@ -24,8 +24,19 @@ int main() {
   assert(!parseIsoCommand("ISO1:45:0:0.5:10:80:2:TC:6", iso));
   PlateauCommand p;
   assert(parsePlateauCommand("PLAT1:5000:60:30:0.2:0.8:20:900:90:2:IR:REGULATED", p));
-  assert(p.sensor == SENSOR_IR && p.postMode == POST_REGULATED);
+  assert(p.sensor == SENSOR_IR && p.postMode == POST_REGULATED && p.illuminationMode == TARGET_LUX);
+  assert(parsePlateauCommand("PLAT2:MAX_OUTPUT:60:30:0.2:0.8:20:900:90:2:IR:PASSIVE", p));
+  assert(p.postMode == POST_PASSIVE && p.illuminationMode == MAX_OUTPUT && p.targetLux == 0);
   assert(!parsePlateauCommand("PLAT1:5000:60:2:0.2:0.8:20:900:90:2:IR:PASSIVE", p));
+  assert(!parsePlateauCommand("PLAT2:TARGET_LUX:60:30:0.2:0.8:20:900:90:2:IR:PASSIVE", p));
+
+  MaxOutputNormalCommand maxNormal;
+  assert(parseMaxOutputNormalCommand("SET2:60:5:80:2:MAX_OUTPUT", maxNormal));
+  assert(maxNormal.durationSeconds == 60 && maxNormal.cycles == 5 && maxNormal.logInterval == 2);
+  assert(!parseMaxOutputNormalCommand("SET2:60:0:80:2:MAX_OUTPUT", maxNormal));
+  assert(!parseMaxOutputNormalCommand("SET2:60:32768:80:2:MAX_OUTPUT", maxNormal));
+  assert(!parseMaxOutputNormalCommand("SET2:60:5:80:32768:MAX_OUTPUT", maxNormal));
+  assert(!parseMaxOutputNormalCommand("SET2:60:5:80:2:TARGET_LUX", maxNormal));
   assert(!parseIsoCommand("ISO1:45junk:120:0.5:10:80:2:TC:6", iso));
   assert(!parseIsoCommand("ISO1:+45:120:0.5:10:80:2:TC:6", iso));
   assert(!parseIsoCommand("ISO1:45:-1:0.5:10:80:2:TC:6", iso));

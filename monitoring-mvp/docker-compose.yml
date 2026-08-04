@@ -1,0 +1,85 @@
+services:
+  # TimescaleDB - Time-series database for metrics storage
+  timescaledb:
+    image: timescale/timescaledb:latest-pg14
+    container_name: monitoring-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: monitoring
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - monitoring-network
+
+  # Monitoring Agent - Main metric collection service
+  agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: monitoring-agent
+    environment:
+      - AGENT_NAME=${AGENT_NAME:-local-agent}
+      - DATABASE_URL=postgresql://postgres:postgres@timescaledb:5432/monitoring?sslmode=disable
+      - COLLECTION_INTERVAL=${COLLECTION_INTERVAL:-10s}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    volumes:
+      - ./config:/etc/monitoring-agent:ro
+      - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+      - /proc:/host/proc:ro
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
+  # Web Dashboard - React/Next.js interface
+  web:
+    build:
+      context: ./web
+      dockerfile: ../docker/Dockerfile.web
+    container_name: monitoring-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080/api
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws
+    depends_on:
+      - agent
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
+  # API Gateway - Backend API service (optional placeholder)
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: monitoring-api
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@timescaledb:5432/monitoring?sslmode=disable
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-here}
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
+volumes:
+  timescaledb_data:
+    driver: local
+
+networks:
+  monitoring-network:
+    driver: bridge

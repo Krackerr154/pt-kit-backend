@@ -146,6 +146,7 @@
           <div class="chart-container"><canvas id="analysisChart" ondblclick="resetZoom()"></canvas></div>
           <div class="debug-action"><button onclick="toggleDebug()">Show debug log</button></div>
           <div id="debugBox">System Ready...</div>
+          <div id="noticeBar" role="alert" aria-live="assertive" hidden style="margin-top:10px;padding:10px 14px;border-radius:6px;background:#fff4e5;color:#8a5a00;border:1px solid #f0c36d;font-size:.9rem;"></div>
         </div>
       </main>
     </div>
@@ -156,6 +157,12 @@ var lastAdvancedSummary = null; var lastCompareSummary = null;
 const COLORS = ['#007bff', '#dc3545', '#28a745', '#fd7e14', '#6610f2', '#17a2b8', '#e83e8c'];
 function log(msg) { var out = document.getElementById('debugBox'); var t = new Date().toLocaleTimeString(); out.innerHTML += `<div>[${t}] ${msg}</div>`; out.scrollTop = out.scrollHeight; }
 function toggleDebug() { var x = document.getElementById('debugBox'); x.style.display = x.style.display==='none'?'block':'none'; }
+function notify(msg) {
+    var n = document.getElementById('noticeBar');
+    if (!n) { try { log('⚠ ' + msg); } catch (e) {} return; }
+    n.textContent = msg; n.hidden = false;
+    clearTimeout(n._t); n._t = setTimeout(function () { n.hidden = true; }, 6000);
+}
 fetch('/api/experiments').then(r => { if(!r.ok) throw new Error('Archive request failed ('+r.status+')'); return r.json(); }).then(d => { allExperiments = d; populateOperators(); renderList(d); }).catch(e => { var list=document.getElementById('sampleList');list.innerHTML='<div class="list-empty">Archive data could not be loaded. Return to the dashboard and check backend status.</div>';log("❌ ERROR Fetch: " + e); });
 function populateOperators() { var ops = [...new Set(allExperiments.map(e => e.operator_name || "Unknown"))]; var s = document.getElementById('operatorSelect'); ops.forEach(op => { var o = document.createElement('option'); o.value=op; o.innerText=op; s.appendChild(o); }); }
 function filterSamples() { var op = document.getElementById('operatorSelect').value; var k = document.getElementById('searchBox').value.toLowerCase(); var r = allExperiments.filter(e => (op === 'all' || e.operator_name === op) && String(e.sample_name||'').toLowerCase().includes(k)); renderList(r); }
@@ -173,12 +180,12 @@ function getColumnName(r, p) { for (var i = 0; i < p.length; i++) { if (r[p[i]] 
 // tested in tests/js/pt-stats.test.js. Do not re-add copies of that logic here.
 
 function loadExpAnalysis() {
-    var sel = getSelected(); if(sel.length !== 1) return alert("Pilih TEPAT 1 sampel!");
+    var sel = getSelected(); if(sel.length !== 1) return notify("Please select exactly 1 sample for analysis.");
     showAnalysisWorkspace();
     document.getElementById('loading').style.display = 'block'; document.getElementById('analysisTools').style.display = 'block'; document.getElementById('compareStatsBox').style.display = 'none';
     currentExpName = sel[0].name;
     fetch(`/api/experiment/${sel[0].id}`).then(r => r.json()).then(d => {
-        document.getElementById('loading').style.display = 'none'; var rows=Array.isArray(d)?d:(d.data||d.readings||[]); if (!rows.length) return alert("Data kosong!"); currentData = rows; showModeSummary(Array.isArray(d)?allExperiments.find(e=>String(e.id)===String(sel[0].id)):d, rows); switchView('expanded');
+        document.getElementById('loading').style.display = 'none'; var rows=Array.isArray(d)?d:(d.data||d.readings||[]); if (!rows.length) return notify("No data in this experiment."); currentData = rows; showModeSummary(Array.isArray(d)?allExperiments.find(e=>String(e.id)===String(sel[0].id)):d, rows); switchView('expanded');
     }).catch(e => { document.getElementById('loading').style.display = 'none'; log(`❌ Error: ${e}`); });
 }
 
@@ -204,7 +211,7 @@ function switchView(mode) {
             ds.push({ label: 'TC Temp', data: tcData, borderColor: '#dc3545', backgroundColor: '#dc3545', borderDash: [5,5], pointRadius: 0, tension: 0.3 });
             title = `Expanded: ${currentExpName}`;
         } else if (mode === 'overlay') {
-            var cycles = PTStats.groupDataByCycle(currentData, kCyc); xLabel = 'Waktu Relatif (s)'; title = `Overlay: ${Object.keys(cycles).length} Cycles`;
+            var cycles = PTStats.groupDataByCycle(currentData, kCyc); xLabel = 'Relative Time (s)'; title = `Overlay: ${Object.keys(cycles).length} Cycles`;
             Object.keys(cycles).forEach(cNum => {
                 var cData = cycles[cNum];
 
@@ -218,7 +225,7 @@ function switchView(mode) {
                 ds.push({ label: `C${cNum} TC`, data: filteredData.map(d => ({x: d[kTime]-startT, y: parseFloat(d[kTC])})), borderColor: 'rgba(220,53,69,0.4)', borderWidth: 1.5, borderDash:[2,2], pointRadius: 0, tension: 0.3 });
             });
         } else if (mode === 'advanced') {
-            xLabel = 'Waktu Relatif (s)'; title = `Statistics & Regression Model (Heating Phase)`;
+            xLabel = 'Relative Time (s)'; title = `Statistics & Regression Model (Heating Phase)`;
             var stats = PTStats.calculateStatistics(currentData, kCyc, kTime, kIR, kTC, kState);
 
             // --- IR DATA ---
@@ -268,7 +275,7 @@ function switchView(mode) {
 }
 
 function loadCompare() {
-    var sel = getSelected(); if(sel.length < 1) return alert("Pilih minimal 1 sampel!");
+    var sel = getSelected(); if(sel.length < 1) return notify("Select at least 1 sample to compare.");
     showAnalysisWorkspace();
     document.getElementById('analysisTools').style.display = 'none'; document.getElementById('loading').style.display = 'block'; document.getElementById('compareStatsBox').style.display = 'none';
     Promise.all(sel.map(s => fetch(`/api/experiment/${s.id}`).then(r => r.json()))).then(results => {
@@ -312,7 +319,7 @@ function loadCompare() {
                 }
             }
         }
-        drawChart(ds, "Compare Samples", "Waktu Relatif (s)");
+        drawChart(ds, "Compare Samples", "Relative Time (s)");
         var expBtnHost = document.getElementById('compareStatsBox');
         if (expBtnHost.style.display === 'block') {
             var expBtn = document.createElement('div');
@@ -333,7 +340,7 @@ function downloadTextFile(filename, text) {
     URL.revokeObjectURL(url);
 }
 function exportAnalysisSummary() {
-    if (!lastAdvancedSummary) return alert('No analysis summary available yet — open the Advanced view first.');
+    if (!lastAdvancedSummary) return notify('No analysis summary available yet — open the Advanced view first.');
     var s = lastAdvancedSummary;
     var rows = [
         ['experiment', 'sensor', 'n_cycles', 'cycle_slope_mean_C_per_s', 'cycle_slope_sd', 'ci95_halfwidth', 'pooled_heating_r2'],
@@ -344,7 +351,7 @@ function exportAnalysisSummary() {
     downloadTextFile(`pt-kit_analysis_${(s.expName || 'experiment').replace(/[^a-z0-9_-]+/gi, '_')}.csv`, csv);
 }
 function exportCompareSummary() {
-    if (!lastCompareSummary) return alert('No comparison summary available yet — run Compare on 2 samples first.');
+    if (!lastCompareSummary) return notify('No comparison summary available yet — run Compare on 2 samples first.');
     var cd = lastCompareSummary.compareData, result = lastCompareSummary.result;
     var rows = [['sample', 'n_cycles', 'ir_slope_mean_C_per_s', 'ir_slope_sd', 'welch_t', 'welch_df', 'p_value', 'significant_at_0.05']];
     cd.forEach((c, idx) => {
@@ -367,7 +374,7 @@ function drawChart(ds, t, xl) {
     chartInstance = new Chart(ctx, { type: 'line', data: { datasets: ds }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', position: 'bottom', title: {display:true, text:xl} }, y: { title: {display:true, text:'Temperature (°C)'} } }, plugins: { title: { display: true, text: t, font: {size:16} }, zoom: { pan: { enabled: true, mode: 'xy' }, zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, pinch: { enabled: true }, mode: 'xy' } }, legend: { labels: { filter: function(i) { return !i.text.includes('Low') && !i.text.includes('High'); } } } } } });
 }
 function resetZoom() { if(chartInstance) chartInstance.resetZoom(); }
-function downloadSelected() { var s = getSelected(); if(s.length===0) return alert("Pilih data!"); s.forEach(i => window.open(`/api/export/${i.id}`)); }
+function downloadSelected() { var s = getSelected(); if(s.length===0) return notify("Select at least 1 sample to download."); s.forEach(i => window.open(`/api/export/${i.id}`)); }
 </script>
 </body>
 </html>

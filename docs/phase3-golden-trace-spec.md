@@ -58,23 +58,35 @@ All parameters carry explicit units in their names.
 Depends on experiment mode:
 
 **ISO1 Command:**
+
+> ⚠️ **CORRECTION (2026-08-03):** The earlier version of this section used a simulator-side JSON shape (`duration_s`, `qualification_cycles`, `temp_range_lower_c`, …) that does **not** match the parameters of `app/protocol.py::serialize_fixed_command`. The fields below match the production wire command `ISO1:{target_temp}:{hold_s}:{tolerance}:{qualify_s}:{max_temp}:{interval}:{sensor}:{ramp_rate}`.
+
 ```json
 {
   "mode": "ISO1",
-  "target_temp_c": 37.0,
-  "duration_s": 60.0,
-  "qualification_cycles": 3,
-  "cycle_duration_s": 60.0,
-  "hold_duration_s": 60.0,
-  "stabilization_tolerance_c": 0.002,
-  "max_slope_c_per_min": 0.2,
-  "min_slope_c_per_min": -0.2,
-  "temp_range_lower_c": 36.8,
-  "temp_range_upper_c": 37.2
+  "target_temperature": 37.0,
+  "hold_duration_s": 60,
+  "temperature_tolerance": 0.2,
+  "qualification_dwell_s": 60,
+  "max_temp": 80.0,
+  "interval": 1,
+  "control_sensor": "IR",
+  "ramp_rate": 5.0
 }
 ```
 
-**PLAT1 Command:** (similar structure with plateau-specific params)
+| JSON field | `serialize_fixed_command` arg | Wire position |
+|---|---|---|
+| `target_temperature` | `target_temp_c` | 1 |
+| `hold_duration_s` | `hold_seconds` | 2 |
+| `temperature_tolerance` | `tolerance_c` | 3 |
+| `qualification_dwell_s` | `qualification_seconds` | 4 |
+| `max_temp` | `max_temp_c` | 5 |
+| `interval` | `log_interval_s` | 6 |
+| `control_sensor` | `sensor` (`IR`\|`TC`) | 7 |
+| `ramp_rate` | `ramp_rate_c_per_min` | 8 |
+
+**PLAT1 Command:** field names follow `serialize_plateau_command` (`target_lux`, `hold_seconds`, `window_seconds`, `max_abs_slope_c_per_min`, `max_peak_to_peak_c`, `confirmation_seconds`, `max_discovery_seconds`, `max_temp_c`, `log_interval_s`, `sensor`, `post_plateau_mode`).
 
 **CAL_BARE Command:** (calibration sequence parameters)
 
@@ -150,6 +162,25 @@ Each element in `traces` array represents a single time step.
 | `min_slope_c_per_min` | float? | Minimum measured slope (nullable) |
 | `average_slope_c_per_min` | float? | Average slope over window (nullable) |
 | `side_channel_message` | string? | Side-channel message if any (nullable) |
+
+**Simulator ↔ production wire field-name mapping:**
+
+> The simulator telemetry names above are plant/controller-side names. They do **not** match the production wire/backend field names in `app/protocol.py::parse_telemetry` / `app/main.py`. Use this table to map a golden-trace frame onto a production telemetry row (and vice versa):
+
+| Golden-trace (sim) | Production wire/backend | Notes |
+|---|---|---|
+| `timestamp_s` | `total_time` (+ `phase_time`) | wire carries both total and phase time |
+| `controller_state` | `state_code` (→ `state_label` via STATE_LABELS) | same 0–15 enum |
+| `surface_temp_c` | `ir_temp` | surface ≈ IR sensor |
+| `bulk_temp_c` | `tc_temp` | bulk ≈ thermocouple |
+| `lamp_output_lux` | `current_lux` | |
+| `target_temp_c` | `temp_setpoint` | experiment target |
+| `setpoint_temp_c` | `control_temp` | active control value |
+| `lamp_pwm` (actuator) | `lamp_pwm` (field 13) | same name |
+| `elapsed_hold_s` | `hold_wall_elapsed_s` / `hold_qualified_elapsed_s` | wire splits wall vs qualified |
+| `supervision_flag`, `hold_temp_c`, `current_cycle`, `total_cycles`, `max/min/average_slope_c_per_min`, `side_channel_message` | *(no direct wire field)* | sim-only; `cycle_num` on wire ≈ `current_cycle`; `detected_plateau_temp` (wire) has no sim counterpart in this schema |
+
+Full production layout: see `docs/BACKEND_API.md` §10 (Telemetry Wire Format) and §11 (State Code Map).
 
 **Floating-Point Tolerance:**
 
@@ -227,4 +258,4 @@ Planned improvements:
 
 ---
 
-*Last updated: 2026-08-01 | PT-Kit Digital Twin Simulator v3.0*
+*Last updated: 2026-08-03 | PT-Kit Digital Twin Simulator v3.0 — ISO1 command JSON + telemetry field names reconciled with app/protocol.py wire format*
