@@ -195,9 +195,10 @@
       .system-log-card[data-collapsed="true"] .system-log-content { display:none; }
       .control-action-bar { display:none; }
       .mobile-review-bar { position:fixed; left:8px; right:8px; bottom:max(8px,env(safe-area-inset-bottom)); z-index:12; display:flex; align-items:center; gap:10px; padding:8px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.97); box-shadow:0 4px 20px rgba(23,63,103,.22); }
-      .mobile-review-summary { min-width:0; flex:1; color:var(--muted); font-size:.78rem; line-height:1.25; }
-      .mobile-review-summary strong { display:block; color:var(--ink); font-size:.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-      .mobile-review-bar .btn-start { width:auto; min-width:150px; margin:0; }
+      .mobile-review-summary { min-width:0; flex:1 1 auto; overflow:hidden; color:var(--muted); font-size:.78rem; line-height:1.25; }
+      .mobile-review-summary strong, .mobile-review-summary span { display:block; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .mobile-review-summary strong { color:var(--ink); font-size:.88rem; }
+      .mobile-review-bar .btn-start { flex:0 0 auto; width:auto; min-width:clamp(132px,40vw,170px); margin:0; white-space:nowrap; }
       body.mobile-review-visible { padding-bottom:86px; }
       body:not(.mobile-review-visible) .mobile-review-bar { display:none; }
       #reviewModal { align-items:flex-end; padding:0; }
