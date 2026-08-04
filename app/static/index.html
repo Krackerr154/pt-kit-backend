@@ -138,6 +138,7 @@
     .system-log-card[data-collapsed="true"] .system-log-toggle::after { content:'+'; }
     .system-log-card[data-collapsed="true"] .system-log-content { display:none; }
     .system-log-content { height:96px !important; overflow-y:auto; overscroll-behavior:contain; }
+    .control-scroll-hint { display:inline-flex; align-items:center; min-height:26px; padding:3px 8px; border:1px solid #b6cbe0; border-radius:999px; background:#eef5fb; color:#315a7d; font-size:.72rem; font-weight:600; white-space:nowrap; }
     .visually-hidden { position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
     /* --- Custom themed dropdown (replaces native <select> look) --- */
     .csel { position:relative; width:100%; font:inherit; }
@@ -407,7 +408,7 @@
 
     <div class="right-col">
         <div class="card control-card">
-            <div class="card-title">Experiment control <span id="statusBadge" class="visually-hidden">IDLE</span></div>
+            <div class="card-title">Experiment control <span id="statusBadge" class="visually-hidden">IDLE</span><span id="controlScrollHint" class="control-scroll-hint" hidden>More settings below</span></div>
             
             <div id="setupForm">
                 <div class="setup-column setup-column-primary">
@@ -551,8 +552,10 @@ function updateModeFields() {
     document.getElementById('plateauFields').style.display=mode==='NATURAL_PLATEAU'?'block':'none';
     document.getElementById('modeSummary').textContent=mode==='NORMAL_CYCLIC'?'Run the existing heat/cool cycles.':mode==='FIXED_TEMPERATURE'?'Ramp to target, qualify within tolerance, then accumulate qualified hold time.':'Illuminate each sample while detecting its natural thermal plateau, confirm it, then hold.';
     updateIlluminationFields();
+    if(document&&typeof document.querySelector==='function'&&typeof setTimeout==='function')setTimeout(updateControlScrollHint,0);
 }
 function toggleSystemLog(forceOpen) { var card=document.getElementById('systemLogCard'),toggle=document.getElementById('systemLogToggle');if(!card||!toggle)return;card.dataset=card.dataset||{};var open=forceOpen===true||(forceOpen!==false&&card.dataset.collapsed==='true');card.dataset.collapsed=open?'false':'true';toggle.setAttribute('aria-expanded',String(open)); }
+function updateControlScrollHint() { if(!document||typeof document.querySelector!=='function')return;var card=document.querySelector('.control-card'),hint=document.getElementById('controlScrollHint');if(!card||!hint)return;var overflowing=card.scrollHeight>card.clientHeight+2,atBottom=card.scrollTop+card.clientHeight>=card.scrollHeight-2;hint.hidden=!overflowing||atBottom; }
 function revealInvalidSetupField(error) { var field=null;if(/Maximum temperature/i.test(error))field=document.getElementById('maxTemp');else if(/Target lux/i.test(error))field=document.getElementById('targetLux');else if(/Interval/i.test(error))field=document.getElementById('interval');if(field&&typeof field.closest==='function'){var section=field.closest('.mobile-advanced-fieldset');if(section)setMobileAdvancedExpanded(section,true,field);} }
 function field(data, names, fallback) { for(var i=0;i<names.length;i++) if(data && data[names[i]]!==undefined && data[names[i]]!==null) return data[names[i]]; return fallback; }
 /* --- Custom themed dropdown: wraps a native <select>, keeps it as source of truth --- */
@@ -1273,7 +1276,7 @@ function setUIState(state, clearTerminal) {
 if(document.querySelectorAll){document.querySelectorAll('[data-window]').forEach(function(b){b.addEventListener('click',function(){selectChartWindow(b.dataset.window);});});
 document.querySelectorAll('[data-channel]').forEach(function(b){b.addEventListener('click',function(){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));applyChannelVisibility();applyChartView();});});}
 document.getElementById('setupForm').addEventListener('input',updateMobileSetupSummary);document.getElementById('setupForm').addEventListener('change',function(e){updateMobileSetupSummary(e);updateModeFields();});if(window.matchMedia){var mobileSetupMedia=window.matchMedia('(max-width:600px)');if(mobileSetupMedia.addEventListener)mobileSetupMedia.addEventListener('change',syncMobileAdvancedVisibility);}
-updateModeFields(); initCustomSelects(); syncMobileAdvancedVisibility(); updateMobileSetupSummary(); if(document.body&&document.body.classList)document.body.classList.add('mobile-review-visible'); initChart(); renderPhaseStepper('NORMAL_CYCLIC',0); renderPhaseVisibility('IDLE'); renderHealth(true,null,null); renderMonitoringVisibility(false,'IDLE',true); setInterval(updateStatus, 1000);
+updateModeFields(); initCustomSelects(); syncMobileAdvancedVisibility(); updateMobileSetupSummary(); if(document.body&&document.body.classList)document.body.classList.add('mobile-review-visible'); initChart(); renderPhaseStepper('NORMAL_CYCLIC',0); renderPhaseVisibility('IDLE'); renderHealth(true,null,null); renderMonitoringVisibility(false,'IDLE',true); var controlCard=document.querySelector('.control-card');if(controlCard&&typeof controlCard.addEventListener==='function')controlCard.addEventListener('scroll',updateControlScrollHint);if(window&&typeof window.addEventListener==='function')window.addEventListener('resize',updateControlScrollHint);if(typeof setTimeout==='function')setTimeout(updateControlScrollHint,0); setInterval(updateStatus, 1000);
 
 // Load calibrated max lux hint on page load
 fetch('/api/get_config').then(function(r) { return r.json(); }).then(function(conf) {
