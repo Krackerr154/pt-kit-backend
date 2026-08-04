@@ -214,8 +214,13 @@
     @media (max-width:600px) {
       body { padding:8px; }
       .card, .instrument-header { padding:12px; }
+      .instrument-mainline { display:grid; grid-template-columns:1fr; gap:8px; }
       .instrument-title { width:100%; }
       .instrument-title span { display:none; }
+      .instrument-status { width:100%; gap:6px 10px; }
+      .instrument-utilities { width:100%; margin-left:0; gap:8px; }
+      .instrument-utility-link { flex:1 1 0; }
+      .health-cluster { margin-top:8px; gap:6px 8px; }
       .form-pair { grid-template-columns:1fr; gap:0; }
       .chart-container { height:280px; }
       .lux-chart-container { height:170px; }
@@ -238,13 +243,15 @@
       .system-log-card { padding-top:8px; padding-bottom:8px; }
       .system-log-card[data-collapsed="true"] .system-log-content { display:none; }
       .control-action-bar { display:none; }
-      .mobile-review-bar { position:fixed; left:8px; right:8px; bottom:max(8px,env(safe-area-inset-bottom)); z-index:12; display:flex; align-items:center; gap:10px; padding:8px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.97); box-shadow:0 4px 20px rgba(23,63,103,.22); }
+      .mobile-review-bar { position:static; width:100%; display:flex; align-items:center; gap:10px; margin:12px 0 0; padding:8px; border:1px solid var(--line); border-radius:10px; background:var(--surface); box-shadow:0 2px 10px rgba(23,63,103,.12); }
       .mobile-review-summary { min-width:0; flex:1 1 auto; overflow:hidden; color:var(--muted); font-size:.78rem; line-height:1.25; }
       .mobile-review-summary strong, .mobile-review-summary span { display:block; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
       .mobile-review-summary strong { color:var(--ink); font-size:.88rem; }
       .mobile-review-bar .btn-start { flex:0 0 auto; width:auto; min-width:clamp(132px,40vw,170px); margin:0; white-space:nowrap; }
-      body.mobile-review-visible { padding-bottom:86px; }
+      body.mobile-review-visible { padding-bottom:8px; }
       body:not(.mobile-review-visible) .mobile-review-bar { display:none; }
+      #systemLogCard { margin-top:12px; }
+      #systemLogToggle { min-height:48px; }
       #reviewModal { align-items:flex-end; padding:0; }
       #reviewModal .modal { width:100%; max-width:none; max-height:min(86dvh,720px); border-radius:16px 16px 0 0; padding:0; padding-bottom:env(safe-area-inset-bottom); box-shadow:0 -10px 32px rgba(0,0,0,.24); }
       #reviewModal .modal-handle { display:block; width:42px; height:5px; margin:9px auto 5px; border-radius:999px; background:#aeb8c2; }
@@ -271,6 +278,9 @@
       /* placeholder / colspan rows: no label, centered */
       table.cycle-table td[colspan]::before { content:none; }
       table.cycle-table td[colspan] { justify-content:center; text-align:center; }
+    }
+    @media (min-width:360px) and (max-width:600px) {
+      #normalFields .form-pair, #illuminationAdvanced .form-pair { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
     }
   </style>
 </head>
@@ -433,6 +443,7 @@
                 <div class="stat-val" style="font-size:1.2rem; color:#666;" id="valTime">00:00</div>
             </div>
         </div>
+        <div id="mobileReviewBar" class="mobile-review-bar" aria-label="Experiment review action"><div class="mobile-review-summary"><strong id="mobileReviewTitle">Normal cyclic · 5 cycles</strong><span id="mobileReviewDetail">Target lux · 38,000 lx</span></div><button class="btn-start" type="button" onclick="openReviewModal()">Review experiment</button></div>
         <div id="systemLogCard" class="card system-log-card" data-collapsed="true">
             <button id="systemLogToggle" class="system-log-toggle" type="button" aria-expanded="false" aria-controls="sysLog" onclick="toggleSystemLog()"><span>ℹ️ System Log</span><span id="systemLogStatus" class="mobile-advanced-summary">System ready</span></button>
             <div id="sysLog" class="system-log-content" style="height:150px; overflow-y:auto; font-size:0.8rem; color:#555; font-family:monospace;">System Ready...</div>
@@ -440,8 +451,6 @@
     </div>
 </div>
 </div>
-<div id="mobileReviewBar" class="mobile-review-bar" aria-label="Experiment review action"><div class="mobile-review-summary"><strong id="mobileReviewTitle">Normal cyclic · 5 cycles</strong><span id="mobileReviewDetail">Target lux · 38,000 lx</span></div><button class="btn-start" type="button" onclick="openReviewModal()">Review experiment</button></div>
-
 <div id="stopModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="stopModalTitle" aria-describedby="stopModalDescription"><h2 id="stopModalTitle">Stop this experiment?</h2><p id="stopModalDescription">The lamp will be turned off. Data already recorded will be retained.</p><div class="modal-actions"><button id="cancelStop" type="button" onclick="closeStopModal()">Cancel</button><button id="confirmStop" class="danger" type="button" onclick="stopExperiment()">Stop now</button></div></div></div>
 <div id="reviewModal" class="modal-backdrop" hidden><div class="modal review-sheet" role="dialog" aria-modal="true" aria-labelledby="reviewTitle" aria-describedby="reviewDescription"><div class="modal-handle" aria-hidden="true"></div><div class="modal-header"><h2 id="reviewTitle">Review experiment settings</h2><p id="reviewDescription">Confirm the exact configuration before the instrument starts.</p></div><div class="modal-body"><dl id="reviewDetails" class="review-details"></dl><p id="reviewWarning" class="illumination-notice" hidden></p></div><div class="modal-actions"><button id="cancelReview" type="button" onclick="closeReviewModal()">Back to edit</button><button id="confirmReview" type="button" onclick="confirmReviewedStart()">Confirm and start</button></div></div></div>
 
