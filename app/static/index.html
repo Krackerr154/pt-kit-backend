@@ -50,7 +50,7 @@
     .btn-download { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; display: block; text-decoration: none; text-align: center; }
     .btn-reset { width: 100%; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-    .instrument-utilities { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-left:4px; }
+    .instrument-utilities { grid-area:utilities; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
     .instrument-utility-link { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:44px; padding:6px 10px; border:1px solid var(--line); border-radius:6px; background:var(--surface-soft); color:#29465f; text-decoration:none; font-size:.82rem; font-weight:600; white-space:nowrap; }
     .instrument-utility-link:hover { background:#e8eef3; border-color:#aeb8c2; }
 
@@ -121,11 +121,20 @@
     .err-val { font-size: 0.75rem; color: #999; } 
 
     .instrument-header { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:12px 16px; margin-bottom:16px; }
-    .instrument-mainline { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; }
-    .instrument-title { display:flex; align-items:baseline; gap:10px; margin-right:auto; }
+    .header-grid { display:grid; grid-template-areas:"brand status utilities"; grid-template-columns:auto 1fr auto; align-items:center; gap:8px 20px; }
+    .header-brand { grid-area:brand; min-width:0; }
+    .header-brand .health-cluster { margin-top:6px; }
+    .instrument-title { display:flex; align-items:baseline; gap:10px; }
     .instrument-title h1 { margin:0; font-size:1.35rem; letter-spacing:-.01em; }
     .instrument-title span { color:var(--muted); font-size:.85rem; }
-    .instrument-status { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; color:var(--muted); font-size:.85rem; }
+    .instrument-status { grid-area:status; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px 14px; color:var(--muted); font-size:.85rem; }
+    .utilities-overflow { display:none; position:relative; }
+    .utilities-menu-btn { min-width:44px; min-height:44px; border:1px solid var(--line); border-radius:6px; background:var(--surface-soft); color:#29465f; font-size:1.1rem; font-weight:700; cursor:pointer; line-height:1; }
+    .utilities-menu-btn:hover { background:#e8eef3; border-color:#aeb8c2; }
+    .utilities-menu { position:absolute; right:0; top:calc(100% + 6px); z-index:60; display:flex; flex-direction:column; gap:2px; min-width:190px; padding:6px; background:var(--surface); border:1px solid var(--line); border-radius:8px; box-shadow:0 10px 28px rgba(23,33,43,.14); }
+    .utilities-menu a { display:flex; align-items:center; gap:6px; padding:9px 10px; border-radius:6px; color:#29465f; text-decoration:none; font-size:.85rem; font-weight:600; white-space:nowrap; }
+    .utilities-menu a:hover { background:var(--surface-soft); }
+    .archive-badge { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:#173f67; color:#fff; font-size:.68rem; font-weight:700; }
     .status-text { display:inline-flex; align-items:center; min-height:28px; font-weight:600; }
     .monitoring-empty { min-height:clamp(220px,42vh,420px); flex:1 1 auto; display:grid; place-content:center; text-align:center; padding:24px; border:1px dashed #aeb8c2; border-radius:8px; background:var(--surface-soft); }
     #monitoringData:not([hidden]) { flex:1 1 auto; display:flex; flex-direction:column; }
@@ -192,7 +201,7 @@
     @media (max-width:1180px) and (min-width:901px) {
       .dashboard-grid { grid-template-columns:minmax(0, 1fr) minmax(330px, 380px); }
       .form-pair { grid-template-columns:1fr; gap:0; }
-      .instrument-mainline { gap:8px 10px; }
+      .header-grid { gap:8px 12px; }
       .instrument-status { gap:6px 10px; }
     }
     @media (max-width:980px) and (min-width:901px) {
@@ -233,6 +242,10 @@
     }
     @media (max-width:900px) {
       body { padding:12px; }
+      .header-grid { grid-template-areas:"brand overflow" "status status"; grid-template-columns:1fr auto; }
+      .instrument-utilities { display:none; }
+      .utilities-overflow { display:block; grid-area:overflow; justify-self:end; }
+      .instrument-status { justify-content:flex-start; }
       .dashboard-grid { grid-template-columns:minmax(0, 1fr); grid-template-areas:"monitor" "control"; align-items:start; }
       .dashboard-grid[data-ui-state="IDLE"] { grid-template-areas:"control" "monitor"; }
       .right-col { position:static; max-height:none; overflow:visible; }
@@ -244,12 +257,8 @@
     @media (max-width:600px) {
       body { padding:8px; }
       .card, .instrument-header { padding:12px; }
-      .instrument-mainline { display:grid; grid-template-columns:1fr; gap:8px; }
-      .instrument-title { width:100%; }
       .instrument-title span { display:none; }
-      .instrument-status { width:100%; gap:6px 10px; }
-      .instrument-utilities { width:100%; margin-left:0; gap:8px; }
-      .instrument-utility-link { flex:1 1 0; }
+      .instrument-status { gap:6px 10px; }
       .health-cluster { margin-top:8px; gap:6px 8px; }
       .form-pair { grid-template-columns:1fr; gap:0; }
       .chart-container { height:280px; }
@@ -318,8 +327,11 @@
 
 <div class="page-shell">
 <header class="instrument-header" aria-label="PT-Kit instrument status">
-    <div class="instrument-mainline">
-        <div class="instrument-title"><h1>PT-Kit</h1><span>Thermal photostability instrument</span></div>
+    <div class="header-grid">
+        <div class="header-brand">
+            <div class="instrument-title"><h1>PT-Kit</h1><span>Thermal photostability instrument</span></div>
+            <div id="healthCluster" class="health-cluster" aria-label="System health diagnostics"></div>
+        </div>
         <div class="instrument-status">
             <span id="stateBadge" class="badge bg-idle" aria-live="polite">IDLE</span>
             <span id="backendStatus" class="status-text" aria-live="polite">Backend online</span>
@@ -327,11 +339,17 @@
             <span id="sampleFreshness" class="status-text" aria-live="polite">Sample: waiting</span>
         </div>
         <nav class="instrument-utilities" aria-label="Instrument utilities">
-            <a class="instrument-utility-link" href="/history">📁 Data archive</a>
+            <a class="instrument-utility-link" href="/history">📁 Data archive <span id="archiveCount" class="archive-badge" hidden></span></a>
             <a class="instrument-utility-link" href="/static/calibration.html">🔧 Lux calibration</a>
         </nav>
+        <div class="utilities-overflow">
+            <button id="utilitiesMenuBtn" class="utilities-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="utilitiesMenu" aria-label="More utilities" onclick="toggleUtilitiesMenu()">⋯</button>
+            <div id="utilitiesMenu" class="utilities-menu" role="menu" hidden>
+                <a role="menuitem" href="/history">📁 Data archive <span id="archiveCountMenu" class="archive-badge" hidden></span></a>
+                <a role="menuitem" href="/static/calibration.html">🔧 Lux calibration</a>
+            </div>
+        </div>
     </div>
-    <div id="healthCluster" class="health-cluster" aria-label="System health diagnostics"></div>
 </header>
 
 <div class="dashboard-grid" data-ui-state="IDLE">
@@ -571,6 +589,26 @@ function updateModeFields() {
     if(document&&typeof document.querySelector==='function'&&typeof setTimeout==='function')setTimeout(updateControlScrollHint,0);
 }
 function toggleSystemLog(forceOpen) { var card=document.getElementById('systemLogCard'),toggle=document.getElementById('systemLogToggle');if(!card||!toggle)return;card.dataset=card.dataset||{};var open=forceOpen===true||(forceOpen!==false&&card.dataset.collapsed==='true');card.dataset.collapsed=open?'false':'true';toggle.setAttribute('aria-expanded',String(open)); }
+function toggleUtilitiesMenu(forceOpen) {
+    var menu=document.getElementById('utilitiesMenu'),btn=document.getElementById('utilitiesMenuBtn');
+    if(!menu||!btn)return;
+    var open=forceOpen===true||(forceOpen!==false&&menu.hidden);
+    menu.hidden=!open;
+    btn.setAttribute('aria-expanded',String(open));
+}
+function getArchiveBadgeModel(count) {
+    var n=Number(count);
+    return Number.isFinite(n)&&n>0?{visible:true,text:String(n)}:{visible:false,text:''};
+}
+function renderArchiveCount(count) {
+    var model=getArchiveBadgeModel(count);
+    ['archiveCount','archiveCountMenu'].forEach(function(id){
+        var b=document.getElementById(id);
+        if(!b)return;
+        b.hidden=!model.visible;
+        b.textContent=model.text;
+    });
+}
 function updateControlScrollHint() { if(!document||typeof document.querySelector!=='function')return;var card=document.querySelector('.control-card'),hint=document.getElementById('controlScrollHint');if(!card||!hint)return;var overflowing=card.scrollHeight>card.clientHeight+2,atBottom=card.scrollTop+card.clientHeight>=card.scrollHeight-2;hint.hidden=!overflowing||atBottom; }
 function revealInvalidSetupField(error) { var field=null;if(/Maximum temperature/i.test(error))field=document.getElementById('maxTemp');else if(/Target lux/i.test(error))field=document.getElementById('targetLux');else if(/Interval/i.test(error))field=document.getElementById('interval');if(field&&typeof field.closest==='function'){var section=field.closest('.mobile-advanced-fieldset');if(section)setMobileAdvancedExpanded(section,true,field);} }
 function field(data, names, fallback) { for(var i=0;i<names.length;i++) if(data && data[names[i]]!==undefined && data[names[i]]!==null) return data[names[i]]; return fallback; }
@@ -1359,6 +1397,14 @@ fetch('/api/get_config').then(function(r) { return r.json(); }).then(function(co
         document.getElementById('targetLux').max = parseFloat(conf.max_hardware_lux);
     }
 }).catch(function() {});
+
+// Archive count badge + utilities overflow menu dismissal
+fetch('/api/archive/count').then(function(r){return r.ok?r.json():null;}).then(function(d){if(d)renderArchiveCount(d.count);}).catch(function(){});
+document.addEventListener('click',function(e){
+    var menu=document.getElementById('utilitiesMenu'),btn=document.getElementById('utilitiesMenuBtn');
+    if(!menu||!btn||menu.hidden)return;
+    if(e.target&&typeof e.target.closest==='function'&&!e.target.closest('#utilitiesMenu')&&!e.target.closest('#utilitiesMenuBtn'))toggleUtilitiesMenu(false);
+});
 </script>
 </body>
 </html>

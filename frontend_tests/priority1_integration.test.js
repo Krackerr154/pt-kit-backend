@@ -27,7 +27,7 @@ function harness() {
   }
   const fetchQueue=[];
   const context={document,Chart,console,Date,Math,JSON,Number,parseInt,parseFloat,Promise,
-    fetch: (...args)=>args[0]==='/api/get_config'?Promise.resolve({ok:true,status:200,json:async()=>({})}):(assert.ok(fetchQueue.length,'unexpected fetch '+args[0]),Promise.resolve(fetchQueue.shift())),
+    fetch: (...args)=>(args[0]==='/api/get_config'||args[0]==='/api/archive/count')?Promise.resolve({ok:true,status:200,json:async()=>({})}):(assert.ok(fetchQueue.length,'unexpected fetch '+args[0]),Promise.resolve(fetchQueue.shift())),
     setInterval(){return 1},clearInterval(){},setTimeout(fn){fn();return 1},clearTimeout(){},alert(){}};
   context.window=context;
   vm.createContext(context); vm.runInContext(inline,context,{filename:'index.inline.js'});

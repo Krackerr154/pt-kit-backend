@@ -498,6 +498,16 @@ def list_experiments():
     conn.close()
     return results
 
+@app.get("/api/archive/count")
+def archive_count():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM experiments")
+    count = cur.fetchone()[0]
+    cur.close()
+    conn.close()
+    return {"count": count}
+
 @app.get("/api/experiment/{exp_id}")
 def get_experiment_data(exp_id: int):
     conn = get_db_connection()

@@ -31,6 +31,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, json.dumps({"active_experiment": None, "recent_data": [sample]}))
         if path == "/api/get_config":
             return self._send(200, json.dumps({"max_hardware_lux": 50000}))
+        if path == "/api/archive/count":
+            return self._send(200, json.dumps({"count": 3}))
         if path == "/api/toggle_mock":
             STATE["connected"] = not STATE["connected"]
             STATE["t0"] = time.time()
