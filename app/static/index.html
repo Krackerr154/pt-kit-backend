@@ -19,7 +19,7 @@
     .dashboard-grid { display:grid; grid-template-columns:minmax(0, 1fr) minmax(360px, 420px); grid-template-areas:"monitor control"; gap:16px; align-items:stretch; }
     .left-col { grid-area:monitor; min-width:0; display:flex; flex-direction:column; }
     .left-col > section.card { display:flex; flex-direction:column; flex:1 1 auto; }
-    .right-col { grid-area:control; position:sticky; top:16px; min-width:0; overflow-y:auto; scrollbar-gutter:stable; }
+    .right-col { grid-area:control; position:sticky; top:0; min-width:0; overflow-y:auto; scrollbar-gutter:stable; }
     .card { background:var(--surface); padding:16px; border:1px solid var(--line); border-radius:8px; box-shadow:none; margin-bottom:16px; }
     .card-title { font-size:1.125rem; font-weight:700; margin-bottom:16px; color:#20364b; display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center; }
     
@@ -177,7 +177,7 @@
       .dashboard-grid { height:calc(100dvh - 92px); min-height:0; gap:10px; }
       .card { padding:10px; margin-bottom:10px; }
       .card-title { margin-bottom:8px; font-size:1rem; }
-      .right-col { position:relative; overflow:visible; min-height:0; }
+      .right-col { position:relative; top:0; overflow:visible; min-height:0; }
       .control-card { height:auto; margin-bottom:0; overflow:visible; zoom:.72; }
       #systemLogCard { position:absolute; left:0; right:0; bottom:0; height:70px; margin:0; overflow:hidden; }
       #setupForm { height:auto; overflow:visible; }
