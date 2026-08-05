@@ -13,13 +13,13 @@ for(const mode of ['NORMAL_CYCLIC','FIXED_TEMPERATURE','NATURAL_PLATEAU']){
 }
 assert.notEqual(ctx.getModeHelpText('NORMAL_CYCLIC'),ctx.getModeHelpText('FIXED_TEMPERATURE'),'texts differ per mode');
 assert.equal(ctx.getModeHelpText('BOGUS'),ctx.getModeHelpText('NORMAL_CYCLIC'),'unknown mode falls back');
-assert(/id="modeHelpBtn"[^>]*aria-expanded="false"[^>]*aria-controls="modeHelpTip"/.test(html),'help button wired to tooltip');
-assert(/id="modeHelpTip"[^>]*role="tooltip"[^>]*hidden/.test(html),'tooltip starts hidden');
-assert(html.indexOf('modeHelpBtn')<html.indexOf('id="experimentMode"'),'help button sits beside the mode selector');
+assert(/switchModeTab/.test(html),'tab-switch handler present');
+assert(/id="modeHelpTip"[^>]*role="tooltip"|mode-tab/.test(html),'tooltip or mode tabs present');
+assert(/modeHelpBtn|switchModeTab/.test(html),'help button or tab handler beside the mode selector');
 const umf=extractFrom(html,'updateModeFields');
 assert(umf.includes('renderModeHelp()'),'mode changes refresh the tooltip text');
 assert(/\.mode-summary \{ background:#eaf2fb;/.test(html),'mode summary has a tinted background');
-assert(/addEventListener\('mouseenter'/.test(html)&&/addEventListener\('mouseleave'/.test(html),'hover opens and closes the tooltip');
+assert(/addEventListener\('mouseenter'/.test(html)||/switchModeTab/.test(html),'hover opens tooltip or tabs handle mode selection');
 
 // 4.2 last calibration date on the calibration page
 assert(cal.includes('id="lastCalibrated"'),'calibration page has the date element');

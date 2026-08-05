@@ -271,7 +271,16 @@
     .csel-opt[data-selected="true"] { background:rgba(11,95,255,.10); color:var(--accent,#0b5fff); font-weight:600; }
     .csel-opt[data-selected="true"]::after { content:'✓'; font-weight:700; }
     .csel-opt .csel-desc { display:block; font-size:.72rem; color:var(--muted,#5b6b7a); margin-top:2px; font-weight:400; }
-    .zoom-hint { font-size:.8rem; color:var(--muted); font-style:normal; margin-top:8px; text-align:right; }
+    /* --- Mode tabs (replaces dropdown) --- */
+    .mode-tabs { display:flex; gap:0; border:1px solid var(--line); border-radius:8px 8px 0 0; overflow:hidden; margin-bottom:0; }
+    .mode-tab { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 8px; background:var(--surface-soft); border:0; border-bottom:3px solid transparent; color:var(--muted); font-family:inherit; font-size:.82rem; font-weight:600; cursor:pointer; transition:background .15s,border-color .15s,color .15s; text-align:center; line-height:1.3; }
+    .mode-tab:hover { background:#e8eef3; color:var(--ink); }
+    .mode-tab.active { background:var(--surface); border-bottom-color:var(--accent); color:var(--navy); }
+    .mode-tab small { display:block; font-weight:400; font-size:.68rem; opacity:.75; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+    .mode-tab-panel { display:none; border:1px solid var(--line); border-top:0; border-radius:0 0 8px 8px; padding:12px; background:var(--surface); }
+    .mode-tab-panel.active { display:block; }
+    .mode-desc { font-size:.82rem; color:var(--muted); margin:0 0 10px; line-height:1.45; }
+    .tabbed-layout { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:14px; }
     button:disabled { cursor:not-allowed; opacity:.48; }
     @media (min-width:1440px) {
       body { padding:16px 24px; }
@@ -547,35 +556,47 @@
             <div class="card-title">Experiment control <span id="statusBadge" class="visually-hidden">IDLE</span><span id="controlScrollHint" class="control-scroll-hint" hidden>More settings below</span></div>
             
             <div id="setupForm">
-                <div class="setup-column setup-column-primary">
-                <fieldset><legend>Experiment</legend>
-                <div class="form-group"><label for="operatorName">Operator Name</label><input type="text" id="operatorName" value="Gerald"></div>
-                <div class="form-group"><label for="sampleName">Sample Name</label><input type="text" id="sampleName" placeholder="e.g. MOF-Batch-1" title="Shortcut: Ctrl+S focuses this field"></div>
-                <div class="form-group mode-select-group"><div class="mode-label-row"><label for="experimentMode">Experiment Mode</label><button type="button" id="modeHelpBtn" class="mode-help-btn" aria-label="About experiment modes" aria-expanded="false" aria-controls="modeHelpTip">ℹ️</button></div><select id="experimentMode"><option value="NORMAL_CYCLIC" selected>Normal cyclic</option><option value="FIXED_TEMPERATURE">Fixed temperature</option><option value="NATURAL_PLATEAU">Natural plateau</option></select><div id="modeHelpTip" class="mode-help-tip" role="tooltip" hidden></div></div></fieldset>
-                <fieldset><legend>Mode parameters</legend>
-                <div id="normalFields" class="mode-fields">
-                  <div class="form-pair"><div class="form-group"><label for="duration">Target Duration (sec/cycle)</label><input type="number" id="duration" value="60"></div>
-                  <div class="form-group"><label for="cycles">Total Cycles</label><input type="number" id="cycles" value="5"></div></div>
+                <div class="form-pair"><div class="form-group"><label for="operatorName">Operator Name</label><input type="text" id="operatorName" value="Gerald"></div>
+                <div class="form-group"><label for="sampleName">Sample Name</label><input type="text" id="sampleName" placeholder="e.g. MOF-Batch-1" title="Shortcut: Ctrl+S focuses this field"></div></div>
+                
+                <div class="mode-tabs" role="tablist" aria-label="Experiment mode">
+                  <button id="tabNormal" class="mode-tab active" type="button" role="tab" aria-selected="true" aria-controls="panelNormal" onclick="switchModeTab('NORMAL_CYCLIC')">Normal<small>Cyclic</small></button>
+                  <button id="tabFixed" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="panelFixed" onclick="switchModeTab('FIXED_TEMPERATURE')">Fixed<small>Temperature</small></button>
+                  <button id="tabPlateau" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="panelPlateau" onclick="switchModeTab('NATURAL_PLATEAU')">Plateau<small>Auto-detect</small></button>
                 </div>
-                <div id="fixedFields" class="mode-fields">
-                  <div class="form-pair"><div class="form-group"><label for="targetTemperature">Target Temperature (°C)</label><input type="number" id="targetTemperature" value="60"></div>
-                  <div class="form-group"><label for="qualifiedHoldMinutes">Qualified Hold Duration (minutes)</label><input type="number" id="qualifiedHoldMinutes" value="10" min="0.1" step="0.1"></div></div>
-                  <div class="form-pair"><div class="form-group"><label for="temperatureTolerance">Tolerance (°C)</label><input type="number" id="temperatureTolerance" value="1" step="0.1"></div>
-                  <div class="form-group"><label for="qualificationDwell">Qualification Dwell (sec)</label><input type="number" id="qualificationDwell" value="30"></div></div>
-                  <div class="form-pair"><div class="form-group"><label for="fixedControlSensor">Control Sensor</label><select id="fixedControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div>
-                  <div class="form-group"><label for="rampRate">Ramp Rate (°C/min)</label><input type="number" id="rampRate" value="5" step="0.1"></div></div>
+                <div id="panelNormal" class="mode-tab-panel active" role="tabpanel" aria-labelledby="tabNormal">
+                  <p class="mode-desc">Run the existing heat/cool cycles.</p>
+                  <div class="tabbed-layout">
+                    <div><div class="form-group"><label for="duration">Target Duration (sec/cycle)</label><input type="number" id="duration" value="60"></div>
+                    <div class="form-group"><label for="cycles">Total Cycles</label><input type="number" id="cycles" value="5"></div></div>
+                    <div></div>
+                  </div>
                 </div>
-                <div id="plateauFields" class="mode-fields">
-                  <div class="form-pair"><div class="form-group"><label for="plateauHoldMinutes">Plateau Hold Duration (minutes)</label><input type="number" id="plateauHoldMinutes" value="10" min="0.1" step="0.1"></div>
-                  <div class="form-group"><label for="plateauControlSensor">Control Sensor</label><select id="plateauControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div></div>
-                  <div class="form-pair"><div class="form-group"><label for="detectionWindow">Detection Window (sec)</label><input type="number" id="detectionWindow" value="60" max="60"></div>
-                  <div class="form-group"><label for="maxAbsSlope">Max Abs Slope (°C/min)</label><input type="number" id="maxAbsSlope" value="0.2" step="0.01"></div></div>
-                  <div class="form-pair"><div class="form-group"><label for="maxPeakToPeak">Max Peak-to-Peak (°C)</label><input type="number" id="maxPeakToPeak" value="1" step="0.1"></div>
-                  <div class="form-group"><label for="confirmationDuration">Confirmation Duration (sec)</label><input type="number" id="confirmationDuration" value="60"></div></div>
-                  <div class="form-pair"><div class="form-group"><label for="maxDiscoveryTime">Max Discovery Time (minutes)</label><input type="number" id="maxDiscoveryTime" value="60"></div>
-                  <div class="form-group"><label for="postPlateauBehavior">Post-plateau Behavior</label><select id="postPlateauBehavior"><option value="PASSIVE" selected>Passive (same illumination)</option><option value="REGULATED">Regulated</option></select></div></div>
-                </div></fieldset>
+                <div id="panelFixed" class="mode-tab-panel" role="tabpanel" aria-labelledby="tabFixed">
+                  <p class="mode-desc">Ramp to target, qualify within tolerance, then accumulate qualified hold time.</p>
+                  <div class="tabbed-layout">
+                    <div><div class="form-group"><label for="targetTemperature">Target Temperature (°C)</label><input type="number" id="targetTemperature" value="60"></div>
+                    <div class="form-group"><label for="qualifiedHoldMinutes">Qualified Hold Duration (minutes)</label><input type="number" id="qualifiedHoldMinutes" value="10" min="0.1" step="0.1"></div>
+                    <div class="form-group"><label for="temperatureTolerance">Tolerance (°C)</label><input type="number" id="temperatureTolerance" value="1" step="0.1"></div>
+                    <div class="form-group"><label for="qualificationDwell">Qualification Dwell (sec)</label><input type="number" id="qualificationDwell" value="30"></div></div>
+                    <div><div class="form-group"><label for="fixedControlSensor">Control Sensor</label><select id="fixedControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div>
+                    <div class="form-group"><label for="rampRate">Ramp Rate (°C/min)</label><input type="number" id="rampRate" value="5" step="0.1"></div></div>
+                  </div>
                 </div>
+                <div id="panelPlateau" class="mode-tab-panel" role="tabpanel" aria-labelledby="tabPlateau">
+                  <p class="mode-desc">Illuminate each sample while detecting its natural thermal plateau, confirm it, then hold.</p>
+                  <div class="tabbed-layout">
+                    <div><div class="form-group"><label for="plateauHoldMinutes">Plateau Hold Duration (minutes)</label><input type="number" id="plateauHoldMinutes" value="10" min="0.1" step="0.1"></div>
+                    <div class="form-group"><label for="plateauControlSensor">Control Sensor</label><select id="plateauControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div>
+                    <div class="form-group"><label for="detectionWindow">Detection Window (sec)</label><input type="number" id="detectionWindow" value="60" max="60"></div>
+                    <div class="form-group"><label for="maxAbsSlope">Max Abs Slope (°C/min)</label><input type="number" id="maxAbsSlope" value="0.2" step="0.01"></div></div>
+                    <div><div class="form-group"><label for="maxPeakToPeak">Max Peak-to-Peak (°C)</label><input type="number" id="maxPeakToPeak" value="1" step="0.1"></div>
+                    <div class="form-group"><label for="confirmationDuration">Confirmation Duration (sec)</label><input type="number" id="confirmationDuration" value="60"></div>
+                    <div class="form-group"><label for="maxDiscoveryTime">Max Discovery Time (minutes)</label><input type="number" id="maxDiscoveryTime" value="60"></div>
+                    <div class="form-group"><label for="postPlateauBehavior">Post-plateau Behavior</label><select id="postPlateauBehavior"><option value="PASSIVE" selected>Passive (same illumination)</option><option value="REGULATED">Regulated</option></select></div></div>
+                  </div>
+                </div>
+                <select id="experimentMode" class="visually-hidden"><option value="NORMAL_CYCLIC" selected>Normal cyclic</option><option value="FIXED_TEMPERATURE">Fixed temperature</option><option value="NATURAL_PLATEAU">Natural plateau</option></select>
                 <div class="setup-column setup-column-secondary">
                 <fieldset id="illuminationFieldset" class="mobile-advanced-fieldset" data-expanded="false"><legend>Illumination &amp; acquisition</legend>
                 <button class="mobile-advanced-toggle" type="button" aria-expanded="false" aria-controls="illuminationAdvanced" onclick="toggleMobileAdvanced('illuminationFieldset')"><span>Illumination &amp; acquisition</span><span id="illuminationMobileSummary" class="mobile-advanced-summary">Target lux · 38,000 lx · log 1 s</span></button>
@@ -692,11 +713,26 @@ function toggleMobileAdvanced(id) { var fieldset=document.getElementById(id);if(
 function syncMobileAdvancedVisibility() { ['illuminationFieldset','safetyFieldset'].forEach(function(id){var fieldset=document.getElementById(id);if(fieldset)setMobileAdvancedExpanded(fieldset,!isMobileSetup()||(fieldset.dataset&&fieldset.dataset.expanded==='true'));}); }
 function updateMobileSetupSummary() { var mode=valueOf('experimentMode'),illum=mode==='FIXED_TEMPERATURE'?'TEMPERATURE_CONTROLLED':selectedIlluminationMode(),lux=numberOf('targetLux'),interval=valueOf('interval'),max=valueOf('maxTemp'),modeLabel=mode==='NORMAL_CYCLIC'?'Normal cyclic · '+valueOf('cycles')+' cycles':mode==='FIXED_TEMPERATURE'?'Fixed temperature · '+valueOf('targetTemperature')+' °C':'Natural plateau · '+valueOf('plateauHoldMinutes')+' min hold',illumLabel=illum==='MAX_OUTPUT'?'Maximum output':illum==='TEMPERATURE_CONTROLLED'?'Temperature controlled':'Target lux · '+(Number.isFinite(lux)?lux.toLocaleString():'—')+'\u00A0lx';document.getElementById('illuminationMobileSummary').textContent=illumLabel+' · log '+interval+' s';document.getElementById('safetyMobileSummary').textContent='Maximum · '+max+' °C';document.getElementById('mobileReviewTitle').textContent=modeLabel;var luxVal=(Number.isFinite(lux)?lux.toLocaleString():'—')+'\u00A0lx',safetyVal='safety\u00A0'+max+'\u00A0°C';document.getElementById('mobileReviewDetail').innerHTML='<span style="white-space:nowrap">'+illumLabel+'</span><span style="white-space:nowrap">\u00A0·\u00A0'+safetyVal+'</span>'; }
 function updateIlluminationFields() { var fixed=valueOf('experimentMode')==='FIXED_TEMPERATURE',maximum=!fixed&&selectedIlluminationMode()==='MAX_OUTPUT';document.getElementById('illuminationModeControl').hidden=fixed;document.getElementById('targetLuxGroup').hidden=fixed||maximum;document.getElementById('maxOutputNotice').hidden=!maximum;document.getElementById('temperatureControlNotice').hidden=!fixed;updateMobileSetupSummary(); }
+function switchModeTab(mode, fromSelect) {
+    ['NORMAL_CYCLIC','FIXED_TEMPERATURE','NATURAL_PLATEAU'].forEach(function(m){
+        var tab=document.getElementById(m==='NORMAL_CYCLIC'?'tabNormal':m==='FIXED_TEMPERATURE'?'tabFixed':'tabPlateau');
+        var panel=document.getElementById(m==='NORMAL_CYCLIC'?'panelNormal':m==='FIXED_TEMPERATURE'?'panelFixed':'panelPlateau');
+        if(tab){tab.classList.toggle('active',m===mode);tab.setAttribute('aria-selected',String(m===mode));}
+        if(panel)panel.classList.toggle('active',m===mode);
+    });
+    var sel=document.getElementById('experimentMode');
+    if(sel&&sel.value!==mode){sel.value=mode;if(!fromSelect)updateModeFields();}
+    renderModeHelp();
+    updateIlluminationFields();
+    if(typeof computePlannedDurationSeconds==='function'&&typeof setTimeout==='function')setTimeout(updateTotalTime,0);
+    if(typeof updateMobileSetupSummary==='function')updateMobileSetupSummary();
+    if(document&&typeof document.querySelector==='function'&&typeof setTimeout==='function')setTimeout(updateControlScrollHint,0);
+}
 function updateModeFields() {
     var mode=valueOf('experimentMode');
-    document.getElementById('normalFields').style.display=mode==='NORMAL_CYCLIC'?'block':'none';
-    document.getElementById('fixedFields').style.display=mode==='FIXED_TEMPERATURE'?'block':'none';
-    document.getElementById('plateauFields').style.display=mode==='NATURAL_PLATEAU'?'block':'none';
+    document.getElementById('normalFields')?document.getElementById('normalFields').style.display=mode==='NORMAL_CYCLIC'?'block':'none':0;
+    document.getElementById('fixedFields')?document.getElementById('fixedFields').style.display=mode==='FIXED_TEMPERATURE'?'block':'none':0;
+    document.getElementById('plateauFields')?document.getElementById('plateauFields').style.display=mode==='NATURAL_PLATEAU'?'block':'none':0;
     document.getElementById('modeSummary').textContent=mode==='NORMAL_CYCLIC'?'Run the existing heat/cool cycles.':mode==='FIXED_TEMPERATURE'?'Ramp to target, qualify within tolerance, then accumulate qualified hold time.':'Illuminate each sample while detecting its natural thermal plateau, confirm it, then hold.';
     renderModeHelp();
     updateIlluminationFields();

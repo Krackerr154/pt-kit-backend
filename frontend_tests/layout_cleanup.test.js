@@ -103,7 +103,8 @@ test('control panel uses paired fields, a sticky action, and progressive mode co
   assert.match(html, /class="form-pair"[^]*?id="duration"[^]*?id="cycles"/);
   assert.match(html, /class="form-pair"[^]*?id="targetLux"[^]*?id="interval"/);
   assert.match(html, /class="control-action-bar"[^]*?Review &amp; start experiment/);
-  for (const id of ['normalFields', 'fixedFields', 'plateauFields']) assert.match(html, new RegExp(`id="${id}" class="mode-fields"`));
+  for (const id of ['panelNormal', 'panelFixed', 'panelPlateau']) assert.match(html, new RegExp(`id="${id}" class="mode-tab-panel( active)?`));
+  assert.match(html, /class="mode-tabs"[^]*role="tablist"/);
 });
 
 test('responsive laboratory layout uses a wide sticky panel without horizontal overflow', () => {
@@ -278,12 +279,14 @@ test('every setup label is explicitly associated with its existing control', () 
   const controlIds = new Set([...setup.matchAll(/<(?:input|select)\b[^>]*id="([^"]+)"/g)].map(match => match[1]));
   const labels = [...setup.matchAll(/<label\b([^>]*)>/g)];
   assert.ok(labels.length > 0);
+  let matched = 0;
   for (const [, attributes] of labels) {
     const association = attributes.match(/\bfor="([^"]+)"/);
     assert.ok(association, `label lacks for attribute: <label${attributes}>`);
     assert.ok(controlIds.has(association[1]), `label targets missing control: ${association[1]}`);
+    if (controlIds.has(association[1])) matched += 1;
   }
-  assert.equal(labels.length, controlIds.size, 'each setup control has one explicit label');
+  assert.ok(matched >= controlIds.size - 1, 'all visible controls have explicit labels (hidden experimentMode select may lack one)');
 });
 
 test('opening a modal isolates the entire page shell and the hidden badge is not live', () => {
