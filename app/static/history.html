@@ -481,5 +481,6 @@ function drawChart(ds, t, xl) {
 function resetZoom() { if(chartInstance) chartInstance.resetZoom(); }
 function downloadSelected() { var s = getSelected(); if(s.length===0) return notify("Select at least 1 sample to download."); s.forEach(i => window.open(`/api/export/${i.id}`)); }
 </script>
+<script src="/static/archive-advanced.js"></script>
 </body>
 </html>
