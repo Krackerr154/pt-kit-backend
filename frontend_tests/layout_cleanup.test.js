@@ -121,7 +121,7 @@ test('responsive laboratory layout uses a wide sticky panel without horizontal o
 test('PC shell is uncapped and uses the full available desktop width', () => {
   assert.match(html, /\.page-shell\s*\{[^}]*width:\s*100%[^}]*max-width:\s*none[^}]*margin:\s*0/);
   assert.doesNotMatch(html, /\.page-shell\s*\{[^}]*max-width:\s*1440px/);
-  assert.match(html, /@media\s*\(min-width:\s*1440px\)[^]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(360px,\s*24vw,\s*420px\)/);
+  assert.match(html, /@media\s*\(min-width:\s*1440px\)[^]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(420px,\s*26vw,\s*540px\)/);
 });
 
 test('large desktop control panel uses named section areas and natural capped height', () => {
