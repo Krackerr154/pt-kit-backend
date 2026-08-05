@@ -298,11 +298,11 @@
       #systemLogToggle { min-height:40px; }
     }
     @media (min-width:1360px) and (min-height:800px) {
-      .dashboard-grid { grid-template-columns:minmax(0,1fr) clamp(600px,42vw,720px); height:calc(100dvh - 152px); min-height:0; }
+      .dashboard-grid { grid-template-columns:minmax(0,1fr) clamp(480px, min(38vw, 640px), 640px); height:calc(100dvh - 152px); min-height:0; }
       .right-col { position:sticky; top:0; display:flex; flex-direction:column; gap:12px; overflow:hidden; min-height:0; }
       .control-card { flex:0 1 auto; min-height:0; max-height:calc(100% - 70px); margin-bottom:0; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:#aeb8c2 transparent; overscroll-behavior:contain; }
       .control-card > .card-title { position:sticky; top:0; z-index:5; margin-bottom:10px; padding-bottom:10px; background:var(--surface); }
-      #setupForm { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-areas:"primary secondary" "summary summary" "action action"; column-gap:14px; row-gap:10px; align-items:start; }
+      #setupForm { display:grid; grid-template-columns:1fr; grid-template-areas:"primary" "secondary" "summary" "action"; column-gap:0; row-gap:10px; align-items:start; }
       .setup-column { display:flex; flex-direction:column; gap:10px; min-width:0; }
       .setup-column-primary { grid-area:primary; }
       .setup-column-secondary { grid-area:secondary; }

@@ -126,8 +126,8 @@ test('PC shell is uncapped and uses the full available desktop width', () => {
 
 test('large desktop control panel uses named section areas and natural capped height', () => {
   const large = html.match(/@media\s*\(min-width:\s*1360px\)\s*and\s*\(min-height:\s*800px\)\s*\{[^]*?\n\s*\}/)?.[0] || html;
-  assert.match(large, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(600px,\s*42vw,\s*720px\)/);
-  assert.match(large, /grid-template-areas:\s*"primary secondary"\s*"summary summary"\s*"action action"/);
+  assert.match(large, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(480px,\s*min\(38vw,\s*640px\),\s*640px\)/);
+  assert.match(large, /grid-template-areas:\s*"primary"\s*"secondary"\s*"summary"\s*"action"/);
   assert.match(large, /\.control-card\s*\{[^}]*flex:\s*0\s+1\s+auto[^}]*max-height:\s*calc\(100%\s*-\s*70px\)[^}]*overflow-y:\s*auto/);
   assert.match(large, /\.setup-column-primary\s*\{[^}]*grid-area:\s*primary/);
   assert.match(large, /\.setup-column-secondary\s*\{[^}]*grid-area:\s*secondary/);
