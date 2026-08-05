@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+  (function(){try{var t=localStorage.getItem('ptkit-theme');if(t!=='dark'&&t!=='light')t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();
+  </script>
   <title>Dashboard Live - PT Kit</title>
   
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -11,7 +14,64 @@
   
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
-    :root { --space:8px; --ink:#17212b; --muted:#52606d; --line:#d9e0e7; --surface:#fff; --surface-soft:#f4f7f9; --navy:#173f67; }
+    :root { --space:8px; --ink:#17212b; --muted:#52606d; --line:#d9e0e7; --surface:#fff; --surface-soft:#f4f7f9; --navy:#173f67; --accent:#0b5fff; }
+    /* Dark lab theme: overrides variables + every hardcoded component color. */
+    [data-theme="dark"] { --ink:#e2eaf2; --muted:#93a3b3; --line:#34424f; --surface:#1b242e; --surface-soft:#232f3b; --navy:#4d7fb8; --accent:#5ea3f7; }
+    [data-theme="dark"] body { background:#0f151c; }
+    [data-theme="dark"] .card-title { color:#d5e2ee; }
+    [data-theme="dark"] .c-ir { color:#4aa8e0; } [data-theme="dark"] .c-tc { color:#e06a5f; } [data-theme="dark"] .c-rate { color:#55b86f; } [data-theme="dark"] .c-lux { color:#d9b545; }
+    [data-theme="dark"] #modeProgress { background:#232f3b; }
+    [data-theme="dark"] .mode-summary { background:#1d3044; border-color:#33506e; color:#a9cde9; }
+    [data-theme="dark"] .mode-help-btn { border-color:#3c4c5c; background:#232f3b; color:#8fb6d9; }
+    [data-theme="dark"] .mode-help-btn:hover { background:#2b3b4a; border-color:#4d667c; }
+    [data-theme="dark"] .mode-help-tip { background:#2b5484; box-shadow:0 8px 22px rgba(0,0,0,.5); }
+    [data-theme="dark"] .segmented-control { border-color:#3c4c5c; }
+    [data-theme="dark"] .segmented-control span { color:#c2d0dd; }
+    [data-theme="dark"] .illumination-notice { border-left-color:#d9a62e; background:#33290f; color:#e6c669; }
+    [data-theme="dark"] input, [data-theme="dark"] select { border-color:#3c4c5c; background:#131b23; color:var(--ink); }
+    [data-theme="dark"] .instrument-utility-link { color:#a9c6e2; }
+    [data-theme="dark"] .instrument-utility-link:hover { background:#2b3b4a; border-color:#4d667c; }
+    [data-theme="dark"] .chart-controls button { border-color:#4d5f70; background:#232f3b; }
+    [data-theme="dark"] .chart-controls button[aria-pressed="true"] { background:#2b5484; }
+    [data-theme="dark"] .result-cards div { background:#232f3b; }
+    [data-theme="dark"] .chart-overlay { background:rgba(15,21,28,.88); color:#d5e2ee; }
+    [data-theme="dark"] .phase-ready { border-left-color:#55b86f; background:#16281c; }
+    [data-theme="dark"] .phase-ready.phase-ready-waiting { border-left-color:#d9a62e; background:#2e2712; color:#e6c669; }
+    [data-theme="dark"] .btn-start:disabled { background:#4a5866; }
+    [data-theme="dark"] .start-hint { color:#d9a62e; }
+    [data-theme="dark"] .troubleshooting { color:#93a3b3; }
+    [data-theme="dark"] .troubleshooting summary { color:#7fa8cf; }
+    [data-theme="dark"] .phase-stepper li { border-bottom-color:#3c4c5c; }
+    [data-theme="dark"] .phase-stepper .completed { background:#16281c; border-color:#55b86f; }
+    [data-theme="dark"] .phase-stepper [aria-current="step"] { background:#2b5484; border-color:#2b5484; }
+    [data-theme="dark"] .health-item { background:#232f3b; }
+    [data-theme="dark"] .run-overview { background:#1d3044; border-color:#33506e; }
+    [data-theme="dark"] .primary-metric { color:#7fa8cf; }
+    [data-theme="dark"] button:focus-visible, [data-theme="dark"] input:focus-visible, [data-theme="dark"] select:focus-visible, [data-theme="dark"] a:focus-visible { outline-color:#4da3e8; }
+    [data-theme="dark"] .segmented-control input:focus-visible + span { outline-color:#4da3e8; }
+    [data-theme="dark"] .modal { background:#1b242e; }
+    [data-theme="dark"] .modal-actions { background:#1b242e; }
+    [data-theme="dark"] .zoom-hint { color:#7a8896; }
+    [data-theme="dark"] .state-indicator { background:#232f3b; }
+    [data-theme="dark"] table.cycle-table th, [data-theme="dark"] table.cycle-table td { border-bottom-color:#2a3540; }
+    [data-theme="dark"] table.cycle-table th { background:#232f3b; color:#93a3b3; }
+    [data-theme="dark"] table.cycle-table tfoot, [data-theme="dark"] table.cycle-table tfoot tr { background:#232f3b; }
+    [data-theme="dark"] table.cycle-table tfoot td, [data-theme="dark"] table.cycle-table td { border-bottom-color:#2a3540; }
+    [data-theme="dark"] .err-val { color:#7a8896; }
+    [data-theme="dark"] .theme-toggle-btn { color:#e2eaf2; }
+    [data-theme="dark"] .theme-toggle-btn:hover { background:#2b3b4a; border-color:#4d667c; }
+    [data-theme="dark"] .utilities-menu-btn { color:#a9c6e2; }
+    [data-theme="dark"] .utilities-menu-btn:hover { background:#2b3b4a; border-color:#4d667c; }
+    [data-theme="dark"] .utilities-menu { box-shadow:0 10px 28px rgba(0,0,0,.5); }
+    [data-theme="dark"] .utilities-menu a { color:#a9c6e2; }
+    [data-theme="dark"] .archive-badge { background:#2b5484; }
+    [data-theme="dark"] .monitoring-empty { border-color:#3c4c5c; }
+    [data-theme="dark"] .control-scroll-hint { border-color:#33506e; background:#1d3044; color:#7fa8cf; }
+    [data-theme="dark"] .csel-btn:hover { border-color:#4d5f70; }
+    [data-theme="dark"] .control-card { scrollbar-color:#4d5f70 transparent; }
+    [data-theme="dark"] #setupForm .setup-column > fieldset { background:#1f2833; }
+    [data-theme="dark"] .mobile-review-bar { box-shadow:0 2px 10px rgba(0,0,0,.4); }
+    [data-theme="dark"] #reviewModal .modal-handle { background:#4d5f70; }
     * { box-sizing:border-box; }
     html, body { max-width:100%; overflow-x:hidden; }
     body { font-family:'Roboto',sans-serif; background:#eef2f5; margin:0; padding:16px; color:var(--ink); font-size:16px; line-height:1.45; }
@@ -58,7 +118,10 @@
     .btn-download { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; display: block; text-decoration: none; text-align: center; }
     .btn-reset { width: 100%; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-    .instrument-utilities { grid-area:utilities; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+    .instrument-utilities { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+    .header-utilities { grid-area:utilities; display:flex; align-items:center; gap:6px; }
+    .theme-toggle-btn { min-width:44px; min-height:44px; border:1px solid var(--line); border-radius:6px; background:var(--surface-soft); color:#29465f; font-size:1.05rem; cursor:pointer; line-height:1; }
+    .theme-toggle-btn:hover { background:#e8eef3; border-color:#aeb8c2; }
     .instrument-utility-link { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:44px; padding:6px 10px; border:1px solid var(--line); border-radius:6px; background:var(--surface-soft); color:#29465f; text-decoration:none; font-size:.82rem; font-weight:600; white-space:nowrap; }
     .instrument-utility-link:hover { background:#e8eef3; border-color:#aeb8c2; }
 
@@ -251,8 +314,9 @@
     @media (max-width:900px) {
       body { padding:12px; }
       .header-grid { grid-template-areas:"brand overflow" "status status"; grid-template-columns:1fr auto; }
+      .header-utilities { grid-area:overflow; justify-self:end; }
       .instrument-utilities { display:none; }
-      .utilities-overflow { display:block; grid-area:overflow; justify-self:end; }
+      .utilities-overflow { display:block; }
       .instrument-status { justify-content:flex-start; }
       .dashboard-grid { grid-template-columns:minmax(0, 1fr); grid-template-areas:"monitor" "control"; align-items:start; }
       .dashboard-grid[data-ui-state="IDLE"] { grid-template-areas:"control" "monitor"; }
@@ -346,15 +410,18 @@
             <span id="connStatus" class="status-text" aria-live="polite">🔴 ESP32 disconnected</span>
             <span id="sampleFreshness" class="status-text" aria-live="polite">Sample: waiting</span>
         </div>
-        <nav class="instrument-utilities" aria-label="Instrument utilities">
-            <a class="instrument-utility-link" href="/history">📁 Data archive <span id="archiveCount" class="archive-badge" hidden></span></a>
-            <a class="instrument-utility-link" href="/static/calibration.html">🔧 Lux calibration</a>
-        </nav>
-        <div class="utilities-overflow">
-            <button id="utilitiesMenuBtn" class="utilities-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="utilitiesMenu" aria-label="More utilities" onclick="toggleUtilitiesMenu()">⋯</button>
-            <div id="utilitiesMenu" class="utilities-menu" role="menu" hidden>
-                <a role="menuitem" href="/history">📁 Data archive <span id="archiveCountMenu" class="archive-badge" hidden></span></a>
-                <a role="menuitem" href="/static/calibration.html">🔧 Lux calibration</a>
+        <div class="header-utilities">
+            <button id="themeToggle" class="theme-toggle-btn" type="button" aria-pressed="false" aria-label="Toggle dark mode" title="Switch to dark theme" onclick="toggleTheme()">🌙</button>
+            <nav class="instrument-utilities" aria-label="Instrument utilities">
+                <a class="instrument-utility-link" href="/history">📁 Data archive <span id="archiveCount" class="archive-badge" hidden></span></a>
+                <a class="instrument-utility-link" href="/static/calibration.html">🔧 Lux calibration</a>
+            </nav>
+            <div class="utilities-overflow">
+                <button id="utilitiesMenuBtn" class="utilities-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="utilitiesMenu" aria-label="More utilities" onclick="toggleUtilitiesMenu()">⋯</button>
+                <div id="utilitiesMenu" class="utilities-menu" role="menu" hidden>
+                    <a role="menuitem" href="/history">📁 Data archive <span id="archiveCountMenu" class="archive-badge" hidden></span></a>
+                    <a role="menuitem" href="/static/calibration.html">🔧 Lux calibration</a>
+                </div>
             </div>
         </div>
     </div>
@@ -616,6 +683,44 @@ var MODE_HELP = {
 };
 function getModeHelpText(mode) {
     return MODE_HELP[mode] || MODE_HELP.NORMAL_CYCLIC;
+}
+var currentTheme=(typeof document!=='undefined'&&document.documentElement&&document.documentElement.getAttribute)?(document.documentElement.getAttribute('data-theme')||'light'):'light';
+function getStoredTheme() {
+    try{return localStorage.getItem('ptkit-theme');}catch(e){return null;}
+}
+function resolveInitialTheme() {
+    var t=getStoredTheme();
+    if(t==='dark'||t==='light')return t;
+    return (typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+}
+function getChartThemeColors(theme) {
+    return theme==='dark'
+        ? {text:'#b8c6d4', grid:'rgba(255,255,255,.14)', lux:'#e0a63c', luxTarget:'#c9a227'}
+        : {text:'#52606d', grid:'rgba(0,0,0,.08)', lux:'#b77900', luxTarget:'#745b00'};
+}
+function applyChartTheme(theme) {
+    if(typeof Chart==='undefined'||!Chart.defaults)return;
+    var c=getChartThemeColors(theme);
+    Chart.defaults.color=c.text;
+    Chart.defaults.borderColor=c.grid;
+    if(typeof luxChart!=='undefined'&&luxChart&&luxChart.data){
+        luxChart.data.datasets[0].borderColor=c.lux;
+        luxChart.data.datasets[1].borderColor=c.luxTarget;
+        if(luxChart.update)luxChart.update('none');
+    }
+    if(typeof chart!=='undefined'&&chart&&chart.update)chart.update('none');
+}
+function applyTheme(theme,persist) {
+    var t=theme==='dark'?'dark':'light';
+    currentTheme=t;
+    if(typeof document!=='undefined'&&document.documentElement&&document.documentElement.setAttribute)document.documentElement.setAttribute('data-theme',t);
+    if(persist){try{localStorage.setItem('ptkit-theme',t);}catch(e){}}
+    var btn=document.getElementById('themeToggle');
+    if(btn){btn.textContent=t==='dark'?'☀️':'🌙';btn.setAttribute('aria-pressed',String(t==='dark'));btn.title=t==='dark'?'Switch to light theme':'Switch to dark theme';}
+    applyChartTheme(t);
+}
+function toggleTheme() {
+    applyTheme(currentTheme!=='dark'?'dark':'light',true);
 }
 function renderModeHelp() {
     var tip=document.getElementById('modeHelpTip');
@@ -910,6 +1015,7 @@ function initChart() {
         }
     });
     luxChart=new Chart(document.getElementById('luxChart').getContext('2d'),{type:'line',data:{datasets:[{label:'Lux',data:[],borderColor:'#b77900',pointRadius:0},{label:'Target lux',data:[],borderColor:'#745b00',borderDash:[6,4],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,animation:false,scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{title:{display:true,text:'Illuminance (lx)'}}}}});
+    applyChartTheme(currentTheme);
     applyChannelVisibility();
 }
 function pointData(view,key){return view.filter(function(p){return p[key]!==null&&p[key]!==undefined;}).map(function(p){return {x:p.x,y:p[key]};});}
@@ -1417,7 +1523,7 @@ function setUIState(state, clearTerminal) {
 if(document.querySelectorAll){document.querySelectorAll('[data-window]').forEach(function(b){b.addEventListener('click',function(){selectChartWindow(b.dataset.window);});});
 document.querySelectorAll('[data-channel]').forEach(function(b){b.addEventListener('click',function(){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));applyChannelVisibility();applyChartView();});});}
 document.getElementById('setupForm').addEventListener('input',function(){updateMobileSetupSummary();renderPlannedTotalTime();});document.getElementById('setupForm').addEventListener('change',function(e){updateMobileSetupSummary(e);updateModeFields();renderPlannedTotalTime();});if(window.matchMedia){var mobileSetupMedia=window.matchMedia('(max-width:600px)');if(mobileSetupMedia.addEventListener)mobileSetupMedia.addEventListener('change',syncMobileAdvancedVisibility);}
-updateModeFields(); initCustomSelects(); syncMobileAdvancedVisibility(); updateMobileSetupSummary(); if(document.body&&document.body.classList)document.body.classList.add('mobile-review-visible'); initChart(); renderPhaseStepper('NORMAL_CYCLIC',0); renderPhaseVisibility('IDLE'); renderHealth(true,null,null); renderMonitoringVisibility(false,'IDLE',true); renderReadinessGate(); renderPlannedTotalTime(); var controlCard=document.querySelector('.control-card');if(controlCard&&typeof controlCard.addEventListener==='function')controlCard.addEventListener('scroll',updateControlScrollHint);if(window&&typeof window.addEventListener==='function')window.addEventListener('resize',updateControlScrollHint);if(typeof setTimeout==='function')setTimeout(updateControlScrollHint,0); setInterval(updateStatus, 1000);
+updateModeFields(); initCustomSelects(); syncMobileAdvancedVisibility(); updateMobileSetupSummary(); if(document.body&&document.body.classList)document.body.classList.add('mobile-review-visible'); applyTheme(resolveInitialTheme(),false); initChart(); renderPhaseStepper('NORMAL_CYCLIC',0); renderPhaseVisibility('IDLE'); renderHealth(true,null,null); renderMonitoringVisibility(false,'IDLE',true); renderReadinessGate(); renderPlannedTotalTime(); var controlCard=document.querySelector('.control-card');if(controlCard&&typeof controlCard.addEventListener==='function')controlCard.addEventListener('scroll',updateControlScrollHint);if(window&&typeof window.addEventListener==='function')window.addEventListener('resize',updateControlScrollHint);if(typeof setTimeout==='function')setTimeout(updateControlScrollHint,0); setInterval(updateStatus, 1000);
 
 // Load calibrated max lux hint on page load
 fetch('/api/get_config').then(function(r) { return r.json(); }).then(function(conf) {

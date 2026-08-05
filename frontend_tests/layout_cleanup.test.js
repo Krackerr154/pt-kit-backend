@@ -157,7 +157,7 @@ test('chart zoom callbacks are nested where chartjs-plugin-zoom executes them', 
   };
   const context = { Chart, document, chartZoomActive: false };
   vm.createContext(context);
-  vm.runInContext('var chart, luxChart;', context);
+  vm.runInContext('var chart, luxChart; var currentTheme="light"; function applyChartTheme(){}', context);
   vm.runInContext(extractFunction('setZoomResetAvailable'), context);
   vm.runInContext(extractFunction('setChartZoomActive'), context);
   vm.runInContext(extractFunction('applyChannelVisibility'), context);
