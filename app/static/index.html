@@ -521,7 +521,7 @@
                 <div class="setup-column setup-column-primary">
                 <fieldset><legend>Experiment</legend>
                 <div class="form-group"><label for="operatorName">Operator Name</label><input type="text" id="operatorName" value="Gerald"></div>
-                <div class="form-group"><label for="sampleName">Sample Name</label><input type="text" id="sampleName" placeholder="e.g. MOF-Batch-1"></div>
+                <div class="form-group"><label for="sampleName">Sample Name</label><input type="text" id="sampleName" placeholder="e.g. MOF-Batch-1" title="Shortcut: Ctrl+S focuses this field"></div>
                 <div class="form-group mode-select-group"><div class="mode-label-row"><label for="experimentMode">Experiment Mode</label><button type="button" id="modeHelpBtn" class="mode-help-btn" aria-label="About experiment modes" aria-expanded="false" aria-controls="modeHelpTip">ℹ️</button></div><select id="experimentMode"><option value="NORMAL_CYCLIC" selected>Normal cyclic</option><option value="FIXED_TEMPERATURE">Fixed temperature</option><option value="NATURAL_PLATEAU">Natural plateau</option></select><div id="modeHelpTip" class="mode-help-tip" role="tooltip" hidden></div></div></fieldset>
                 <fieldset><legend>Mode parameters</legend>
                 <div id="normalFields" class="mode-fields">
@@ -559,7 +559,7 @@
                 <fieldset id="safetyFieldset" class="mobile-advanced-fieldset" data-expanded="false"><legend>Safety</legend><button class="mobile-advanced-toggle" type="button" aria-expanded="false" aria-controls="safetyAdvanced" onclick="toggleMobileAdvanced('safetyFieldset')"><span>Safety</span><span id="safetyMobileSummary" class="mobile-advanced-summary">Maximum · 100 °C</span></button><div id="safetyAdvanced" class="mobile-advanced-content"><div class="form-group"><label for="maxTemp">Max Temp (°C)</label><input type="number" id="maxTemp" value="100"></div></div></fieldset>
                 </div>
                 <div id="modeSummary" class="mode-summary"></div>
-                <div class="control-action-bar"><button id="reviewStartBtn" class="btn-start" onclick="openReviewModal()">Review &amp; start experiment</button><div id="startHint" class="start-hint" hidden>Connect ESP32 to begin</div></div>
+                <div class="control-action-bar"><button id="reviewStartBtn" class="btn-start" onclick="openReviewModal()" aria-describedby="startHint">Review &amp; start experiment</button><div id="startHint" class="start-hint" hidden aria-live="polite">Connect ESP32 to begin</div></div>
             </div>
 
             <div id="runOverview" class="run-overview" hidden><strong>Run overview — configuration locked</strong><div id="controlMetric" class="primary-metric">Control temperature: -- °C</div><div id="runSummary">Waiting for run details…</div></div>
@@ -587,7 +587,7 @@
 </div>
 </div>
 <div id="stopModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="stopModalTitle" aria-describedby="stopModalDescription"><h2 id="stopModalTitle">Stop this experiment?</h2><p id="stopModalDescription">The lamp will be turned off. Data already recorded will be retained.</p><div class="modal-actions"><button id="cancelStop" type="button" onclick="closeStopModal()">Cancel</button><button id="confirmStop" class="danger" type="button" onclick="stopExperiment()">Stop now</button></div></div></div>
-<div id="reviewModal" class="modal-backdrop" hidden><div class="modal review-sheet" role="dialog" aria-modal="true" aria-labelledby="reviewTitle" aria-describedby="reviewDescription"><div class="modal-handle" aria-hidden="true"></div><div class="modal-header"><h2 id="reviewTitle">Review experiment settings</h2><p id="reviewDescription">Confirm the exact configuration before the instrument starts.</p></div><div class="modal-body"><dl id="reviewDetails" class="review-details"></dl><p id="reviewWarning" class="illumination-notice" hidden></p></div><div class="modal-actions"><button id="cancelReview" type="button" onclick="closeReviewModal()">Back to edit</button><button id="confirmReview" type="button" onclick="confirmReviewedStart()">Confirm and start</button></div></div></div>
+<div id="reviewModal" class="modal-backdrop" hidden><div class="modal review-sheet" role="dialog" aria-modal="true" aria-labelledby="reviewTitle" aria-describedby="reviewDescription"><div class="modal-handle" aria-hidden="true"></div><div class="modal-header"><h2 id="reviewTitle">Review experiment settings</h2><p id="reviewDescription">Confirm the exact configuration before the instrument starts.</p></div><div class="modal-body"><dl id="reviewDetails" class="review-details"></dl><p id="reviewWarning" class="illumination-notice" hidden></p></div><div class="modal-actions"><button id="cancelReview" type="button" onclick="closeReviewModal()" title="Back to edit (Escape)">Back to edit</button><button id="confirmReview" type="button" onclick="confirmReviewedStart()" title="Confirm and start (Ctrl+Enter)">Confirm and start</button></div></div></div>
 
 <script>
 var chart, luxChart, pendingReviewPayload=null, scientificSeries={samples:[]}, chartWindow='live', chartZoomActive=false;
@@ -773,7 +773,7 @@ function customizeSelect(sel, descriptions) {
         list.innerHTML = ''; opts = [];
         Array.prototype.forEach.call(sel.options, function (o, i) {
             var li = document.createElement('li');
-            li.className = 'csel-opt'; li.setAttribute('role', 'option'); li.dataset.value = o.value; li.dataset.index = i;
+            li.className = 'csel-opt'; li.setAttribute('role', 'option'); li.id = sel.id + '-opt-' + i; li.dataset.value = o.value; li.dataset.index = i;
             li.dataset.selected = String(o.selected);
             var txt = document.createElement('span');
             txt.innerHTML = o.textContent + (descriptions && descriptions[o.value] ? '<span class="csel-desc">' + descriptions[o.value] + '</span>' : '');
@@ -784,9 +784,9 @@ function customizeSelect(sel, descriptions) {
         syncLabel();
     }
     function syncLabel() { var o = sel.options[sel.selectedIndex]; label.textContent = o ? o.textContent : ''; Array.prototype.forEach.call(opts, function (li) { li.dataset.selected = String(li.dataset.value === (o && o.value)); }); }
-    function setActive(i) { Array.prototype.forEach.call(opts, function (li, j) { li.dataset.active = String(i === j); }); if (opts[i]) opts[i].scrollIntoView({ block: 'nearest' }); wrap._active = i; }
+    function setActive(i) { Array.prototype.forEach.call(opts, function (li, j) { li.dataset.active = String(i === j); }); if (opts[i]) { opts[i].scrollIntoView({ block: 'nearest' }); if (opts[i].id) btn.setAttribute('aria-activedescendant', opts[i].id); } wrap._active = i; }
     function openList() { if (wrap.dataset.open === 'true') return; closeAll(); wrap.dataset.open = 'true'; btn.setAttribute('aria-expanded', 'true'); setActive(sel.selectedIndex < 0 ? 0 : sel.selectedIndex); }
-    function closeList(focus) { if (wrap.dataset.open !== 'true') return; wrap.dataset.open = 'false'; btn.setAttribute('aria-expanded', 'false'); if (focus) btn.focus(); }
+    function closeList(focus) { if (wrap.dataset.open !== 'true') return; wrap.dataset.open = 'false'; btn.setAttribute('aria-expanded', 'false'); btn.removeAttribute('aria-activedescendant'); if (focus) btn.focus(); }
     function closeAll(except) { Array.prototype.forEach.call(document.querySelectorAll('.csel[data-open="true"]'), function (w) { if (w !== except) { w.dataset.open = 'false'; var b = w.querySelector('.csel-btn'); if (b) b.setAttribute('aria-expanded', 'false'); } }); }
     function choose(i, byUser) { sel.selectedIndex = i; syncLabel(); closeList(true); if (byUser) sel.dispatchEvent(new Event('change', { bubbles: true })); }
     btn.addEventListener('click', function () { wrap.dataset.open === 'true' ? closeList(true) : openList(); });
@@ -1376,7 +1376,7 @@ function openReviewModal(){if(lastEsp32State!=='connected'){showMonitoringNotice
 function finishReviewModal(restoreFocus){pendingReviewPayload=null;setReviewSubmitting(false);document.getElementById('reviewModal').hidden=true;setPageModalIsolation(false);if(restoreFocus&&reviewModalOpener&&reviewModalOpener.focus)reviewModalOpener.focus();}
 function closeReviewModal(){if(reviewStartInFlight)return;finishReviewModal(true);setPageModalIsolation(false);}
 function confirmReviewedStart(){if(reviewStartInFlight||!pendingReviewPayload)return;var payload=JSON.parse(JSON.stringify(pendingReviewPayload));setReviewSubmitting(true);setPageModalIsolation(true);startExperiment(payload);}
-function handleReviewModalKeydown(e){if(document.getElementById('reviewModal').hidden)return;if(e.key==='Escape'){e.preventDefault();closeReviewModal();return;}if(e.key==='Tab'){var a=[document.getElementById('cancelReview'),document.getElementById('confirmReview')].filter(function(x){return !x.disabled;}),i=a.indexOf(document.activeElement);if(!a.length){e.preventDefault();return;}var next=e.shiftKey?(i<=0?a.length-1:i-1):(i<0||i===a.length-1?0:i+1);e.preventDefault();a[next].focus();}}
+function handleReviewModalKeydown(e){if(document.getElementById('reviewModal').hidden)return;if(e.key==='Escape'){e.preventDefault();closeReviewModal();return;}if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();confirmReviewedStart();return;}if(e.key==='Tab'){var a=[document.getElementById('cancelReview'),document.getElementById('confirmReview')].filter(function(x){return !x.disabled;}),i=a.indexOf(document.activeElement);if(!a.length){e.preventDefault();return;}var next=e.shiftKey?(i<=0?a.length-1:i-1):(i<0||i===a.length-1?0:i+1);e.preventDefault();a[next].focus();}}
 document.getElementById('reviewModal').addEventListener('keydown',handleReviewModalKeydown);
 document.getElementById('reviewModal').addEventListener('click',function(e){if(e.target===this)closeReviewModal();});
 function startExperiment(payload) {
@@ -1543,7 +1543,31 @@ fetch('/api/archive/count').then(function(r){return r.ok?r.json():null;}).then(f
     var group=typeof btn.closest==='function'?btn.closest('.mode-select-group'):null;
     if(group)group.addEventListener('mouseleave',function(){toggleModeHelp(false);});
 })();
-document.addEventListener('keydown',function(e){if(e&&e.key==='Escape')toggleModeHelp(false);});
+/* Global keyboard shortcuts: Escape closes the topmost transient surface
+   (modal backstop → utilities menu → mode help → open custom dropdowns);
+   Ctrl/Cmd+S focuses the sample-name field. Escape events already handled
+   inside a modal or dropdown are skipped via defaultPrevented. */
+function handleGlobalShortcut(e){
+    if(!e)return;
+    if(e.key==='Escape'){
+        if(e.defaultPrevented)return;
+        toggleModeHelp(false);
+        var review=document.getElementById('reviewModal'),stop=document.getElementById('stopModal');
+        if(review&&review.hidden===false){closeReviewModal();return;}
+        if(stop&&stop.hidden===false){closeStopModal();return;}
+        toggleUtilitiesMenu(false);
+        if(typeof document.querySelectorAll==='function')Array.prototype.forEach.call(document.querySelectorAll('.csel[data-open="true"]'),function(w){w.dataset.open='false';var b=w.querySelector('.csel-btn');if(b){b.setAttribute('aria-expanded','false');b.removeAttribute('aria-activedescendant');}});
+        return;
+    }
+    if(typeof e.key==='string'&&e.key.toLowerCase()==='s'&&(e.ctrlKey||e.metaKey)){
+        var rm=document.getElementById('reviewModal'),sm=document.getElementById('stopModal');
+        if((rm&&rm.hidden===false)||(sm&&sm.hidden===false))return; /* never steal focus from an open modal */
+        if(e.preventDefault)e.preventDefault();
+        var s=document.getElementById('sampleName');
+        if(s&&typeof s.focus==='function')s.focus();
+    }
+}
+document.addEventListener('keydown',handleGlobalShortcut);
 document.addEventListener('click',function(e){
     var menu=document.getElementById('utilitiesMenu'),btn=document.getElementById('utilitiesMenuBtn');
     if(menu&&btn&&!menu.hidden&&e.target&&typeof e.target.closest==='function'&&!e.target.closest('#utilitiesMenu')&&!e.target.closest('#utilitiesMenuBtn'))toggleUtilitiesMenu(false);
