@@ -46,6 +46,20 @@
     .selection-heading .panel-title { margin:0; }
     #selectionSummary { color:var(--muted); font-size:.82rem; }
     .scroll-list { flex:1; min-height:330px; max-height:52vh; overflow-y:auto; border:1px solid var(--line); border-radius:7px; background:var(--surface-soft); padding:6px; scrollbar-gutter:stable; }
+    .exp-table { width:100%; border-collapse:collapse; table-layout:auto; font-size:.85rem; }
+    .exp-table th, .exp-table td { padding:8px 10px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap; }
+    .exp-table th { background:var(--surface-soft); color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; position:sticky; top:0; z-index:2; cursor:pointer; user-select:none; border-bottom:2px solid #aeb8c2; }
+    .exp-table th:hover { color:var(--navy); }
+    .exp-table th.sorted::after { content:' ▾'; }
+    .exp-table th.sorted-asc::after { content:' ▴'; }
+    .exp-table tbody tr { cursor:pointer; transition:background .12s; }
+    .exp-table tbody tr:hover { background:#e8eef3; }
+    .exp-table tbody tr.selected { background:#eef5fb; }
+    .exp-table tbody tr.selected td { border-bottom-color:#b6cbe0; }
+    .exp-table td input[type="checkbox"] { width:16px; height:16px; min-height:16px; margin:0; accent-color:var(--navy); vertical-align:middle; }
+    .exp-table td.metric { text-align:right; font-weight:600; }
+    .exp-table td.mode-badge { text-align:center; }
+    .exp-table .badge-mode { display:inline-block; padding:2px 8px; border-radius:999px; font-size:.7rem; font-weight:700; background:#e8eef3; color:#29465f; white-space:nowrap; }
     .list-item { display:grid; grid-template-columns:22px minmax(0,1fr); align-items:start; gap:0 8px; padding:10px; border:1px solid transparent; border-radius:6px; cursor:pointer; font-size:.9rem; }
     .list-item + .list-item { margin-top:4px; }
     .list-item:hover { background:#e8eef3; border-color:#cbd6df; }
@@ -53,7 +67,11 @@
     .list-item input { grid-row:1 / span 2; width:18px; height:18px; min-height:18px; margin:2px 0 0; accent-color:var(--navy); }
     .list-item br { display:none; }
     .list-item small { grid-column:2; display:block; margin-top:3px; color:var(--muted); line-height:1.35; overflow-wrap:anywhere; }
-    .list-empty { min-height:300px; display:grid; place-content:center; padding:24px; text-align:center; color:var(--muted); }
+    .quick-metrics { display:flex; flex-wrap:wrap; gap:6px 16px; padding:12px 14px; background:var(--surface); border:1px solid var(--line); border-radius:8px; margin-bottom:14px; }
+    .quick-metric { font-size:.82rem; }
+    .quick-metric .qm-label { color:var(--muted); font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; }
+    .quick-metric .qm-value { font-weight:700; color:var(--navy); font-size:1.1rem; }
+    .analysis-empty { min-height:430px; display:grid; place-content:center; text-align:center; padding:32px; border:1px dashed #aeb8c2; border-radius:8px; background:var(--surface-soft); }
     .btn-group { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
     .btn { min-width:0; min-height:44px; padding:9px 12px; border-radius:6px; cursor:pointer; font-weight:700; font-size:.86rem; }
     .btn-compare { background:var(--navy); border:1px solid var(--navy); color:white; }
@@ -167,8 +185,95 @@ fetch('/api/experiments').then(r => { if(!r.ok) throw new Error('Archive request
 function populateOperators() { var ops = [...new Set(allExperiments.map(e => e.operator_name || "Unknown"))]; var s = document.getElementById('operatorSelect'); ops.forEach(op => { var o = document.createElement('option'); o.value=op; o.innerText=op; s.appendChild(o); }); }
 function filterSamples() { var op = document.getElementById('operatorSelect').value; var k = document.getElementById('searchBox').value.toLowerCase(); var r = allExperiments.filter(e => (op === 'all' || e.operator_name === op) && String(e.sample_name||'').toLowerCase().includes(k)); renderList(r); }
 function illuminationArchiveLabel(e) { var mode=e.illumination_mode||(e.mode==='FIXED_TEMPERATURE'?'TEMPERATURE_CONTROLLED':'TARGET_LUX');return mode==='MAX_OUTPUT'?'MAX OUTPUT (100% PWM)':mode==='TEMPERATURE_CONTROLLED'?'TEMPERATURE CONTROLLED':'TARGET '+(e.target_lux===null||e.target_lux===undefined?'—':e.target_lux)+' lx'; }
-function renderList(l) { var d = document.getElementById('sampleList'); d.textContent=""; if(l.length===0) { var empty=document.createElement('div');empty.className='list-empty';empty.textContent='No experiments match the current filters.';d.appendChild(empty);updateSelectionActions();return; } l.forEach(e => { var label=document.createElement('label'); label.className='list-item'; var input=document.createElement('input'); input.type='checkbox'; input.className='chk'; input.value=e.id; input.dataset.name=e.sample_name||'';input.setAttribute('aria-label','Select '+(e.sample_name||'unnamed experiment'));input.addEventListener('change',updateSelectionActions); label.appendChild(input); label.appendChild(document.createTextNode('[#'+e.id+'] '+(e.sample_name||'Unnamed'))); label.appendChild(document.createElement('br')); var small=document.createElement('small'); small.textContent=(e.operator_name||'Anon')+' · '+new Date(e.started_at).toLocaleString()+' · '+(e.mode||e.experiment_mode||'NORMAL_CYCLIC').replaceAll('_',' ')+' · '+illuminationArchiveLabel(e); label.appendChild(small); d.appendChild(label); }); updateSelectionActions(); }
-function updateSelectionActions(){var n=document.querySelectorAll('.chk:checked').length;document.getElementById('selectionSummary').textContent=n+' selected';document.getElementById('compareBtn').disabled=n<1;document.getElementById('analysisBtn').disabled=n!==1;document.getElementById('csvBtn').disabled=n<1;}
+function modeBadgeLabel(e) { var m=(e.mode||e.experiment_mode||'NORMAL_CYCLIC').replace(/_/g,' '); if(m==='NORMAL CYCLIC')return 'Cyclic';if(m==='FIXED TEMPERATURE')return 'Fixed';if(m==='NATURAL PLATEAU')return 'Plateau';return m; }
+var currentSort={key:null,dir:'desc'};
+function sortExperiments(key) {
+    if(currentSort.key===key){currentSort.dir=currentSort.dir==='desc'?'asc':'desc';}
+    else {currentSort.key=key;currentSort.dir='desc';}
+    var sorted=[].concat(allExperiments).sort(function(a,b){
+        var av=a[key]||'',bv=b[key]||'';
+        if(key==='started_at'){av=new Date(av||0).getTime();bv=new Date(bv||0).getTime();}
+        else if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}
+        if(av<bv)return currentSort.dir==='asc'?-1:1;
+        if(av>bv)return currentSort.dir==='asc'?1:-1;
+        return 0;
+    });
+    renderList(sorted);
+}
+function renderList(l) {
+    var d=document.getElementById('sampleList');d.textContent='';
+    if(l.length===0){
+        var empty=document.createElement('div');empty.className='list-empty';empty.textContent='No experiments match the current filters.';d.appendChild(empty);updateSelectionActions();return;
+    }
+    var table=document.createElement('table');table.className='exp-table';
+    var thead=document.createElement('thead');
+    var cols=[{key:'id',label:'#'},{key:'sample_name',label:'Sample'},{key:'started_at',label:'Date'},{key:'mode',label:'Mode'},{key:'operator_name',label:'Operator'}];
+    var tr=document.createElement('tr');
+    cols.forEach(function(c){
+        var th=document.createElement('th');
+        th.textContent=c.label;
+        if(currentSort.key===c.key)th.className=currentSort.dir==='asc'?'sorted-asc':'sorted';
+        th.addEventListener('click',function(){sortExperiments(c.key);});
+        tr.appendChild(th);
+    });
+    thead.appendChild(tr);table.appendChild(thead);
+    var tbody=document.createElement('tbody');
+    l.forEach(function(e){
+        var row=document.createElement('tr');
+        var chk=document.createElement('input');chk.type='checkbox';chk.className='chk';chk.value=e.id;chk.dataset.name=e.sample_name||'';chk.setAttribute('aria-label','Select '+(e.sample_name||'unnamed'));
+        chk.addEventListener('change',updateSelectionActions);
+        chk.addEventListener('click',function(ev){ev.stopPropagation();});
+        var tdChk=document.createElement('td');tdChk.appendChild(chk);row.appendChild(tdChk);
+        var tdName=document.createElement('td');tdName.textContent=e.sample_name||'Unnamed';tdName.style.fontWeight='600';tdName.style.color='var(--navy)';row.appendChild(tdName);
+        var tdDate=document.createElement('td');tdDate.textContent=new Date(e.started_at).toLocaleDateString();tdDate.style.color='var(--muted)';tdDate.style.fontSize='.82rem';row.appendChild(tdDate);
+        var tdMode=document.createElement('td');tdMode.className='mode-badge';var badge=document.createElement('span');badge.className='badge-mode';badge.textContent=modeBadgeLabel(e);tdMode.appendChild(badge);row.appendChild(tdMode);
+        var tdOp=document.createElement('td');tdOp.textContent=e.operator_name||'Anon';tdOp.style.color='var(--muted)';tdOp.style.fontSize='.82rem';row.appendChild(tdOp);
+        row.addEventListener('click',function(ev){if(ev.target.tagName!=='INPUT'){chk.checked=!chk.checked;chk.dispatchEvent(new Event('change'));}});
+        if(chk.checked)row.classList.add('selected');
+        tbody.appendChild(row);
+    });
+    table.appendChild(tbody);d.appendChild(table);
+    updateSelectionActions();
+}
+function updateSelectionActions(){
+    var chks=document.querySelectorAll('.chk:checked'),n=chks.length;
+    document.getElementById('selectionSummary').textContent=n+' selected';
+    document.getElementById('compareBtn').disabled=n<1;document.getElementById('analysisBtn').disabled=n!==1;document.getElementById('csvBtn').disabled=n<1;
+    if(n===1){var eid=chks[0].value;loadExpQuickMetrics(eid);}else{hideQuickMetrics();}
+}
+function hideQuickMetrics(){var q=document.getElementById('quickMetricsPanel');if(q)q.style.display='none';}
+function loadExpQuickMetrics(expId){
+    fetch('/api/experiment/'+expId).then(r=>r.json()).then(d=>{
+        var rows=Array.isArray(d)?d:(d.data||d.readings||[]);
+        if(!rows||!rows.length){hideQuickMetrics();return;}
+        var kIR=getColumnName(rows[0],['ir_temp','IR_Temp','ir']),kTC=getColumnName(rows[0],['tc_temp','TC_Temp','tc']);
+        var kCyc=getColumnName(rows[0],['cycle_num','Cycle','cycle']),kTime=getColumnName(rows[0],['total_time','TotalTime','time']);
+        var kState=getColumnName(rows[0],['state_label','State','state']);
+        var maxT=0,minT=Infinity,maxLux=0,totalRuntime=rows[rows.length-1][kTime]-rows[0][kTime];
+        var cycles=new Set();
+        rows.forEach(function(r){
+            var ir=parseFloat(r[kIR]),tc=parseFloat(r[kTC]),lux=parseFloat(r.current_lux||r.lux||0);
+            if(Number.isFinite(ir)){if(ir>maxT)maxT=ir;if(ir<minT)minT=ir;}
+            if(Number.isFinite(tc)){if(tc>maxT)maxT=tc;if(tc<minT)minT=tc;}
+            if(Number.isFinite(lux)&&lux>maxLux)maxLux=lux;
+            var c=parseInt(r[kCyc]);if(Number.isFinite(c)&&c>=0)cycles.add(c);
+        });
+        var runtimeS=Math.round(totalRuntime),runtimeMins=Math.floor(runtimeS/60),runtimeSecs=runtimeS%60;
+        var runtimeStr=runtimeMins+'m '+runtimeSecs+'s';
+        var panel=document.getElementById('quickMetricsPanel');
+        if(!panel){
+            panel=document.createElement('div');panel.id='quickMetricsPanel';panel.className='quick-metrics';
+            var ws=document.getElementById('analysisWorkspace');
+            if(ws)ws.insertBefore(panel,ws.firstChild);
+        }
+        panel.style.display='flex';
+        panel.innerHTML='<div class="quick-metric"><div class="qm-label">Max Temp</div><div class="qm-value">'+(Number.isFinite(maxT)?maxT.toFixed(1)+' °C':'—')+'</div></div>'+
+            '<div class="quick-metric"><div class="qm-label">Min Temp</div><div class="qm-value">'+(Number.isFinite(minT)&&minT<Infinity?minT.toFixed(1)+' °C':'—')+'</div></div>'+
+            '<div class="quick-metric"><div class="qm-label">Cycles</div><div class="qm-value">'+cycles.size+'</div></div>'+
+            '<div class="quick-metric"><div class="qm-label">Runtime</div><div class="qm-value">'+runtimeStr+'</div></div>'+
+            '<div class="quick-metric"><div class="qm-label">Max Lux</div><div class="qm-value">'+(Number.isFinite(maxLux)&&maxLux>0?Math.round(maxLux).toLocaleString()+' lx':'—')+'</div></div>';
+    }).catch(function(){hideQuickMetrics();});
+}
 function showAnalysisWorkspace(){document.getElementById('analysisEmpty').hidden=true;document.getElementById('analysisWorkspace').hidden=false;}
 function holdOnlyData(data) { return data.filter(function(r){ var s=String(r.state_label||r.state||'').toUpperCase(); return s.includes('HOLD') || s.includes('PLATEAU_HOLD'); }); }
 function showModeSummary(meta, rows) { /* FIXED_TEMPERATURE / NATURAL_PLATEAU */ var mode=(meta&& (meta.mode||meta.experiment_mode)) || (rows[0]&&(rows[0].mode||rows[0].experiment_mode)) || 'NORMAL_CYCLIC'; var box=document.getElementById('modeSummary'); if(mode==='NORMAL_CYCLIC'){box.style.display='none';return;} var hold=holdOnlyData(rows); var temps=hold.map(r=>parseFloat(r.control_temp)).filter(Number.isFinite); var details=[]; if(temps.length) details.push('Hold mean: '+(temps.reduce((a,b)=>a+b,0)/temps.length).toFixed(2)+' °C (hold-only, n='+temps.length+')'); var plateau=meta&&meta.detected_plateau_temperature; if(plateau!==undefined) details.push('Detected plateau: '+plateau+' °C'); box.textContent='Mode: '+mode.replaceAll('_',' ')+' — '+(mode==='FIXED_TEMPERATURE'?'qualified isothermal hold':'sample-specific plateau detection')+(details.length?' • '+details.join(' • '):''); box.style.display='block'; }
