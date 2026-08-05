@@ -51,6 +51,8 @@
     [data-theme="dark"] .segmented-control input:focus-visible + span { outline-color:#4da3e8; }
     [data-theme="dark"] .modal { background:#1b242e; }
     [data-theme="dark"] .modal-actions { background:#1b242e; }
+    [data-theme="dark"] .review-checklist li.ok .ck { color:#4cc069; }
+    [data-theme="dark"] .review-checklist li.missing .ck { color:#f26d5f; }
     [data-theme="dark"] .zoom-hint { color:#7a8896; }
     [data-theme="dark"] .state-indicator { background:#232f3b; }
     [data-theme="dark"] table.cycle-table th, [data-theme="dark"] table.cycle-table td { border-bottom-color:#2a3540; }
@@ -170,6 +172,33 @@
     .modal-actions { flex:0 0 auto; display:flex; gap:10px; justify-content:flex-end; padding-top:16px; background:#fff; }
     .modal-actions button { min-height:44px; padding:8px 18px; }
     .modal-actions button:disabled { cursor:wait; }
+    /* --- Lux calibration wizard (7.1) --- */
+    .cal-progress { display:flex; align-items:center; gap:6px; margin:2px 0 14px; }
+    .cal-dot { flex:0 0 auto; width:30px; height:30px; min-height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.85rem; font-weight:700; background:var(--surface-soft); color:var(--muted); border:2px solid var(--line); }
+    .cal-dot.active { border-color:var(--accent); color:var(--accent); }
+    .cal-dot.done { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .cal-bar { flex:1 1 auto; height:3px; background:var(--line); border-radius:2px; }
+    .cal-bar.done { background:var(--accent); }
+    .cal-step-panel h3 { margin:.2rem 0 .5rem; font-size:1.05rem; }
+    .cal-step-panel p, .cal-step-panel li { color:var(--muted); line-height:1.55; font-size:.92rem; }
+    .cal-step-panel ul { margin:.4rem 0 .8rem; padding-left:1.2rem; }
+    .cal-lux { font-size:1.6rem; font-weight:700; color:var(--accent); text-align:center; margin:.6rem 0; }
+    .cal-lux small { font-size:.85rem; color:var(--muted); font-weight:400; }
+    .cal-status { text-align:center; font-size:.85rem; color:var(--muted); font-style:italic; min-height:1.2em; }
+    .cal-measure { width:100%; min-height:44px; margin-top:.5rem; background:var(--accent); color:#fff; border:0; border-radius:6px; font-weight:600; cursor:pointer; }
+    .cal-measure:disabled { background:var(--line); color:var(--muted); cursor:not-allowed; }
+    .cal-summary { width:100%; border-collapse:collapse; margin:.4rem 0; }
+    .cal-summary td { padding:6px 0; border-bottom:1px solid var(--line); font-size:.92rem; }
+    .cal-summary td:first-child { color:var(--muted); }
+    .cal-summary td:last-child { text-align:right; font-weight:600; color:var(--ink); }
+    .cal-advanced { display:block; margin-top:10px; font-size:.82rem; color:var(--accent); }
+    /* --- Pre-experiment checklist (7.2) --- */
+    .review-checklist { list-style:none; margin:0 0 12px; padding:10px 12px; background:var(--surface-soft); border:1px solid var(--line); border-radius:8px; display:grid; gap:6px; }
+    .review-checklist li { display:flex; gap:8px; align-items:baseline; font-size:.88rem; color:var(--ink); }
+    .review-checklist .ck { font-weight:700; }
+    .review-checklist li.ok .ck { color:#1e7e34; }
+    .review-checklist li.missing .ck { color:#b42318; }
+    .review-checklist .ck-detail { color:var(--muted); }
     .danger { background:#b42318; color:#fff; border:0; }
     .zoom-hint { font-size: 0.75rem; color: #999; font-style: italic; margin-top: 5px; text-align: right; }
     .badge { display:inline-flex; align-items:center; min-height:28px; padding:4px 10px; border-radius:999px; font-size:.8rem; color:white; font-weight:700; }
@@ -414,13 +443,13 @@
             <button id="themeToggle" class="theme-toggle-btn" type="button" aria-pressed="false" aria-label="Toggle dark mode" title="Switch to dark theme" onclick="toggleTheme()">🌙</button>
             <nav class="instrument-utilities" aria-label="Instrument utilities">
                 <a class="instrument-utility-link" href="/history">📁 Data archive <span id="archiveCount" class="archive-badge" hidden></span></a>
-                <a class="instrument-utility-link" href="/static/calibration.html">🔧 Lux calibration</a>
+                <a class="instrument-utility-link" href="/static/calibration.html" onclick="openCalWizard();return false;">🔧 Lux calibration</a>
             </nav>
             <div class="utilities-overflow">
                 <button id="utilitiesMenuBtn" class="utilities-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="utilitiesMenu" aria-label="More utilities" onclick="toggleUtilitiesMenu()">⋯</button>
                 <div id="utilitiesMenu" class="utilities-menu" role="menu" hidden>
                     <a role="menuitem" href="/history">📁 Data archive <span id="archiveCountMenu" class="archive-badge" hidden></span></a>
-                    <a role="menuitem" href="/static/calibration.html">🔧 Lux calibration</a>
+                    <a role="menuitem" href="/static/calibration.html" onclick="openCalWizard();return false;">🔧 Lux calibration</a>
                 </div>
             </div>
         </div>
@@ -587,7 +616,16 @@
 </div>
 </div>
 <div id="stopModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="stopModalTitle" aria-describedby="stopModalDescription"><h2 id="stopModalTitle">Stop this experiment?</h2><p id="stopModalDescription">The lamp will be turned off. Data already recorded will be retained.</p><div class="modal-actions"><button id="cancelStop" type="button" onclick="closeStopModal()">Cancel</button><button id="confirmStop" class="danger" type="button" onclick="stopExperiment()">Stop now</button></div></div></div>
-<div id="reviewModal" class="modal-backdrop" hidden><div class="modal review-sheet" role="dialog" aria-modal="true" aria-labelledby="reviewTitle" aria-describedby="reviewDescription"><div class="modal-handle" aria-hidden="true"></div><div class="modal-header"><h2 id="reviewTitle">Review experiment settings</h2><p id="reviewDescription">Confirm the exact configuration before the instrument starts.</p></div><div class="modal-body"><dl id="reviewDetails" class="review-details"></dl><p id="reviewWarning" class="illumination-notice" hidden></p></div><div class="modal-actions"><button id="cancelReview" type="button" onclick="closeReviewModal()" title="Back to edit (Escape)">Back to edit</button><button id="confirmReview" type="button" onclick="confirmReviewedStart()" title="Confirm and start (Ctrl+Enter)">Confirm and start</button></div></div></div>
+<div id="reviewModal" class="modal-backdrop" hidden><div class="modal review-sheet" role="dialog" aria-modal="true" aria-labelledby="reviewTitle" aria-describedby="reviewDescription"><div class="modal-handle" aria-hidden="true"></div><div class="modal-header"><h2 id="reviewTitle">Review experiment settings</h2><p id="reviewDescription">Confirm the exact configuration before the instrument starts.</p></div><div class="modal-body"><ul id="reviewChecklist" class="review-checklist"></ul><dl id="reviewDetails" class="review-details"></dl><p id="reviewWarning" class="illumination-notice" hidden></p></div><div class="modal-actions"><button id="cancelReview" type="button" onclick="closeReviewModal()" title="Back to edit (Escape)">Back to edit</button><button id="confirmReview" type="button" onclick="confirmReviewedStart()" title="Confirm and start (Ctrl+Enter)">Confirm and start</button></div></div></div>
+<div id="calWizardModal" class="modal-backdrop" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="calWizardTitle" aria-describedby="calWizardDesc"><div class="modal-header"><h2 id="calWizardTitle">Lux calibration wizard</h2><p id="calWizardDesc">Guided zero-point and reference calibration for the light sensor.</p></div>
+<div class="cal-progress" id="calWizardProgress" role="progressbar" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1" aria-label="Calibration progress"><span class="cal-dot active" id="calDot0">1</span><span class="cal-bar" id="calBar0"></span><span class="cal-dot" id="calDot1">2</span><span class="cal-bar" id="calBar1"></span><span class="cal-dot" id="calDot2">3</span><span class="cal-bar" id="calBar2"></span><span class="cal-dot" id="calDot3">4</span></div>
+<div class="modal-body">
+<div class="cal-step-panel" id="calStep-prepare"><h3>1 · Prepare the instrument</h3><ul><li>Remove the sample; leave the sensor <b>bare and uncovered</b>.</li><li>Set the measurement distance you will use for experiments.</li><li>Close the chamber and keep ambient light stable.</li></ul><p id="calPrepStatus">Checking instrument connection…</p><a class="cal-advanced" href="/static/calibration.html">Advanced tape-method view with live chart</a></div>
+<div class="cal-step-panel" id="calStep-zero" hidden><h3>2 · Calibrate the zero point</h3><p>The lamp turns on at 50% power with the bare sensor. The unattenuated reading is stored as the zero (baseline) point.</p><div class="cal-lux" id="calWizLux">-- <small>lx</small></div><div class="cal-status" id="calWizStatusZero"></div><button type="button" class="cal-measure" id="calMeasureZero" onclick="startCalWizardMeasure('bare')">Measure zero point</button></div>
+<div class="cal-step-panel" id="calStep-reference" hidden><h3>3 · Set the reference lux value</h3><p>Apply the teflon tape layers, then measure at 50% power. Finish with the full-power verification to establish the corrected maximum lux reference.</p><div class="cal-lux" id="calWizLuxRef">-- <small>lx</small></div><div class="cal-status" id="calWizStatusRef"></div><button type="button" class="cal-measure" id="calMeasureTape" onclick="startCalWizardMeasure('tape')">Measure with tape</button><button type="button" class="cal-measure" id="calMeasureFull" onclick="startCalWizardMeasure('full')" disabled>Full-power verification</button></div>
+<div class="cal-step-panel" id="calStep-confirm" hidden><h3>4 · Confirm and save</h3><table class="cal-summary"><tbody id="calWizSummary"></tbody></table><p id="calWizSaved"></p></div>
+</div>
+<div class="modal-actions"><button type="button" id="calWizCancel" onclick="closeCalWizard(true)" title="Cancel (Escape)">Cancel</button><button type="button" id="calWizBack" onclick="calWizardBack()">Back</button><button type="button" id="calWizNext" onclick="calWizardNext()">Next</button></div></div></div>
 
 <script>
 var chart, luxChart, pendingReviewPayload=null, scientificSeries={samples:[]}, chartWindow='live', chartZoomActive=false;
@@ -1372,13 +1410,216 @@ function buildExperimentPayload(v) {
 }
 function currentSetupValues(){var mode=valueOf('experimentMode'),illumination=mode==='FIXED_TEMPERATURE'?'TEMPERATURE_CONTROLLED':selectedIlluminationMode();return {operator_name:valueOf('operatorName'),sample_name:valueOf('sampleName'),duration:parseInt(valueOf('duration')),cycles:parseInt(valueOf('cycles')),max_temp:numberOf('maxTemp'),target_lux:illumination==='TARGET_LUX'?numberOf('targetLux'):null,illumination_mode:illumination,interval:parseInt(valueOf('interval')),mode:mode,target_temperature:numberOf('targetTemperature'),hold_minutes:mode==='FIXED_TEMPERATURE'?numberOf('qualifiedHoldMinutes'):numberOf('plateauHoldMinutes'),tolerance:numberOf('temperatureTolerance'),qualification_dwell_s:numberOf('qualificationDwell'),control_sensor:mode==='FIXED_TEMPERATURE'?valueOf('fixedControlSensor'):valueOf('plateauControlSensor'),ramp_rate:numberOf('rampRate'),window_s:numberOf('detectionWindow'),max_slope:numberOf('maxAbsSlope'),max_range:numberOf('maxPeakToPeak'),confirmation_s:numberOf('confirmationDuration'),max_discovery_minutes:numberOf('maxDiscoveryTime'),post_mode:valueOf('postPlateauBehavior')};}
 function setReviewSubmitting(active){reviewStartInFlight=!!active;var cancel=document.getElementById('cancelReview'),confirm=document.getElementById('confirmReview');cancel.disabled=reviewStartInFlight;confirm.disabled=reviewStartInFlight;confirm.textContent=reviewStartInFlight?'Starting…':'Confirm and start';}
-function openReviewModal(){if(lastEsp32State!=='connected'){showMonitoringNotice('Connect ESP32 to begin','IDLE');return;}var values=currentSetupValues(),error=validateSetupValues(values);if(error){revealInvalidSetupField(error);showMonitoringNotice(error,'IDLE');return;}reviewModalOpener=document.activeElement;var model=buildReviewModel(values),box=document.getElementById('reviewDetails'),warning=document.getElementById('reviewWarning');pendingReviewPayload=JSON.parse(JSON.stringify(model.payload));setReviewSubmitting(false);box.replaceChildren();model.rows.forEach(function(r){var dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=r[0];dd.textContent=r[1];box.append(dt,dd);});warning.hidden=!model.warning;warning.textContent=model.warning||'';document.getElementById('reviewModal').hidden=false;setPageModalIsolation(true);document.getElementById('confirmReview').focus();}
+function openReviewModal(){if(lastEsp32State!=='connected'){showMonitoringNotice('Connect ESP32 to begin','IDLE');return;}var values=currentSetupValues(),error=validateSetupValues(values);if(error){revealInvalidSetupField(error);showMonitoringNotice(error,'IDLE');return;}reviewModalOpener=document.activeElement;var model=buildReviewModel(values),box=document.getElementById('reviewDetails'),warning=document.getElementById('reviewWarning');pendingReviewPayload=JSON.parse(JSON.stringify(model.payload));setReviewSubmitting(false);renderChecklist(getChecklistModel(values,lastEsp32State,illuminationSettingLabel(model.payload.illumination_mode,model.payload.target_lux)));box.replaceChildren();model.rows.forEach(function(r){var dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=r[0];dd.textContent=r[1];box.append(dt,dd);});warning.hidden=!model.warning;warning.textContent=model.warning||'';document.getElementById('reviewModal').hidden=false;setPageModalIsolation(true);document.getElementById('confirmReview').focus();}
 function finishReviewModal(restoreFocus){pendingReviewPayload=null;setReviewSubmitting(false);document.getElementById('reviewModal').hidden=true;setPageModalIsolation(false);if(restoreFocus&&reviewModalOpener&&reviewModalOpener.focus)reviewModalOpener.focus();}
 function closeReviewModal(){if(reviewStartInFlight)return;finishReviewModal(true);setPageModalIsolation(false);}
 function confirmReviewedStart(){if(reviewStartInFlight||!pendingReviewPayload)return;var payload=JSON.parse(JSON.stringify(pendingReviewPayload));setReviewSubmitting(true);setPageModalIsolation(true);startExperiment(payload);}
 function handleReviewModalKeydown(e){if(document.getElementById('reviewModal').hidden)return;if(e.key==='Escape'){e.preventDefault();closeReviewModal();return;}if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();confirmReviewedStart();return;}if(e.key==='Tab'){var a=[document.getElementById('cancelReview'),document.getElementById('confirmReview')].filter(function(x){return !x.disabled;}),i=a.indexOf(document.activeElement);if(!a.length){e.preventDefault();return;}var next=e.shiftKey?(i<=0?a.length-1:i-1):(i<0||i===a.length-1?0:i+1);e.preventDefault();a[next].focus();}}
 document.getElementById('reviewModal').addEventListener('keydown',handleReviewModalKeydown);
 document.getElementById('reviewModal').addEventListener('click',function(e){if(e.target===this)closeReviewModal();});
+/* --- 7.2 Pre-experiment checklist --- */
+function getChecklistModel(v, esp32State, illumLabel) {
+    var sample=v.sample_name&&String(v.sample_name).trim();
+    var maxTemp=Number(v.max_temp);
+    return [
+        {key:'device', label:'ESP32 connected', ok:esp32State==='connected', detail:esp32State==='connected'?'Live telemetry':'Waiting for device'},
+        {key:'sample', label:'Sample loaded', ok:!!sample, detail:sample||'No sample name entered'},
+        {key:'safety', label:'Safety limits configured', ok:Number.isFinite(maxTemp)&&maxTemp>=50, detail:'Cutoff at '+(Number.isFinite(maxTemp)?v.max_temp:'—')+' °C'},
+        {key:'illumination', label:'Illumination mode selected', ok:!!v.illumination_mode, detail:illumLabel||''}
+    ];
+}
+function renderChecklist(items) {
+    var list=document.getElementById('reviewChecklist');
+    if(!list)return;
+    list.innerHTML='';
+    items.forEach(function(item){
+        var li=document.createElement('li');
+        li.className=item.ok?'ok':'missing';
+        var ck=document.createElement('span');
+        ck.className='ck';
+        ck.textContent=item.ok?'✓':'⚠';
+        var text=document.createElement('span');
+        text.textContent=item.label;
+        if(item.detail){
+            var d=document.createElement('span');
+            d.className='ck-detail';
+            d.textContent=' — '+item.detail;
+            text.appendChild(d);
+        }
+        li.appendChild(ck);
+        li.appendChild(text);
+        list.appendChild(li);
+    });
+}
+/* --- 7.1 Lux calibration wizard --- */
+var CAL_WIZARD_STEP_IDS = ['prepare','zero','reference','confirm'];
+function getCalStepReadiness(step, s) {
+    if(step==='prepare') return s.connected===true;
+    if(step==='zero') return s.bareLux!==null&&s.bareLux!==undefined;
+    if(step==='reference') return s.correctedMax!==null&&s.correctedMax!==undefined;
+    return true;
+}
+function getCalWizardView(step, s) {
+    var idx=CAL_WIZARD_STEP_IDS.indexOf(step);
+    if(idx<0)idx=0;
+    return {index:idx, isFirst:idx===0, isLast:step==='confirm', nextLabel:step==='confirm'?'Finish':'Next', canNext:getCalStepReadiness(step,s)};
+}
+function formatCalLux(v) {
+    var n=Number(v);
+    return v!==null&&v!==undefined&&Number.isFinite(n)?n.toFixed(0):'--';
+}
+function emptyCalWizardState() {
+    return {step:'prepare', bareLux:null, tapedLux:null, factor:null, correctedMax:null, measuring:null, savedAt:null};
+}
+var calWizardState=emptyCalWizardState();
+var calWizardOpener=null, calWizardStatusTimer=null, calWizardLuxTimer=null;
+function calWizardViewState() {
+    return {connected:lastEsp32State==='connected', bareLux:calWizardState.bareLux, correctedMax:calWizardState.correctedMax};
+}
+function setCalWizardStatus(which, text) {
+    var el=document.getElementById(which==='zero'?'calWizStatusZero':'calWizStatusRef');
+    if(el)el.textContent=text;
+}
+function renderCalWizard() {
+    var view=getCalWizardView(calWizardState.step,calWizardViewState());
+    CAL_WIZARD_STEP_IDS.forEach(function(id,i){
+        var dot=document.getElementById('calDot'+i);
+        if(dot){dot.className='cal-dot'+(i<view.index?' done':i===view.index?' active':'');dot.textContent=i<view.index?'✓':String(i+1);}
+        if(i<CAL_WIZARD_STEP_IDS.length-1){var bar=document.getElementById('calBar'+i);if(bar)bar.className='cal-bar'+(i<view.index?' done':'');}
+        var panel=document.getElementById('calStep-'+id);
+        if(panel)panel.hidden=i!==view.index;
+    });
+    var prog=document.getElementById('calWizardProgress');
+    if(prog)prog.setAttribute('aria-valuenow',String(view.index+1));
+    var back=document.getElementById('calWizBack');
+    if(back)back.disabled=view.isFirst||!!calWizardState.measuring;
+    var next=document.getElementById('calWizNext');
+    if(next){next.textContent=view.nextLabel;next.disabled=!view.canNext||!!calWizardState.measuring;}
+    var prep=document.getElementById('calPrepStatus');
+    if(prep)prep.textContent=lastEsp32State==='connected'?'Instrument connected. Press Next when the sensor is ready.':'Waiting for ESP32 connection…';
+    var mz=document.getElementById('calMeasureZero');
+    if(mz){mz.disabled=calWizardState.measuring==='bare';mz.textContent=calWizardState.bareLux!==null?'Re-measure zero point':'Measure zero point';}
+    var mt=document.getElementById('calMeasureTape');
+    if(mt){mt.disabled=calWizardState.measuring==='tape';mt.textContent=calWizardState.tapedLux!==null?'Re-measure with tape':'Measure with tape';}
+    var mf=document.getElementById('calMeasureFull');
+    if(mf)mf.disabled=calWizardState.tapedLux===null||!!calWizardState.measuring;
+    var sum=document.getElementById('calWizSummary');
+    if(sum){
+        sum.innerHTML='';
+        [['Zero point (bare baseline)',formatCalLux(calWizardState.bareLux)+' lx'],['Taped reading',formatCalLux(calWizardState.tapedLux)+' lx'],['Attenuation factor',calWizardState.factor!==null?Number(calWizardState.factor).toFixed(2)+' ×':'--'],['Corrected max lux',formatCalLux(calWizardState.correctedMax)+' lx']].forEach(function(row){
+            var tr=document.createElement('tr');
+            var td1=document.createElement('td');td1.textContent=row[0];
+            var td2=document.createElement('td');td2.textContent=row[1];
+            tr.appendChild(td1);tr.appendChild(td2);
+            sum.appendChild(tr);
+        });
+    }
+    var saved=document.getElementById('calWizSaved');
+    if(saved)saved.textContent=calWizardState.savedAt?'Saved by the instrument on '+new Date(calWizardState.savedAt*1000).toLocaleString()+'.':'';
+}
+function openCalWizard() {
+    calWizardOpener=document.activeElement;
+    calWizardState=emptyCalWizardState();
+    toggleUtilitiesMenu(false);
+    document.getElementById('calWizardModal').hidden=false;
+    setPageModalIsolation(true);
+    renderCalWizard();
+    var next=document.getElementById('calWizNext');
+    if(next&&typeof next.focus==='function')next.focus();
+    if(typeof setInterval==='function'){
+        calWizardLuxTimer=setInterval(pollCalWizardLux,1000);
+        pollCalWizardLux();
+    }
+}
+function closeCalWizard(restoreFocus) {
+    if(calWizardStatusTimer){clearInterval(calWizardStatusTimer);calWizardStatusTimer=null;}
+    if(calWizardLuxTimer){clearInterval(calWizardLuxTimer);calWizardLuxTimer=null;}
+    calWizardState.measuring=null;
+    document.getElementById('calWizardModal').hidden=true;
+    setPageModalIsolation(false);
+    if(restoreFocus&&calWizardOpener&&typeof calWizardOpener.focus==='function')calWizardOpener.focus();
+}
+function calWizardNext() {
+    var view=getCalWizardView(calWizardState.step,calWizardViewState());
+    if(!view.canNext||calWizardState.measuring)return;
+    if(view.isLast){closeCalWizard(true);return;}
+    calWizardState.step=CAL_WIZARD_STEP_IDS[view.index+1];
+    renderCalWizard();
+}
+function calWizardBack() {
+    var idx=CAL_WIZARD_STEP_IDS.indexOf(calWizardState.step);
+    if(idx<=0)return;
+    calWizardState.step=CAL_WIZARD_STEP_IDS[idx-1];
+    renderCalWizard();
+}
+function startCalWizardMeasure(phase) {
+    if(calWizardState.measuring)return;
+    calWizardState.measuring=phase;
+    setCalWizardStatus(phase==='bare'?'zero':'ref','Starting measurement…');
+    renderCalWizard();
+    fetch('/api/calibrate_tape?phase='+phase,{method:'POST'}).then(function(r){
+        if(!r.ok)throw new Error('calibrate request failed');
+        return r.json();
+    }).then(function(){
+        setCalWizardStatus(phase==='bare'?'zero':'ref','Measuring… waiting for the reading to stabilize.');
+        if(calWizardStatusTimer)clearInterval(calWizardStatusTimer);
+        calWizardStatusTimer=setInterval(pollCalWizardStatus,1500);
+        pollCalWizardStatus();
+    }).catch(function(){
+        calWizardState.measuring=null;
+        setCalWizardStatus(phase==='bare'?'zero':'ref','Could not reach the instrument. Try again.');
+        renderCalWizard();
+    });
+}
+function pollCalWizardStatus() {
+    fetch('/api/calibration_status').then(function(r){return r.json();}).then(function(data){
+        var st=data.state||{};
+        if(calWizardState.measuring==='bare'&&st.phase==='bare_done'){
+            calWizardState.bareLux=st.bare_lux;
+            calWizardState.measuring=null;
+            setCalWizardStatus('zero','Zero point recorded: '+formatCalLux(st.bare_lux)+' lx.');
+            renderCalWizard();
+        } else if(calWizardState.measuring==='tape'&&st.phase==='tape_done'){
+            calWizardState.tapedLux=st.taped_lux;
+            calWizardState.factor=st.factor;
+            calWizardState.measuring=null;
+            setCalWizardStatus('ref','Taped reading recorded. Attenuation factor '+(st.factor!==null&&st.factor!==undefined?Number(st.factor).toFixed(2):'--')+'×. Run the full-power verification.');
+            renderCalWizard();
+        } else if(calWizardState.measuring==='full'&&st.phase==='done'){
+            var conf=data.config||{};
+            calWizardState.correctedMax=Number(conf.max_hardware_lux);
+            calWizardState.savedAt=Number(conf.cal_timestamp)||null;
+            calWizardState.measuring=null;
+            setCalWizardStatus('ref','Reference established: '+formatCalLux(calWizardState.correctedMax)+' lx corrected maximum.');
+            if(calWizardStatusTimer){clearInterval(calWizardStatusTimer);calWizardStatusTimer=null;}
+            renderCalWizard();
+        }
+    }).catch(function(){});
+}
+function pollCalWizardLux() {
+    fetch('/api/current_status').then(function(r){return r.json();}).then(function(data){
+        var list=data.recent_data;
+        if(!list||!list.length)return;
+        var lux=list[list.length-1].current_lux;
+        ['calWizLux','calWizLuxRef'].forEach(function(id){
+            var el=document.getElementById(id);
+            if(el)el.innerHTML=formatCalLux(lux)+' <small>lx</small>';
+        });
+        renderCalWizard(); // keeps the prepare-step readiness live as device state changes
+    }).catch(function(){});
+}
+function handleCalWizardKeydown(e) {
+    if(document.getElementById('calWizardModal').hidden)return;
+    if(e.key!=='Tab')return;
+    var btns=Array.prototype.filter.call(document.querySelectorAll('#calWizardModal button'),function(b){return !b.disabled&&b.offsetParent!==null;});
+    if(!btns.length){e.preventDefault();return;}
+    var i=btns.indexOf(document.activeElement);
+    var next=e.shiftKey?(i<=0?btns.length-1:i-1):(i<0||i===btns.length-1?0:i+1);
+    e.preventDefault();
+    btns[next].focus();
+}
+document.getElementById('calWizardModal').addEventListener('keydown',handleCalWizardKeydown);
+document.getElementById('calWizardModal').addEventListener('click',function(e){if(e.target===this)closeCalWizard(true);});
 function startExperiment(payload) {
     var fromReview=reviewStartInFlight&&!document.getElementById('reviewModal').hidden;
     var mode=payload.mode||'NORMAL_CYCLIC';
@@ -1552,16 +1793,17 @@ function handleGlobalShortcut(e){
     if(e.key==='Escape'){
         if(e.defaultPrevented)return;
         toggleModeHelp(false);
-        var review=document.getElementById('reviewModal'),stop=document.getElementById('stopModal');
+        var review=document.getElementById('reviewModal'),stop=document.getElementById('stopModal'),wiz=document.getElementById('calWizardModal');
         if(review&&review.hidden===false){closeReviewModal();return;}
         if(stop&&stop.hidden===false){closeStopModal();return;}
+        if(wiz&&wiz.hidden===false){closeCalWizard(true);return;}
         toggleUtilitiesMenu(false);
         if(typeof document.querySelectorAll==='function')Array.prototype.forEach.call(document.querySelectorAll('.csel[data-open="true"]'),function(w){w.dataset.open='false';var b=w.querySelector('.csel-btn');if(b){b.setAttribute('aria-expanded','false');b.removeAttribute('aria-activedescendant');}});
         return;
     }
     if(typeof e.key==='string'&&e.key.toLowerCase()==='s'&&(e.ctrlKey||e.metaKey)){
-        var rm=document.getElementById('reviewModal'),sm=document.getElementById('stopModal');
-        if((rm&&rm.hidden===false)||(sm&&sm.hidden===false))return; /* never steal focus from an open modal */
+        var rm=document.getElementById('reviewModal'),sm=document.getElementById('stopModal'),cw=document.getElementById('calWizardModal');
+        if((rm&&rm.hidden===false)||(sm&&sm.hidden===false)||(cw&&cw.hidden===false))return; /* never steal focus from an open modal */
         if(e.preventDefault)e.preventDefault();
         var s=document.getElementById('sampleName');
         if(s&&typeof s.focus==='function')s.focus();
