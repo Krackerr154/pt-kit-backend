@@ -108,7 +108,7 @@ test('control panel uses paired fields, a sticky action, and progressive mode co
 });
 
 test('responsive laboratory layout uses a wide sticky panel without horizontal overflow', () => {
-  assert.match(html, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(360px,\s*420px\)/);
+  assert.match(html, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(340px,\s*min\(30vw,\s*540px\),\s*540px\)/);
   assert.match(html, /\.right-col\s*\{[^}]*position:\s*sticky[^}]*top:/);
   // Control panel scrolls naturally; no artificial max-height to prevent form/button overlap
   assert.doesNotMatch(html, /\.right-col\s*\{[^}]*max-height:\s*calc\(100vh/s, 'desktop control should not have constrained height');
@@ -121,12 +121,13 @@ test('responsive laboratory layout uses a wide sticky panel without horizontal o
 test('PC shell is uncapped and uses the full available desktop width', () => {
   assert.match(html, /\.page-shell\s*\{[^}]*width:\s*100%[^}]*max-width:\s*none[^}]*margin:\s*0/);
   assert.doesNotMatch(html, /\.page-shell\s*\{[^}]*max-width:\s*1440px/);
-  assert.match(html, /@media\s*\(min-width:\s*1440px\)[^]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(420px,\s*26vw,\s*540px\)/);
+  // Fluid 4-tier system: wide desktop uses clamp in TIER 1
+  assert.match(html, /@media\s*\(min-width:\s*1360px\)\s*and\s*\(min-height:\s*800px\)[^]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(420px,\s*min\(28vw,\s*580px\),\s*580px\)/);
 });
 
 test('large desktop control panel uses named section areas and natural capped height', () => {
   const large = html.match(/@media\s*\(min-width:\s*1360px\)\s*and\s*\(min-height:\s*800px\)\s*\{[^]*?\n\s*\}/)?.[0] || html;
-  assert.match(large, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(480px,\s*min\(38vw,\s*640px\),\s*640px\)/);
+  assert.match(large, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp\(420px,\s*min\(28vw,\s*580px\),\s*580px\)/);
   assert.match(large, /grid-template-areas:\s*"primary"\s*"secondary"\s*"summary"\s*"action"/);
   assert.match(large, /\.control-card\s*\{[^}]*flex:\s*0\s+1\s+auto[^}]*max-height:\s*calc\(100%\s*-\s*70px\)[^}]*overflow-y:\s*auto/);
   assert.match(large, /\.setup-column-primary\s*\{[^}]*grid-area:\s*primary/);

@@ -77,23 +77,31 @@
     * { box-sizing:border-box; }
     html, body { max-width:100%; overflow-x:hidden; }
     body { font-family:'Roboto',sans-serif; background:#eef2f5; margin:0; padding:16px; color:var(--ink); font-size:16px; line-height:1.45; }
+    /* === FLUID RESPONSIVE SYSTEM (4 tiers, no breakpoint conflicts) === */
     .page-shell { width:100%; max-width:none; margin:0; }
-    .dashboard-grid { display:grid; grid-template-columns:minmax(0, 1fr) minmax(360px, 420px); grid-template-areas:"monitor control"; gap:16px; align-items:stretch; }
+    /* Base: fluid grid with natural right-panel cap. 340-540px, never exceeds 30vw. */
+    .dashboard-grid { display:grid; grid-template-columns:minmax(0, 1fr) clamp(340px, min(30vw, 540px), 540px); grid-template-areas:"monitor control"; gap:16px; align-items:stretch; }
     .left-col { grid-area:monitor; min-width:0; display:flex; flex-direction:column; }
     .left-col > section.card { display:flex; flex-direction:column; flex:1 1 auto; }
     .right-col { grid-area:control; position:sticky; top:0; min-width:0; overflow-y:auto; scrollbar-gutter:stable; }
-    .card { background:var(--surface); padding:16px; border:1px solid var(--line); border-radius:8px; box-shadow:none; margin-bottom:16px; }
-    .card-title { font-size:1.125rem; font-weight:700; margin-bottom:16px; color:#20364b; display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center; }
+    .card { background:var(--surface); padding:clamp(10px, min(2vw, 16px), 16px); border:1px solid var(--line); border-radius:8px; box-shadow:none; margin-bottom:16px; }
+    .card-title { font-size:clamp(1rem, 1rem + 0.3vw, 1.25rem); font-weight:700; margin-bottom:16px; color:#20364b; display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center; }
     
-    .status-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-bottom:16px; }
+    /* Stat boxes: auto-fit, no fixed columns needed */
+    .status-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-bottom:16px; }
     .stat-box { background:var(--surface); padding:16px 8px; border-radius:8px; text-align:center; border:1px solid var(--line); margin-bottom:0; min-width:0; }
-    .stat-val { font-size:1.5rem; line-height:1.2; font-weight:700; color:var(--ink); overflow-wrap:anywhere; }
+    .stat-val { font-size:clamp(1.1rem, 2vw, 1.5rem); line-height:1.2; font-weight:700; color:var(--ink); overflow-wrap:anywhere; }
     .stat-label { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px; font-weight:700; }
     
     .c-ir { color:#0969a5; } .c-tc { color:#b42318; } .c-rate { color:#146c2e; } .c-lux { color:#765a00; }
     
     .form-group { margin-bottom:12px; min-width:0; }
-    .form-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    /* Container query for form-pair: 2-col only when container is wide enough */
+    .control-card { container-type:inline-size; }
+    .form-pair { display:grid; grid-template-columns:1fr; gap:12px; }
+    @container (min-width: 380px) {
+      .form-pair { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+    }
     .mode-fields { display:none; padding:0; }
     .mode-summary, #modeProgress { padding:10px; border-radius:6px; font-size:.85rem; margin-bottom:12px; line-height:1.5; }
     #modeProgress { background:#f8f9fa; }
@@ -282,34 +290,19 @@
     .mode-desc { font-size:.82rem; color:var(--muted); margin:0 0 10px; line-height:1.45; }
     .tabbed-layout { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:14px; }
     button:disabled { cursor:not-allowed; opacity:.48; }
-    @media (min-width:1440px) {
-      body { padding:16px 24px; }
-      .dashboard-grid { grid-template-columns:minmax(0, 1fr) clamp(420px, 26vw, 540px); gap:20px; }
-    }
-    @media (min-width:1200px) and (max-width:1439px) and (min-height:800px) {
-      .dashboard-grid { grid-template-columns:minmax(0,1fr) clamp(400px,30vw,540px); height:calc(100dvh - 152px); min-height:0; }
+    /* --- TIER 1: Wide desktop — viewport-contained layout, right panel gets more room --- */
+    @media (min-width: 1360px) and (min-height: 800px) {
+      .dashboard-grid { grid-template-columns:minmax(0,1fr) clamp(420px, min(28vw, 580px), 580px); height:calc(100dvh - 152px); min-height:0; }
       .right-col { position:sticky; top:0; display:flex; flex-direction:column; gap:12px; overflow:hidden; min-height:0; }
       .control-card { flex:0 1 auto; min-height:0; max-height:calc(100% - 70px); margin-bottom:0; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:#aeb8c2 transparent; overscroll-behavior:contain; }
       .control-card > .card-title { position:sticky; top:0; z-index:5; margin-bottom:10px; padding-bottom:10px; background:var(--surface); }
-      .control-timing { margin-top:8px !important; display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:10px; text-align:left !important; }
-      .control-timing #modeProgress { margin:0; }
-      .control-timing .stat-label { margin:0; white-space:nowrap; }
-      #systemLogCard { flex:0 0 auto; margin:0; padding:8px 12px; }
-      #systemLogToggle { min-height:40px; }
-    }
-    @media (min-width:1360px) and (min-height:800px) {
-      .dashboard-grid { grid-template-columns:minmax(0,1fr) clamp(480px, min(38vw, 640px), 640px); height:calc(100dvh - 152px); min-height:0; }
-      .right-col { position:sticky; top:0; display:flex; flex-direction:column; gap:12px; overflow:hidden; min-height:0; }
-      .control-card { flex:0 1 auto; min-height:0; max-height:calc(100% - 70px); margin-bottom:0; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:#aeb8c2 transparent; overscroll-behavior:contain; }
-      .control-card > .card-title { position:sticky; top:0; z-index:5; margin-bottom:10px; padding-bottom:10px; background:var(--surface); }
-      #setupForm { display:grid; grid-template-columns:1fr; grid-template-areas:"primary" "secondary" "summary" "action"; column-gap:0; row-gap:10px; align-items:start; }
+      #setupForm { display:grid; grid-template-columns:1fr; grid-template-areas:"primary" "secondary" "summary" "action"; row-gap:10px; align-items:start; }
       .setup-column { display:flex; flex-direction:column; gap:10px; min-width:0; }
       .setup-column-primary { grid-area:primary; }
       .setup-column-secondary { grid-area:secondary; }
       #setupForm .setup-column > fieldset { min-width:0; border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfcfd; }
       #setupForm .setup-column-primary > fieldset:first-child { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:12px; align-items:start; }
       #setupForm .setup-column-primary > fieldset:first-child > legend, #setupForm .setup-column-primary > fieldset:first-child .form-group:last-child { grid-column:1 / -1; }
-      .mode-fields .form-pair label, #illuminationAdvanced .form-pair label { min-height:2.7em; display:flex; align-items:flex-end; }
       #modeSummary { grid-area:summary; margin:0; }
       .control-action-bar { grid-area:action; padding-top:0; }
       .control-timing { margin-top:8px !important; display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:10px; text-align:left !important; }
@@ -318,37 +311,45 @@
       #systemLogCard { flex:0 0 auto; margin:0; padding:8px 12px; }
       #systemLogToggle { min-height:40px; }
     }
-    @media (max-width:1180px) and (min-width:901px) {
-      .dashboard-grid { grid-template-columns:minmax(0, 1fr) minmax(340px, 420px); }
-      .form-pair { grid-template-columns:1fr; gap:0; }
-      .header-grid { gap:8px 12px; }
-      .instrument-status { gap:6px 10px; }
-      @media (min-height:800px) {
-        .dashboard-grid { height:calc(100dvh - 152px); min-height:0; }
-        .right-col { position:sticky; top:0; display:flex; flex-direction:column; gap:12px; overflow:hidden; min-height:0; }
-        .control-card { flex:0 1 auto; min-height:0; max-height:calc(100% - 70px); margin-bottom:0; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:#aeb8c2 transparent; overscroll-behavior:contain; }
-        .control-card > .card-title { position:sticky; top:0; z-index:5; margin-bottom:10px; padding-bottom:10px; background:var(--surface); }
-        .control-timing { margin-top:8px !important; display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:10px; text-align:left !important; }
-        .control-timing #modeProgress { margin:0; }
-        .control-timing .stat-label { margin:0; white-space:nowrap; }
-        #systemLogCard { flex:0 0 auto; margin:0; padding:8px 12px; }
-        #systemLogToggle { min-height:40px; }
-      }
+    /* --- TIER 2: Tall narrow — viewport-contained with tighter right panel --- */
+    @media (min-width: 901px) and (max-width: 1359px) and (min-height: 800px) {
+      .dashboard-grid { height:calc(100dvh - 152px); min-height:0; }
+      .right-col { position:sticky; top:0; display:flex; flex-direction:column; gap:12px; overflow:hidden; min-height:0; }
+      .control-card { flex:0 1 auto; min-height:0; max-height:calc(100% - 70px); margin-bottom:0; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:#aeb8c2 transparent; overscroll-behavior:contain; }
+      .control-card > .card-title { position:sticky; top:0; z-index:5; margin-bottom:10px; padding-bottom:10px; background:var(--surface); }
+      .control-timing { margin-top:8px !important; display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:10px; text-align:left !important; }
+      .control-timing #modeProgress { margin:0; }
+      .control-timing .stat-label { margin:0; white-space:nowrap; }
+      #systemLogCard { flex:0 0 auto; margin:0; padding:8px 12px; }
+      #systemLogToggle { min-height:40px; }
     }
-    @media (max-width:980px) and (min-width:901px) {
+    /* --- TIER 3: 900-980px — stack to single column --- */
+    @media (max-width: 980px) and (min-width: 901px) {
       .dashboard-grid { grid-template-columns:1fr; grid-template-areas:"control" "monitor"; }
       .right-col { position:static; overflow:visible; }
       .monitoring-empty { min-height:clamp(220px,42vh,420px); }
     }
-    /* Short desktop workspaces: keep the complete setup visible without page scrolling. */
-    @media (min-width:901px) and (max-height:799px) {
+    /* --- TIER 4: Short desktop — compact without the zoom hack --- */
+    @media (min-width: 901px) and (max-height: 799px) {
       body { padding:8px; font-size:14px; overflow:hidden; }
       .instrument-header { padding:8px 12px; margin-bottom:8px; }
       .dashboard-grid { height:calc(100dvh - 120px); min-height:0; gap:10px; }
       .card { padding:10px; margin-bottom:10px; }
-      .card-title { margin-bottom:8px; font-size:1rem; }
+      .card-title { font-size:clamp(0.85rem, 1.2vw, 1rem); margin-bottom:8px; }
       .right-col { position:relative; top:0; display:flex; flex-direction:column; gap:8px; overflow:hidden; min-height:0; }
-      .control-card { flex:1 1 auto; min-height:0; height:auto; margin-bottom:0; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:#aeb8c2 transparent; overscroll-behavior:contain; zoom:.56; }
+      .control-card { flex:1 1 auto; min-height:0; height:auto; margin-bottom:0; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:#aeb8c2 transparent; overscroll-behavior:contain; font-size:0.82rem; }
+      .control-card input, .control-card select, .control-card .csel-btn { min-height:34px; padding:5px 8px; font-size:0.82rem; }
+      .control-card label { font-size:0.78rem; margin-bottom:2px; }
+      .control-card .form-group { margin-bottom:5px; }
+      .control-card .form-pair { gap:6px; }
+      .control-card .segmented-control { padding:2px; gap:2px; }
+      .control-card .segmented-control span { min-height:30px; padding:3px 6px; font-size:0.75rem; }
+      .control-card .mode-summary { padding:4px 7px; margin-bottom:4px; font-size:0.72rem; }
+      .control-card .mode-tab { padding:6px 6px; font-size:0.74rem; }
+      .control-card .mode-tab small { font-size:0.62rem; }
+      .control-card .mode-tab-panel { padding:8px; }
+      .control-card .tabbed-layout { column-gap:8px; }
+      .control-card .illumination-notice { margin:0 0 5px; padding:4px 6px; font-size:0.7rem; }
       #systemLogCard { position:static; flex:0 0 44px; height:44px; margin:0; padding:4px 8px; overflow:hidden; }
       .system-log-toggle { min-height:32px; }
       #systemLogCard[data-collapsed="true"] .system-log-content { display:none; }
@@ -357,16 +358,8 @@
       #setupForm .setup-column-primary > fieldset:first-child { display:grid; grid-template-columns:1fr 1fr; column-gap:10px; align-items:start; }
       #setupForm .setup-column-primary > fieldset:first-child > legend { grid-column:1 / -1; }
       #setupForm .setup-column-primary > fieldset:first-child .form-group:last-child { grid-column:1 / -1; }
-      .form-group { margin-bottom:6px; }
-      label, #illuminationModeLabel { margin-bottom:3px !important; font-size:.78rem !important; }
-      input, select, .csel-btn { min-height:36px; padding:6px 8px; font-size:.86rem; }
-      .form-pair { gap:8px; }
-      .segmented-control { padding:2px; gap:2px; }
-      .segmented-control span { min-height:32px; padding:4px 6px; font-size:.78rem; }
-      .mode-summary { padding:5px 8px; margin-bottom:5px; font-size:.76rem; }
-      .illumination-notice { margin:0 0 6px; padding:5px 7px; font-size:.72rem; }
       .control-action-bar { padding:6px 0 0; }
-      .control-action-bar .btn-start { min-height:38px; padding:7px 10px; font-size:.88rem; }
+      .control-action-bar .btn-start { min-height:38px; padding:7px 10px; font-size:0.88rem; }
       #systemLogCard { margin-top:8px; }
       .system-log-content { height:70px !important; }
       .monitoring-empty { min-height:0; }
