@@ -724,7 +724,7 @@ function switchModeTab(mode, fromSelect) {
     if(sel&&sel.value!==mode){sel.value=mode;if(!fromSelect)updateModeFields();}
     renderModeHelp();
     updateIlluminationFields();
-    if(typeof computePlannedDurationSeconds==='function'&&typeof setTimeout==='function')setTimeout(updateTotalTime,0);
+    if(typeof computePlannedDurationSeconds==='function'&&typeof setTimeout==='function')setTimeout(function(){if(typeof updateTotalTime==='function')updateTotalTime();},0);
     if(typeof updateMobileSetupSummary==='function')updateMobileSetupSummary();
     if(document&&typeof document.querySelector==='function'&&typeof setTimeout==='function')setTimeout(updateControlScrollHint,0);
 }
