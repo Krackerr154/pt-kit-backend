@@ -33,7 +33,15 @@
     .form-group { margin-bottom:12px; min-width:0; }
     .form-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
     .mode-fields { display:none; padding:0; }
-    .mode-summary, #modeProgress { background:#f8f9fa; padding:10px; border-radius:6px; font-size:.85rem; margin-bottom:12px; line-height:1.5; }
+    .mode-summary, #modeProgress { padding:10px; border-radius:6px; font-size:.85rem; margin-bottom:12px; line-height:1.5; }
+    #modeProgress { background:#f8f9fa; }
+    .mode-summary { background:#eaf2fb; border:1px solid #cfdfef; color:#2c4a6b; }
+    .mode-select-group { position:relative; }
+    .mode-label-row { display:flex; align-items:center; gap:6px; }
+    .mode-label-row label { flex:1; }
+    .mode-help-btn { flex:0 0 auto; width:22px; height:22px; min-height:0; padding:0; border:1px solid #c9d6e2; border-radius:50%; background:#eef4fa; color:#3d6285; font-size:.72rem; line-height:1; cursor:pointer; }
+    .mode-help-btn:hover { background:#dce9f5; border-color:#a9c2d8; }
+    .mode-help-tip { position:absolute; z-index:70; top:100%; left:0; right:0; margin-top:4px; padding:8px 10px; background:#173f67; color:#fff; border-radius:6px; font-size:.78rem; line-height:1.45; box-shadow:0 8px 22px rgba(23,33,43,.18); }
     .segmented-control { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; border:1px solid #aeb8c2; border-radius:8px; background:var(--surface-soft); }
     .segmented-control label { margin:0; cursor:pointer; }
     .segmented-control input { position:absolute; width:1px; height:1px; min-height:0; margin:-1px; opacity:0; pointer-events:none; }
@@ -447,7 +455,7 @@
                 <fieldset><legend>Experiment</legend>
                 <div class="form-group"><label for="operatorName">Operator Name</label><input type="text" id="operatorName" value="Gerald"></div>
                 <div class="form-group"><label for="sampleName">Sample Name</label><input type="text" id="sampleName" placeholder="e.g. MOF-Batch-1"></div>
-                <div class="form-group"><label for="experimentMode">Experiment Mode</label><select id="experimentMode"><option value="NORMAL_CYCLIC" selected>Normal cyclic</option><option value="FIXED_TEMPERATURE">Fixed temperature</option><option value="NATURAL_PLATEAU">Natural plateau</option></select></div></fieldset>
+                <div class="form-group mode-select-group"><div class="mode-label-row"><label for="experimentMode">Experiment Mode</label><button type="button" id="modeHelpBtn" class="mode-help-btn" aria-label="About experiment modes" aria-expanded="false" aria-controls="modeHelpTip">ℹ️</button></div><select id="experimentMode"><option value="NORMAL_CYCLIC" selected>Normal cyclic</option><option value="FIXED_TEMPERATURE">Fixed temperature</option><option value="NATURAL_PLATEAU">Natural plateau</option></select><div id="modeHelpTip" class="mode-help-tip" role="tooltip" hidden></div></div></fieldset>
                 <fieldset><legend>Mode parameters</legend>
                 <div id="normalFields" class="mode-fields">
                   <div class="form-pair"><div class="form-group"><label for="duration">Target Duration (sec/cycle)</label><input type="number" id="duration" value="60"></div>
@@ -585,6 +593,7 @@ function updateModeFields() {
     document.getElementById('fixedFields').style.display=mode==='FIXED_TEMPERATURE'?'block':'none';
     document.getElementById('plateauFields').style.display=mode==='NATURAL_PLATEAU'?'block':'none';
     document.getElementById('modeSummary').textContent=mode==='NORMAL_CYCLIC'?'Run the existing heat/cool cycles.':mode==='FIXED_TEMPERATURE'?'Ramp to target, qualify within tolerance, then accumulate qualified hold time.':'Illuminate each sample while detecting its natural thermal plateau, confirm it, then hold.';
+    renderModeHelp();
     updateIlluminationFields();
     if(document&&typeof document.querySelector==='function'&&typeof setTimeout==='function')setTimeout(updateControlScrollHint,0);
 }
@@ -599,6 +608,26 @@ function toggleUtilitiesMenu(forceOpen) {
 function getArchiveBadgeModel(count) {
     var n=Number(count);
     return Number.isFinite(n)&&n>0?{visible:true,text:String(n)}:{visible:false,text:''};
+}
+var MODE_HELP = {
+    NORMAL_CYCLIC: 'Runs repeated heating/cooling cycles, each lasting the configured target duration. Best for photostability protocols that specify cyclic thermal stress.',
+    FIXED_TEMPERATURE: 'Ramps to the target temperature, waits until readings qualify within tolerance, then accumulates qualified hold time. Illumination is temperature-controlled.',
+    NATURAL_PLATEAU: 'Discovers the sample\'s natural thermal plateau under illumination, confirms stability, then holds. Use when exposure is defined by the sample\'s own equilibrium.'
+};
+function getModeHelpText(mode) {
+    return MODE_HELP[mode] || MODE_HELP.NORMAL_CYCLIC;
+}
+function renderModeHelp() {
+    var tip=document.getElementById('modeHelpTip');
+    if(tip)tip.textContent=getModeHelpText(valueOf('experimentMode'));
+}
+function toggleModeHelp(forceOpen) {
+    var tip=document.getElementById('modeHelpTip'),btn=document.getElementById('modeHelpBtn');
+    if(!tip||!btn)return;
+    var open=forceOpen===true||(forceOpen!==false&&tip.hidden);
+    if(open)renderModeHelp();
+    tip.hidden=!open;
+    btn.setAttribute('aria-expanded',String(open));
 }
 function renderArchiveCount(count) {
     var model=getArchiveBadgeModel(count);
@@ -1400,10 +1429,20 @@ fetch('/api/get_config').then(function(r) { return r.json(); }).then(function(co
 
 // Archive count badge + utilities overflow menu dismissal
 fetch('/api/archive/count').then(function(r){return r.ok?r.json():null;}).then(function(d){if(d)renderArchiveCount(d.count);}).catch(function(){});
+(function(){
+    var btn=document.getElementById('modeHelpBtn');
+    if(!btn)return;
+    btn.addEventListener('click',function(){toggleModeHelp(true);});
+    btn.addEventListener('mouseenter',function(){toggleModeHelp(true);});
+    var group=typeof btn.closest==='function'?btn.closest('.mode-select-group'):null;
+    if(group)group.addEventListener('mouseleave',function(){toggleModeHelp(false);});
+})();
+document.addEventListener('keydown',function(e){if(e&&e.key==='Escape')toggleModeHelp(false);});
 document.addEventListener('click',function(e){
     var menu=document.getElementById('utilitiesMenu'),btn=document.getElementById('utilitiesMenuBtn');
-    if(!menu||!btn||menu.hidden)return;
-    if(e.target&&typeof e.target.closest==='function'&&!e.target.closest('#utilitiesMenu')&&!e.target.closest('#utilitiesMenuBtn'))toggleUtilitiesMenu(false);
+    if(menu&&btn&&!menu.hidden&&e.target&&typeof e.target.closest==='function'&&!e.target.closest('#utilitiesMenu')&&!e.target.closest('#utilitiesMenuBtn'))toggleUtilitiesMenu(false);
+    var tip=document.getElementById('modeHelpTip');
+    if(tip&&!tip.hidden&&e.target&&typeof e.target.closest==='function'&&!e.target.closest('.mode-select-group'))toggleModeHelp(false);
 });
 </script>
 </body>

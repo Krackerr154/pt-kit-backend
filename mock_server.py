@@ -30,7 +30,7 @@ class Handler(BaseHTTPRequestHandler):
             sample = {"total_time": t, "state_code": 0, "cycle_num": 0, "ir_temp": 31.5, "tc_temp": 30.8, "current_lux": 1200}
             return self._send(200, json.dumps({"active_experiment": None, "recent_data": [sample]}))
         if path == "/api/get_config":
-            return self._send(200, json.dumps({"max_hardware_lux": 50000}))
+            return self._send(200, json.dumps({"max_hardware_lux": 50000, "lux_attenuation_factor": 2.5, "cal_timestamp": 1754200000}))
         if path == "/api/archive/count":
             return self._send(200, json.dumps({"count": 3}))
         if path == "/api/toggle_mock":

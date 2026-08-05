@@ -61,6 +61,8 @@
     .factor-highlight { font-size: 1.5rem; color: #ffbc00; font-weight: bold; text-align: center; margin: 10px 0; }
 
     .btn-group { text-align: center; margin-top: 20px; }
+    .last-calibrated { text-align: center; font-size: .85rem; color: #5a6b7b; margin-top: 12px; }
+    .last-calibrated.uncalibrated { color: #a06200; font-weight: 500; }
   </style>
 </head>
 <body>
@@ -71,6 +73,7 @@
     <div class="card">
         <h1>🔧 Lux Calibration — Teflon Tape Method</h1>
         <p style="text-align:center; color:#666;">Calibrate the BH1750 sensor to extend its measurement range using teflon tape as a physical attenuator.</p>
+        <div id="lastCalibrated" class="last-calibrated">Checking calibration record…</div>
         
         <!-- Step Indicator -->
         <div class="step-indicator">
@@ -337,6 +340,7 @@ function onCalComplete(config) {
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
     if (calStatusInterval) { clearInterval(calStatusInterval); calStatusInterval = null; }
     
+    renderLastCalibrated(config);
     // Fill results
     document.getElementById('resBare').innerText = (config.cal_bare_lux || '--') + ' lx';
     document.getElementById('resTaped').innerText = (config.cal_taped_lux || '--') + ' lx';
@@ -374,10 +378,26 @@ function resetWizard() {
 }
 
 // Load existing config on page load
+function getLastCalibratedModel(conf) {
+    var ts = conf ? parseFloat(conf.cal_timestamp) : NaN;
+    if (!isFinite(ts) || ts <= 0) return { text: 'Not yet calibrated.', uncalibrated: true };
+    var d = new Date(ts * 1000);
+    return { text: 'Last calibrated: ' + d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }), uncalibrated: false };
+}
+
+function renderLastCalibrated(conf) {
+    var el = document.getElementById('lastCalibrated');
+    if (!el) return;
+    var m = getLastCalibratedModel(conf);
+    el.textContent = m.text;
+    el.classList.toggle('uncalibrated', m.uncalibrated);
+}
+
 function loadExistingConfig() {
     fetch('/api/get_config')
         .then(function(r) { return r.json(); })
         .then(function(conf) {
+            renderLastCalibrated(conf);
             if (conf && conf.max_hardware_lux) {
                 var info = 'Current: Max ' + parseFloat(conf.max_hardware_lux).toFixed(0) + ' lx';
                 if (conf.lux_attenuation_factor) {
@@ -386,7 +406,10 @@ function loadExistingConfig() {
                 document.getElementById('statusMsg').innerText = info + ' — Run calibration to update.';
             }
         })
-        .catch(function() {});
+        .catch(function() {
+            var el = document.getElementById('lastCalibrated');
+            if (el) el.textContent = 'Calibration record unavailable.';
+        });
 }
 
 // Passive lux monitoring when idle
