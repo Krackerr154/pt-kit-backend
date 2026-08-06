@@ -296,8 +296,8 @@ test('full path: clicking the button toggles dataset.open', () => {
 
 test('full path: initCustomSelects does not crash when selects are present', () => {
   const { context, document, makeEl } = richHarness();
-  // Provide the four real selects with one option each.
-  ['experimentMode', 'fixedControlSensor', 'plateauControlSensor', 'postPlateauBehavior'].forEach(id => {
+  // Provide the three real selects with one option each (experimentMode uses tabs, not a custom dropdown).
+  ['fixedControlSensor', 'plateauControlSensor', 'postPlateauBehavior'].forEach(id => {
     const sel = makeEl('select'); sel.id = id;
     const o = makeEl('option'); o.value = 'X'; o.textContent = 'X'; o.selected = true;
     sel.options = [o]; sel.selectedIndex = 0;

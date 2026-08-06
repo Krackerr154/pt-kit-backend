@@ -573,7 +573,6 @@
             <div id="setupForm">
                 <div class="form-pair"><div class="form-group"><label for="operatorName">Operator Name</label><input type="text" id="operatorName" value="Gerald"></div>
                 <div class="form-group"><label for="sampleName">Sample Name</label><input type="text" id="sampleName" placeholder="e.g. MOF-Batch-1" title="Shortcut: Ctrl+S focuses this field"></div></div>
-                
                 <div class="mode-tabs" role="tablist" aria-label="Experiment mode">
                   <button id="tabNormal" class="mode-tab active" type="button" role="tab" aria-selected="true" aria-controls="panelNormal" onclick="switchModeTab('NORMAL_CYCLIC')">Normal<small>Cyclic</small></button>
                   <button id="tabFixed" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="panelFixed" onclick="switchModeTab('FIXED_TEMPERATURE')">Fixed<small>Temperature</small></button>
@@ -894,7 +893,6 @@ function customizeSelect(sel, descriptions) {
     return wrap;
 }
 function initCustomSelects() {
-    customizeSelect(document.getElementById('experimentMode'), { NORMAL_CYCLIC: 'Heating / cooling cycles', FIXED_TEMPERATURE: 'Hold a constant temperature', NATURAL_PLATEAU: 'Find the sample plateau' });
     customizeSelect(document.getElementById('fixedControlSensor'), { TC: 'Thermocouple (contact)', IR: 'Infrared (non-contact)' });
     customizeSelect(document.getElementById('plateauControlSensor'), { TC: 'Thermocouple (contact)', IR: 'Infrared (non-contact)' });
     customizeSelect(document.getElementById('postPlateauBehavior'), { PASSIVE: 'Keep same illumination', REGULATED: 'Actively regulate output' });
@@ -1814,7 +1812,7 @@ function setUIState(state, clearTerminal) {
 
 if(document.querySelectorAll){document.querySelectorAll('[data-window]').forEach(function(b){b.addEventListener('click',function(){selectChartWindow(b.dataset.window);});});
 document.querySelectorAll('[data-channel]').forEach(function(b){b.addEventListener('click',function(){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));applyChannelVisibility();applyChartView();});});}
-document.getElementById('setupForm').addEventListener('input',function(){updateMobileSetupSummary();renderPlannedTotalTime();});document.getElementById('setupForm').addEventListener('change',function(e){updateMobileSetupSummary(e);updateModeFields();renderPlannedTotalTime();});if(window.matchMedia){var mobileSetupMedia=window.matchMedia('(max-width:600px)');if(mobileSetupMedia.addEventListener)mobileSetupMedia.addEventListener('change',syncMobileAdvancedVisibility);}
+document.getElementById('setupForm').addEventListener('input',function(){updateMobileSetupSummary();renderPlannedTotalTime();});document.getElementById('setupForm').addEventListener('change',function(e){updateMobileSetupSummary(e);if(!(e.target&&e.target.name==='illuminationMode'))updateModeFields();renderPlannedTotalTime();});if(window.matchMedia){var mobileSetupMedia=window.matchMedia('(max-width:600px)');if(mobileSetupMedia.addEventListener)mobileSetupMedia.addEventListener('change',syncMobileAdvancedVisibility);}
 updateModeFields(); initCustomSelects(); syncMobileAdvancedVisibility(); updateMobileSetupSummary(); if(document.body&&document.body.classList)document.body.classList.add('mobile-review-visible'); applyTheme(resolveInitialTheme(),false); initChart(); renderPhaseStepper('NORMAL_CYCLIC',0); renderPhaseVisibility('IDLE'); renderHealth(true,null,null); renderMonitoringVisibility(false,'IDLE',true); renderReadinessGate(); renderPlannedTotalTime(); var controlCard=document.querySelector('.control-card');if(controlCard&&typeof controlCard.addEventListener==='function')controlCard.addEventListener('scroll',updateControlScrollHint);if(window&&typeof window.addEventListener==='function')window.addEventListener('resize',updateControlScrollHint);if(typeof setTimeout==='function')setTimeout(updateControlScrollHint,0); setInterval(updateStatus, 1000);
 
 // Load calibrated max lux hint on page load

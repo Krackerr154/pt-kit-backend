@@ -1,7 +1,6 @@
 #include "PTKitController.h"
 
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -51,13 +50,13 @@ void appendText(char *buffer, size_t capacity, size_t &length, const char *text)
 
 void appendUnsigned(char *buffer, size_t capacity, size_t &length, unsigned long value) {
   char text[16];
-  snprintf(text, sizeof text, "%lu", value);
+  ultoa(value, text, 10);
   appendText(buffer, capacity, length, text);
 }
 
 void appendSigned(char *buffer, size_t capacity, size_t &length, int value) {
   char text[12];
-  snprintf(text, sizeof text, "%d", value);
+  itoa(value, text, 10);
   appendText(buffer, capacity, length, text);
 }
 
@@ -273,9 +272,9 @@ void PTKitController::abort(const char *reason) {
   state_ = PTKIT_ABORTED;
   setLamp(0);
   setFan(255);
-  char line[96];
-  snprintf(line, sizeof line, "ABORT:%s\n", reason);
-  emit(line);
+  emit("ABORT:");
+  emit(reason);
+  emit("\n");
 }
 
 void PTKitController::conditionSensors(const PTKitRawSensors &raw) {
@@ -560,8 +559,17 @@ void PTKitController::runControlled(uint32_t now) {
 
 void PTKitController::display(const char *stateText) {
   char line1[32], line2[32];
-  snprintf(line1, sizeof line1, "%s %lu", stateText, (unsigned long)currentSeconds_);
-  snprintf(line2, sizeof line2, "C:%d T%d I%d", currentCycle_, (int)tempTc_, (int)tempIr_);
+  strcpy(line1, stateText);
+  char *p = line1 + strlen(line1);
+  ultoa(currentSeconds_, p, 10);
+  line2[0] = 'C'; line2[1] = ':';
+  itoa(currentCycle_, line2 + 2, 10);
+  p = line2 + strlen(line2);
+  *p++ = ' '; *p++ = 'T';
+  itoa((int)tempTc_, p, 10);
+  p += strlen(p);
+  *p++ = ' '; *p++ = 'I';
+  itoa((int)tempIr_, p, 10);
   platform_.showDisplay(line1, line2);
 }
 
@@ -588,7 +596,7 @@ void PTKitController::emitTelemetry() {
     lastLogMs_ = now;
   }
 
-  char line[320];
+  char line[160];
   size_t length = 0;
   line[0] = '\0';
   appendUnsigned(line, sizeof line, length, totalSeconds_);
