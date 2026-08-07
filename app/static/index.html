@@ -295,7 +295,7 @@
       .dashboard-grid { grid-template-columns:minmax(0,1fr) clamp(420px, min(28vw, 580px), 580px); height:calc(100dvh - 152px); min-height:0; }
       .right-col { position:sticky; top:0; display:flex; flex-direction:column; gap:12px; overflow:hidden; min-height:0; }
       .control-card { flex:0 1 auto; min-height:0; max-height:calc(100% - 70px); margin-bottom:0; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:#aeb8c2 transparent; overscroll-behavior:contain; }
-      .control-card > .card-title { position:sticky; top:0; z-index:5; margin-bottom:10px; padding-bottom:10px; background:var(--surface); }
+      .control-card > .card-title { position:sticky; top:0; z-index:5; margin-bottom:10px; padding:10px 0 10px 0; background:var(--surface); }
       #setupForm { display:grid; grid-template-columns:1fr; grid-template-areas:"primary" "secondary" "summary" "action"; row-gap:10px; align-items:start; }
       .setup-column { display:flex; flex-direction:column; gap:10px; min-width:0; }
       .setup-column-primary { grid-area:primary; }
@@ -316,7 +316,7 @@
       .dashboard-grid { height:calc(100dvh - 152px); min-height:0; }
       .right-col { position:sticky; top:0; display:flex; flex-direction:column; gap:12px; overflow:hidden; min-height:0; }
       .control-card { flex:0 1 auto; min-height:0; max-height:calc(100% - 70px); margin-bottom:0; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:#aeb8c2 transparent; overscroll-behavior:contain; }
-      .control-card > .card-title { position:sticky; top:0; z-index:5; margin-bottom:10px; padding-bottom:10px; background:var(--surface); }
+      .control-card > .card-title { position:sticky; top:0; z-index:5; margin-bottom:10px; padding:10px 0 10px 0; background:var(--surface); }
       .control-timing { margin-top:8px !important; display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:10px; text-align:left !important; }
       .control-timing #modeProgress { margin:0; }
       .control-timing .stat-label { margin:0; white-space:nowrap; }
@@ -571,6 +571,7 @@
             <div class="card-title">Experiment control <span id="statusBadge" class="visually-hidden">IDLE</span><span id="controlScrollHint" class="control-scroll-hint" hidden>More settings below</span></div>
             
             <div id="setupForm">
+                <div class="setup-column setup-column-primary">
                 <div class="form-pair"><div class="form-group"><label for="operatorName">Operator Name</label><input type="text" id="operatorName" value="Gerald"></div>
                 <div class="form-group"><label for="sampleName">Sample Name</label><input type="text" id="sampleName" placeholder="e.g. MOF-Batch-1" title="Shortcut: Ctrl+S focuses this field"></div></div>
                 <div class="mode-tabs" role="tablist" aria-label="Experiment mode">
@@ -611,6 +612,7 @@
                   </div>
                 </div>
                 <select id="experimentMode" class="visually-hidden"><option value="NORMAL_CYCLIC" selected>Normal cyclic</option><option value="FIXED_TEMPERATURE">Fixed temperature</option><option value="NATURAL_PLATEAU">Natural plateau</option></select>
+                </div>
                 <div class="setup-column setup-column-secondary">
                 <fieldset id="illuminationFieldset" class="mobile-advanced-fieldset" data-expanded="false"><legend>Illumination &amp; acquisition</legend>
                 <button class="mobile-advanced-toggle" type="button" aria-expanded="false" aria-controls="illuminationAdvanced" onclick="toggleMobileAdvanced('illuminationFieldset')"><span>Illumination &amp; acquisition</span><span id="illuminationMobileSummary" class="mobile-advanced-summary">Target lux · 38,000 lx · log 1 s</span></button>
