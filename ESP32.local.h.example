@@ -1,0 +1,7 @@
+// Copy this file to ESP32.local.h for the local build only.
+// ESP32.local.h is gitignored. Never commit credentials or private CA material.
+#define PTKIT_WIFI_SSID "<enterprise-ssid>"
+#define PTKIT_EAP_IDENTITY "<identity>"
+#define PTKIT_EAP_USERNAME "<username>"
+#define PTKIT_EAP_PASSWORD "<password>"
+#define PTKIT_ROOT_CA "<PEM certificate with literal \\n escapes>"

@@ -82,7 +82,7 @@ The dashboard uses several boolean flags to manage transitions:
 docker compose up --build -d   # starts web (8000), db (5433→5432), adminer (8081)
 ```
 
-Server is behind NAT, exposed via WireGuard VPN tunnel → Nginx Proxy Manager → `https://pt-kit.g-labs.my.id/api`. The ESP32 connects to this HTTPS URL with `client.setInsecure()` (no cert verification).
+Server is behind NAT, exposed via WireGuard VPN tunnel → Nginx Proxy Manager → `https://pt-kit.g-labs.my.id/api`. The ESP32 uses a provisioned CA certificate and fails closed when the local TLS material is absent.
 
 ## Utility Scripts (run inside Docker network or with DB_HOST adjusted)
 

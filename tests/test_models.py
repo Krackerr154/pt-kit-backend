@@ -51,6 +51,15 @@ def test_natural_plateau_rejects_zero_target_lux():
         )
 
 
+@pytest.mark.parametrize("window", [2, 31])
+def test_natural_plateau_rejects_window_outside_physical_capacity(window):
+    with pytest.raises(ValidationError, match="between 3 and 30 seconds"):
+        ExperimentConfig(operator_name="op", sample_name="sample", mode="NATURAL_PLATEAU",
+                         target_lux=38000, hold_duration_s=60, plateau_window_s=window,
+                         plateau_max_slope=.2, plateau_max_range=.5,
+                         plateau_confirmation_s=10, plateau_max_discovery_s=300)
+
+
 def test_protocol_integer_limits_are_validated_before_persistence():
     with pytest.raises(ValidationError):
         ExperimentConfig(operator_name="op", sample_name="sample", interval=32768)

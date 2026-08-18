@@ -3,6 +3,19 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef ARDUINO
+#include <stdio.h>
+static char *ultoa(unsigned long value, char *buffer, int base) {
+  if (!buffer || base != 10) return buffer;
+  snprintf(buffer, 16, "%lu", value);
+  return buffer;
+}
+static char *itoa(int value, char *buffer, int base) {
+  if (!buffer || base != 10) return buffer;
+  snprintf(buffer, 12, "%d", value);
+  return buffer;
+}
+#endif
 
 namespace {
 const float MAIN_TARGET = 30.0f;

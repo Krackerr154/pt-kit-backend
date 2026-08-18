@@ -102,7 +102,7 @@ Creates an experiment row (`status='WAITING'`), builds the mode-appropriate hard
 | `qualification_dwell_s` | int \| null | — | required for FIXED |
 | `control_sensor` | string | `"IR"` | `"IR"` or `"TC"` |
 | `ramp_rate` | float \| null | — | required for FIXED (°C/min) |
-| `plateau_window_s` | int \| null | — | PLATEAU; ≤ 60 (firmware capacity) |
+| `plateau_window_s` | int \| null | — | PLATEAU; 3–30 (physical Uno firmware capacity) |
 | `plateau_max_slope` | float \| null | — | PLATEAU (°C/min) |
 | `plateau_max_range` | float \| null | — | PLATEAU (°C peak-to-peak) |
 | `plateau_confirmation_s` | int \| null | — | PLATEAU |

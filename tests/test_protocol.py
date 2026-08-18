@@ -28,7 +28,7 @@ def test_fixed_command():
 
 
 def test_plateau_command_defaults_passive():
-    assert serialize_plateau_command(38000.0, 600, 120, 0.2, 0.5, 30, 1800, 80.0, 1, "IR", PostPlateauMode.PASSIVE) == "PLAT1:38000.0:600:120:0.2:0.5:30:1800:80.0:1:IR:PASSIVE"
+    assert serialize_plateau_command(38000.0, 600, 30, 0.2, 0.5, 30, 1800, 80.0, 1, "IR", PostPlateauMode.PASSIVE) == "PLAT1:38000.0:600:30:0.2:0.5:30:1800:80.0:1:IR:PASSIVE"
 
 
 def test_max_output_plateau_command_is_explicit_and_versioned():

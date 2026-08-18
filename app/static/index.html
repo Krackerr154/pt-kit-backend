@@ -332,8 +332,10 @@
     /* --- TIER 4: Short desktop — compact without the zoom hack --- */
     @media (min-width: 901px) and (max-height: 799px) {
       body { padding:8px; font-size:14px; overflow:hidden; }
+      .page-shell { height:calc(100dvh - 16px); min-height:0; display:flex; flex-direction:column; }
       .instrument-header { padding:8px 12px; margin-bottom:8px; }
-      .dashboard-grid { height:calc(100dvh - 120px); min-height:0; gap:10px; }
+      .dashboard-grid { flex:1 1 auto; grid-template-rows:minmax(0,1fr); height:auto; min-height:0; gap:10px; }
+      .left-col { min-height:0; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:#aeb8c2 transparent; overscroll-behavior:contain; }
       .card { padding:10px; margin-bottom:10px; }
       .card-title { font-size:clamp(0.85rem, 1.2vw, 1rem); margin-bottom:8px; }
       .right-col { position:relative; top:0; display:flex; flex-direction:column; gap:8px; overflow:hidden; min-height:0; }
@@ -603,7 +605,7 @@
                   <div class="tabbed-layout">
                     <div><div class="form-group"><label for="plateauHoldMinutes">Plateau Hold Duration (minutes)</label><input type="number" id="plateauHoldMinutes" value="10" min="0.1" step="0.1"></div>
                     <div class="form-group"><label for="plateauControlSensor">Control Sensor</label><select id="plateauControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div>
-                    <div class="form-group"><label for="detectionWindow">Detection Window (sec)</label><input type="number" id="detectionWindow" value="60" max="60"></div>
+                    <div class="form-group"><label for="detectionWindow">Detection Window (sec)</label><input type="number" id="detectionWindow" value="30" min="3" max="30"></div>
                     <div class="form-group"><label for="maxAbsSlope">Max Abs Slope (°C/min)</label><input type="number" id="maxAbsSlope" value="0.2" step="0.01"></div></div>
                     <div><div class="form-group"><label for="maxPeakToPeak">Max Peak-to-Peak (°C)</label><input type="number" id="maxPeakToPeak" value="1" step="0.1"></div>
                     <div class="form-group"><label for="confirmationDuration">Confirmation Duration (sec)</label><input type="number" id="confirmationDuration" value="60"></div>
@@ -914,7 +916,7 @@ function appendScientificSample(buffer,s,exp,mode){var sig=sampleSignature(s);if
 function selectScientificView(buffer,w){var a=buffer.samples.slice();if(!a.length||w==='all')return a;var span=w==='5m'?300:60,max=a[a.length-1].x;return a.filter(function(p){return p.x>=max-span;});}
 function phaseInfo(code,mode){var model=getPhaseStep(mode,code),step=model.current,colors=['rgba(80,90,100,.05)','rgba(255,170,0,.08)','rgba(0,123,255,.07)','rgba(40,167,69,.07)','rgba(108,117,125,.08)','rgba(20,20,20,.05)'];return {label:model.steps[step]||stateMap[code]||'Unknown',color:colors[step%colors.length]};}
 function derivePhaseRegions(samples,mode){var out=[];samples.forEach(function(s,i){var prev=out[out.length-1];if(!prev||prev.stateCode!==s.stateCode){var info=phaseInfo(s.stateCode,mode);if(prev)prev.end=s.x;out.push({start:s.x,end:s.x,stateCode:s.stateCode,label:info.label,color:info.color});}else prev.end=s.x;});return out;}
-function validateSetupValues(v){if(!v.operator_name||!v.sample_name)return 'Operator and sample name are required.';if(v.mode==='NORMAL_CYCLIC'&&(!(v.duration>0)||v.duration>4294967))return 'Duration must be from 1 to 4294967 seconds.';if(v.mode==='NORMAL_CYCLIC'&&(!(v.cycles>0)||v.cycles>32767))return 'Cycles must be from 1 to 32767.';if(!(v.max_temp>=50))return 'Maximum temperature must be at least 50 °C.';if(v.illumination_mode==='TARGET_LUX'&&!(v.target_lux>=0))return 'Target lux must be 0 or greater.';if(v.mode==='NATURAL_PLATEAU'&&v.illumination_mode==='TARGET_LUX'&&!(v.target_lux>0))return 'Natural plateau requires target lux above 0.';if(!(v.interval>=1)||v.interval>32767)return 'Interval must be from 1 to 32767 seconds.';return null;}
+function validateSetupValues(v){if(!v.operator_name||!v.sample_name)return 'Operator and sample name are required.';if(v.mode==='NORMAL_CYCLIC'&&(!(v.duration>0)||v.duration>4294967))return 'Duration must be from 1 to 4294967 seconds.';if(v.mode==='NORMAL_CYCLIC'&&(!(v.cycles>0)||v.cycles>32767))return 'Cycles must be from 1 to 32767.';if(!(v.max_temp>=50))return 'Maximum temperature must be at least 50 °C.';if(v.illumination_mode==='TARGET_LUX'&&!(v.target_lux>=0))return 'Target lux must be 0 or greater.';if(v.mode==='NATURAL_PLATEAU'&&v.illumination_mode==='TARGET_LUX'&&!(v.target_lux>0))return 'Natural plateau requires target lux above 0.';if(v.mode==='NATURAL_PLATEAU'&&(!(v.window_s>=3)||v.window_s>30))return 'Detection window must be from 3 to 30 seconds.';if(!(v.interval>=1)||v.interval>32767)return 'Interval must be from 1 to 32767 seconds.';return null;}
 function getControlVisibility(v){return {temperature:[v.ir!==false,v.tc!==false],lux:v.lux!==false,setpoint:v.setpoint!==false};}
 function formatSensorValue(value, digits, unit) {
     if (value === null || value === undefined || value === '') return '-- ' + unit;
@@ -1103,7 +1105,7 @@ function initChart() {
             plugins: { zoom: { pan: { enabled: true, mode: 'x', onPanComplete:function(){setChartZoomActive(true);} }, zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, pinch: { enabled: true }, mode: 'x', onZoomComplete:function(){setChartZoomActive(true);} } }, tooltip: { mode: 'index', intersect: false } }
         }
     });
-    luxChart=new Chart(document.getElementById('luxChart').getContext('2d'),{type:'line',data:{datasets:[{label:'Lux',data:[],borderColor:'#b77900',pointRadius:0},{label:'Target lux',data:[],borderColor:'#745b00',borderDash:[6,4],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,animation:false,scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{title:{display:true,text:'Illuminance (lx)'}}}}});
+    luxChart=new Chart(document.getElementById('luxChart').getContext('2d'),{type:'line',data:{datasets:[{label:'Lux',data:[],borderColor:'#b77900',pointRadius:0},{label:'Target lux',data:[],borderColor:'#745b00',borderDash:[6,4],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,animation:false,scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{min:0,title:{display:true,text:'Illuminance (lx)'}}}}});
     applyChartTheme(currentTheme);
     applyChannelVisibility();
 }

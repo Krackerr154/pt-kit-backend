@@ -190,7 +190,7 @@ def test_target_sketch_delegates_to_shared_controller() -> None:
     sketch = (ROOT / "Arduino" / "Arduino.ino").read_text()
     assert '#include "PTKitController.h"' in sketch
     assert "PTKitController controller(controllerPlatform);" in sketch
-    assert "controller.command(data.c_str(), data.length());" in sketch
+    assert "controller.command(cmdBuf, strlen(cmdBuf));" in sketch
     assert "controller.step(raw);" in sketch
 
 

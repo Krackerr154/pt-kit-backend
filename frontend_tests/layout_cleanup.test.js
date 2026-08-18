@@ -133,8 +133,11 @@ test('large desktop control panel uses named section areas and natural capped he
   assert.match(large, /\.setup-column-primary\s*\{[^}]*grid-area:\s*primary/);
   assert.match(large, /\.setup-column-secondary\s*\{[^}]*grid-area:\s*secondary/);
   assert.match(large, /#systemLogCard\s*\{[^}]*flex:\s*0\s+0\s+auto[^}]*margin:\s*0/);
-  assert.match(html, /@media\s*\(min-width:\s*901px\)\s*and\s*\(max-height:\s*799px\)/);
-  assert.match(html, /\.system-log-card\[data-collapsed="true"\]\s+\.system-log-content\s*\{\s*display:\s*none/);
+  const short = html.match(/@media\s*\(min-width:\s*901px\)\s*and\s*\(max-height:\s*799px\)\s*\{[\s\S]*?\n\s*\}/)?.[0] || html;
+  assert.match(short, /\.page-shell\s*\{[^}]*height:\s*calc\(100dvh\s*-\s*16px\)[^}]*display:\s*flex[^}]*flex-direction:\s*column/);
+  assert.match(short, /\.dashboard-grid\s*\{[^}]*flex:\s*1\s+1\s+auto[^}]*grid-template-rows:\s*minmax\(0,1fr\)[^}]*height:\s*auto/);
+  assert.match(short, /\.left-col\s*\{[^}]*min-height:\s*0[^}]*overflow-y:\s*auto/);
+  assert.match(html, /\.system-log-card\[data-collapsed="true"\]\s+\.system-log-content\s*\{\s*display:none/);
 });
 
 test('History and calibration are header utilities, not experiment-form actions', () => {

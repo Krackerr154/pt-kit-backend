@@ -5,7 +5,9 @@ assert.match(html,/name="illuminationMode" value="TARGET_LUX" checked/);
 assert.match(html,/name="illuminationMode" value="MAX_OUTPUT"/);
 assert.match(html,/id="maxOutputNotice"[^>]*hidden[^>]*>Maximum output drives the lamp at 100% PWM/);
 const source=html.match(/function buildExperimentPayload\(v\) \{[\s\S]*?\n\}/)[0];
+const validationSource=html.match(/function validateSetupValues\(v\)\{[\s\S]*?\n\}/)[0];
 const ctx={}; vm.createContext(ctx); vm.runInContext(source,ctx);
+vm.runInContext(validationSource,ctx);
 const base={operator_name:'op',sample_name:'s',duration:60,cycles:5,max_temp:80,target_lux:38000,illumination_mode:'TARGET_LUX',interval:1};
 assert.deepStrictEqual(JSON.parse(JSON.stringify(ctx.buildExperimentPayload({...base,mode:'NORMAL_CYCLIC'}))),base);
 const max=ctx.buildExperimentPayload({...base,mode:'NORMAL_CYCLIC',illumination_mode:'MAX_OUTPUT',target_lux:null});
@@ -14,4 +16,6 @@ const fixed=ctx.buildExperimentPayload({...base,mode:'FIXED_TEMPERATURE',target_
 assert.equal(fixed.hold_duration_s,120); assert.equal(fixed.temperature_tolerance,.5); assert.equal(fixed.qualification_dwell_s,30); assert.equal(fixed.illumination_mode,'TEMPERATURE_CONTROLLED'); assert.equal(fixed.target_lux,null); assert(!('qualified_hold_minutes' in fixed));
 const plateau=ctx.buildExperimentPayload({...base,mode:'NATURAL_PLATEAU',hold_minutes:3,control_sensor:'IR',window_s:30,max_slope:.2,max_range:.5,confirmation_s:10,max_discovery_minutes:5,post_mode:'PASSIVE'});
 assert.equal(plateau.hold_duration_s,180); assert.equal(plateau.plateau_max_discovery_s,300); assert.equal(plateau.plateau_window_s,30); assert.equal(plateau.post_plateau_mode,'PASSIVE');
+assert.equal(ctx.validateSetupValues({...base,...plateau,window_s:30}),null);
+assert.match(ctx.validateSetupValues({...base,...plateau,window_s:31}),/3 to 30 seconds/);
 console.log('frontend payload behavior: PASS');

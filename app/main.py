@@ -18,6 +18,10 @@ logger = logging.getLogger("ptkit")
 
 app = FastAPI()
 
+# Physical Uno plateau ring capacity. Keep this aligned with PLAT_CAP in the
+# root hardware firmware; increasing it would require an SRAM review.
+PLATEAU_WINDOW_CAPACITY_S = 30
+
 # --- MOUNT STATIC FILES ---
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
@@ -121,7 +125,7 @@ class ExperimentConfig(BaseModel):
             if not math.isfinite(values[n]) or values[n] <= 0: raise ValueError(n + " must be finite and positive")
         if mode == ExperimentMode.FIXED_TEMPERATURE and values["max_temp"] <= values["target_temperature"]: raise ValueError("max_temp must exceed target_temperature")
         if mode == ExperimentMode.NATURAL_PLATEAU:
-            if values["plateau_window_s"] > 60: raise ValueError("plateau_window_s exceeds firmware capacity")
+            if values["plateau_window_s"] < 3 or values["plateau_window_s"] > PLATEAU_WINDOW_CAPACITY_S: raise ValueError(f"plateau_window_s must be between 3 and {PLATEAU_WINDOW_CAPACITY_S} seconds")
             if values["plateau_max_discovery_s"] < values["plateau_window_s"]: raise ValueError("discovery must cover window")
             if values["plateau_max_discovery_s"] > 6500: raise ValueError("plateau_max_discovery_s must be at most 6500")
         for n in ("hold_duration_s", "qualification_dwell_s", "plateau_window_s", "plateau_confirmation_s", "plateau_max_discovery_s"):

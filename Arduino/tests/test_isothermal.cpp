@@ -72,7 +72,7 @@ int main() {
 
   PlateauWindow wrapped; plateauReset(wrapped);
   const uint32_t base=0xfffffff0UL;
-  for(int i=0;i<35;i++){wrapped.t[wrapped.next]=base+(uint32_t)(i*10);wrapped.y[wrapped.next]=20+.01f*i;wrapped.next=(wrapped.next+1)%PLATEAU_CAPACITY;wrapped.count++;}
+  for(int i=0;i<35;i++){wrapped.t[wrapped.next]=base+(uint32_t)(i*10);wrapped.y[wrapped.next]=20+.01f*i;wrapped.next=(wrapped.next+1)%PLATEAU_CAPACITY;if(wrapped.count<PLATEAU_CAPACITY)wrapped.count++;}
   PlateauStats ws=plateauStats(wrapped,30);
   assert(ws.valid && fabs(ws.slopePerMin-.6f)<.01f);
   puts("isothermal host tests: PASS");

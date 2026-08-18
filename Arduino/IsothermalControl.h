@@ -24,7 +24,7 @@ inline bool invalidSensorAbortDue(unsigned long now,unsigned long invalidSince,u
 struct IsoCommand { float targetTemp,tolerance,maxTemp,rampRate; unsigned long holdSeconds,qualificationSeconds,logInterval; ControlSensor sensor; };
 struct PlateauCommand { float targetLux,maxSlope,maxPeakToPeak,maxTemp; unsigned long holdSeconds,windowSeconds,confirmationSeconds,maxDiscoverySeconds,logInterval; ControlSensor sensor; PostPlateauMode postMode; IlluminationMode illuminationMode; };
 struct MaxOutputNormalCommand { unsigned long durationSeconds,cycles,logInterval; float maxTemp; };
-const int PLATEAU_CAPACITY=60;
+const int PLATEAU_CAPACITY=30;
 const unsigned long MAX_MILLIS_SECONDS=4294967UL;
 const unsigned long MAX_PLATEAU_SECONDS=6500UL;
 inline bool finitePositive(float x){ return isfinite(x)&&x>0; }
