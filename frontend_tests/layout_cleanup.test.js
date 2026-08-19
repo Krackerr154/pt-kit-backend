@@ -39,19 +39,21 @@ function visibilityHarness() {
   return { context, get: id => document.getElementById(id) };
 }
 
-test('compact instrument header carries textual run, backend, ESP32, and freshness status', () => {
+test('compact instrument header carries primary run, device, and freshness status', () => {
   assert.match(html, /<header[^>]*class="instrument-header"/);
   assert.match(html, /id="stateBadge"[^>]*aria-live="polite"/);
   assert.match(html, /id="connStatus"[^>]*aria-live="polite"/);
   assert.match(html, /id="backendStatus"[^>]*aria-live="polite"/);
   assert.match(html, /id="sampleFreshness"[^>]*aria-live="polite"/);
   assert.match(html, /id="healthCluster"[^>]*class="health-cluster"/);
+  assert.match(html, /\.header-brand\s*>\s*\.health-cluster\s*\{\s*display:none/);
+  assert.match(html, /Utilities ▾/);
 });
 
 test('monitoring starts as one purposeful empty state and hides all scientific chrome', () => {
   assert.match(html, /id="monitoringEmpty"[^>]*class="monitoring-empty"/);
   assert.match(html, /id="monitoringEmptyTitle"[^>]*>Waiting for telemetry</);
-  assert.match(html, /id="monitoringEmptyContext"[^>]*>Backend online[^<]*ESP32 disconnected/);
+  assert.match(html, /id="monitoringEmptyContext"[^>]*>Connect ESP32 to begin monitoring\.<\/p>/);
   assert.match(html, /id="monitoringData"[^>]*hidden/);
   const monitoring = html.match(/id="monitoringData"[^]*?<\/div>\s*<div id="resultSummaryCards"/);
   assert.ok(monitoring, 'monitoringData must contain toolbar and both chart canvases');
@@ -64,11 +66,11 @@ test('real monitoring visibility helper keeps cached samples visible on backend 
   assert.equal(h.get('monitoringEmpty').hidden, false);
   assert.equal(h.get('monitoringData').hidden, true);
   assert.equal(h.get('monitoringEmptyTitle').textContent, 'Waiting for telemetry');
-  assert.match(h.get('monitoringEmptyContext').textContent, /Backend online.*ESP32 disconnected/);
+  assert.equal(h.get('monitoringEmptyContext').textContent, 'Connect ESP32 to begin monitoring.');
 
   h.context.renderMonitoringVisibility(false, 'RUNNING', false);
-  assert.equal(h.get('monitoringEmptyTitle').textContent, 'ESP32 disconnected');
-  assert.match(h.get('monitoringEmptyContext').textContent, /Backend offline/);
+  assert.equal(h.get('monitoringEmptyTitle').textContent, 'Monitoring unavailable');
+  assert.match(h.get('monitoringEmptyContext').textContent, /backend connection/);
 
   h.context.renderMonitoringVisibility(true, 'RUNNING', false);
   assert.equal(h.get('monitoringEmpty').hidden, true);
@@ -78,7 +80,7 @@ test('real monitoring visibility helper keeps cached samples visible on backend 
 });
 
 test('idle has a concise ready state while run and terminal states expose the phase stepper', () => {
-  assert.match(html, /id="phaseReady"[^>]*>Ready for experiment</);
+  assert.match(html,/id="phaseReady"[^>]*>NOT READY.*ESP32 disconnected/);
   const h = visibilityHarness();
   h.context.renderPhaseVisibility('IDLE');
   assert.equal(h.get('phaseReady').hidden, false);
@@ -93,7 +95,11 @@ test('idle has a concise ready state while run and terminal states expose the ph
 test('scientific controls are grouped by Range and Series with a compact reset', () => {
   const toolbar = html.match(/id="chartToolbar"[^]*?<\/div>\s*<div class="chart-container"/);
   assert.ok(toolbar, 'chart toolbar missing');
-  assert.match(toolbar[0], /class="chart-control-group"[^>]*>\s*<legend>Range<\/legend>/);
+  assert.match(toolbar[0], /class="chart-control-group(?: monitoring-view-group)?"[^>]*>\s*<legend>View<\/legend>/);
+  for (const view of ['temperature','illuminance','both']) assert.match(toolbar[0], new RegExp(`data-view="${view}"`));
+  assert.match(html, /id="telemetryNotice"[^>]*role="status"[^>]*hidden/);
+  assert.match(html, /function renderTelemetryOverlay\([^]*?notice\.hidden=kind==='live'\|\|kind==='none'/);
+  assert.match(html, /function setMonitoringView\([^]*?data-view/);
   assert.match(toolbar[0], /class="chart-control-group"[^>]*>\s*<legend>Series<\/legend>/);
   assert.match(toolbar[0], /id="resetZoomButton"[^>]*hidden[^>]*disabled/);
   for (const id of ['toggleIR', 'toggleTC', 'toggleLux', 'toggleSetpoint']) assert.match(toolbar[0], new RegExp(`id="${id}"`));
@@ -105,6 +111,13 @@ test('control panel uses paired fields, a sticky action, and progressive mode co
   assert.match(html, /class="control-action-bar"[^]*?Review &amp; start experiment/);
   for (const id of ['panelNormal', 'panelFixed', 'panelPlateau']) assert.match(html, new RegExp(`id="${id}" class="mode-tab-panel( active)?`));
   assert.match(html, /class="mode-tabs"[^]*role="tablist"/);
+  for (const legend of ['Experiment','Experiment mode','Illumination &amp; acquisition','Safety']) assert.match(html, new RegExp(`<legend>${legend}<\\/legend>`));
+  for (const id of ['illuminationFieldset','safetyFieldset']) {
+    assert.match(html, new RegExp(`id="${id}"[^>]*data-expanded="false"`));
+    assert.match(html, new RegExp(`id="${id}"[^]*?aria-controls="[^"]+"`));
+  }
+  assert.match(html, /content\.hidden=!expanded/);
+  assert.match(html, /var expanded=fieldset\.dataset&&fieldset\.dataset\.expanded==='true'/);
 });
 
 test('responsive laboratory layout uses a wide sticky panel without horizontal overflow', () => {

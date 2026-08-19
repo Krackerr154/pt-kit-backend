@@ -75,7 +75,7 @@ assert(/id="sampleName"[^>]*title="[^"]*Ctrl\+S[^"]*"/.test(html),'sample field 
 assert(/id="reviewModal"[^>]*class="modal-backdrop"[^>]*hidden><div class="modal review-sheet" role="dialog" aria-modal="true" aria-labelledby="reviewTitle"/.test(html),'review modal is a labelled modal dialog');
 assert(/id="stopModal"[^>]*><div class="modal" role="dialog" aria-modal="true" aria-labelledby="stopModalTitle"/.test(html),'stop modal is a labelled modal dialog');
 assert(/id="startHint"[^>]*aria-live="polite"/.test(html),'start gating hint announces state changes');
-assert(/id="reviewStartBtn"[^>]*aria-describedby="startHint"/.test(html),'start button is described by the gating hint');
+assert(/id="reviewStartBtn"[^>]*aria-describedby="hardwareLockNote"/.test(html),'start button is described by the hardware lock explanation');
 assert(/role="radiogroup"/.test(html),'illumination segmented control is a radiogroup');
 assert(kdSrc.includes("e.key==='Tab'"),'review modal traps Tab focus');
 const fm=html.match(/function finishReviewModal\(restoreFocus\)\{[^\n]*/)[0];

@@ -19,6 +19,7 @@ assert(/grid-template-areas:"brand overflow" "status status"/.test(html),'narrow
 
 // overflow menu keeps both utilities reachable at narrow widths
 assert(/id="utilitiesMenuBtn"[^>]*aria-haspopup="menu"/.test(header),'overflow button announces a menu');
+assert(header.includes('Utilities ▾'),'utilities action is text-labeled');
 assert(/id="utilitiesMenu"[^>]*role="menu"[^>]*hidden/.test(header),'menu starts hidden');
 const menu=header.match(/id="utilitiesMenu"[^]*?<\/div>/)[0];
 assert(menu.includes('href="/history"')&&menu.includes('href="/static/calibration.html"'),'menu links both utilities');

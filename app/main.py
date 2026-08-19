@@ -47,7 +47,11 @@ def get_db_connection(max_retries=5):
 pending_command = None 
 current_experiment_id = None
 recent_sensors_cache = collections.deque(maxlen=20)
+last_device_telemetry_at = None
 calibration_state = {"phase": "idle", "bare_lux": None, "taped_lux": None, "factor": None}
+
+def device_is_ready(max_age_seconds=10):
+    return last_device_telemetry_at is not None and time.time() - last_device_telemetry_at <= max_age_seconds
 
 # --- MODELS ---
 class ExperimentConfig(BaseModel):
@@ -220,7 +224,13 @@ def read_history():
 
 @app.post("/api/start_experiment")
 def start_experiment(config: ExperimentConfig):
-    global current_experiment_id, pending_command, recent_sensors_cache
+    global current_experiment_id, pending_command, recent_sensors_cache, last_device_telemetry_at
+
+    # Hardware-affecting commands must not be accepted when the ESP32 has not
+    # produced a fresh telemetry packet. The UI gate is helpful, but this
+    # server-side check is the actual safety boundary.
+    if not device_is_ready():
+        raise HTTPException(status_code=409, detail="ESP32 disconnected or telemetry is stale; reconnect device before starting")
 
     # Build and validate the hardware command before clearing live data or writing to the DB.
     if config.mode == ExperimentMode.FIXED_TEMPERATURE:
@@ -284,7 +294,7 @@ def stop_experiment():
 
 @app.get("/api/current_status")
 def get_status():
-    global recent_sensors_cache, current_experiment_id
+    global recent_sensors_cache, current_experiment_id, last_device_telemetry_at
     
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -297,7 +307,11 @@ def get_status():
     cur.close()
     conn.close()
     
-    return {"active_experiment": exp_info, "recent_data": list(recent_sensors_cache)}
+    age = None if last_device_telemetry_at is None else max(0.0, time.time() - last_device_telemetry_at)
+    return {"active_experiment": exp_info, "recent_data": list(recent_sensors_cache),
+            "device": {"connected": age is not None and age <= 10,
+                        "last_seen_at": last_device_telemetry_at,
+                        "age_seconds": age}}
 
 @app.get("/api/check_command")
 def check_command():
@@ -310,7 +324,7 @@ def check_command():
 
 @app.post("/api/insert_data")
 def insert_data(data: EspSensorData):
-    global current_experiment_id, recent_sensors_cache
+    global current_experiment_id, recent_sensors_cache, last_device_telemetry_at
     try:
         if data.csv_line.startswith("MAXLUX:"):
             try:
@@ -385,6 +399,7 @@ def insert_data(data: EspSensorData):
         
         # Parsing Data (legacy prefix remains unchanged)
         telemetry = parse_telemetry(data.csv_line)
+        last_device_telemetry_at = time.time()
         total_time = telemetry["total_time"]
         phase_time = telemetry["phase_time"]
         cycle_num = telemetry["cycle_num"]
@@ -560,6 +575,8 @@ def trigger_calibrate_tape(phase: str = "bare"):
     cmd_map = {"bare": "CAL_BARE", "tape": "CAL_TAPE", "full": "CAL_FULL"}
     if phase not in cmd_map:
         raise HTTPException(400, "Invalid phase. Use: bare, tape, full")
+    if not device_is_ready():
+        raise HTTPException(status_code=409, detail="ESP32 disconnected or telemetry is stale; reconnect device before calibrating")
     
     pending_command = cmd_map[phase]
     calibration_state["phase"] = phase + "_running"

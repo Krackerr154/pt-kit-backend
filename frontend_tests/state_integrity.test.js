@@ -8,15 +8,15 @@ vm.runInContext(extract('formatPlannedDuration'),ctx);
 
 // 1.1 ESP32-aware readiness
 const ready=ctx.getReadinessModel('connected');
-assert.equal(ready.bannerText,'Ready for experiment');
+assert.match(ready.bannerText,/READY.*device connected/);
 assert.equal(ready.startEnabled,true);
 assert.equal(ready.hint,'');
 for(const state of ['disconnected','stale']){
     const off=ctx.getReadinessModel(state);
     assert.equal(off.deviceReady,false,state);
-    assert.equal(off.bannerText,'Waiting for device',state);
+    assert.match(off.bannerText,/NOT READY.*ESP32 disconnected/,state);
     assert.equal(off.startEnabled,false,state);
-    assert.equal(off.hint,'Connect ESP32 to begin',state);
+    assert.match(off.hint,/Hardware controls locked/,state);
 }
 
 // 1.2 TOTAL TIME computation
@@ -35,4 +35,12 @@ assert(/id="phaseReady"/.test(html),'readiness banner exists');
 assert(/id="startHint"[^>]*hidden/.test(html),'start hint begins hidden');
 assert(/id="reviewStartBtn"/.test(html),'desktop start button is addressable');
 assert(/id="mobileReviewBtn"/.test(html),'mobile start button is addressable');
+assert(/id="hardwareLockNote"/.test(html),'hardware lock explanation is visible near the start action');
+assert(/role="status" aria-live="assertive"/.test(html),'readiness state is announced as a status');
+assert(/id="calUtilityLink"/.test(html)&&/id="calUtilityMenuLink"/.test(html),'calibration utilities are addressable for readiness locking');
+assert(/function openCalWizard\(\) \{\s*if\(lastEsp32State!==['"]connected['"]\)/.test(html),'calibration refuses to open while the device is disconnected');
+assert(/renderStateBadge\(model\.deviceReady\?'IDLE':'NOT READY'/.test(html),'header state badge reflects blocked readiness');
+assert(/function renderSensorCards\(/.test(html),'sensor cards have explicit freshness rendering');
+assert(/last valid/.test(html),'stale sensor values are labeled as last valid');
+assert(/— <small>°C\/s<\/small>/.test(html),'heating rate is unavailable outside heating rather than zero');
 console.log('State integrity (readiness gate + planned total time): PASS');

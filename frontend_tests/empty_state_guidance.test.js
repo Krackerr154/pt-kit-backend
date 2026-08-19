@@ -7,10 +7,10 @@ vm.runInContext(extract('getLogStatusSummary'),ctx);
 
 // 2.2 collapsed System Log summary
 assert.equal(ctx.getLogStatusSummary(null,'connected'),'System ready');
-assert.equal(ctx.getLogStatusSummary(null,'disconnected'),'Waiting for device connection');
-assert.equal(ctx.getLogStatusSummary(null,'stale'),'Waiting for device connection');
+assert.equal(ctx.getLogStatusSummary(null,'disconnected'),'Device link unavailable');
+assert.equal(ctx.getLogStatusSummary(null,'stale'),'Device link unavailable');
 assert.equal(ctx.getLogStatusSummary('Experiment started! ID: 42','connected'),'Experiment started! ID: 42');
-assert.equal(ctx.getLogStatusSummary('ESP32 disconnected — waiting for device','disconnected'),'ESP32 disconnected — waiting for device');
+assert.equal(ctx.getLogStatusSummary('ESP32 disconnected — waiting for device','disconnected'),'Device link unavailable');
 
 // relevance filter: internal chatter hidden, connection/experiment/error events surfaced
 assert.equal(ctx.isUserRelevantLog('Syncing: Stopped remotely.'),false);
