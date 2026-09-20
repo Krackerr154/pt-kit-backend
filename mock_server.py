@@ -25,6 +25,10 @@ class Handler(BaseHTTPRequestHandler):
         path = self.path.split("?")[0]
         if path == "/":
             path = "/index.html"
+        elif path == "/history":
+            path = "/history.html"
+        elif path in ("/preview", "/device-preview"):
+            path = "/device-preview.html"
         if path == "/api/current_status":
             if not STATE["connected"]:
                 return self._send(200, json.dumps({"active_experiment": None, "recent_data": []}))

@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PT-Kit — Mobile Device Preview Mockup</title>
+<style>
+  :root {
+    --accent: #fcd400;
+    --accent-rgb: 252, 212, 0;
+    --primary: #2563eb;
+    --bg: #0b1220;
+    --panel: #131d33;
+    --panel-hover: #1b2845;
+    --line: #243553;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --chrome: #070d18;
+    --success: #10b981;
+    --danger: #ef4444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* Header Toolbar */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--chrome);
+    border-bottom: 2px solid var(--accent);
+    padding: 8px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 6px;
+  }
+
+  .brand-title {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  .brand-title span {
+    color: var(--accent);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(var(--accent-rgb), 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    text-transform: uppercase;
+  }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  label {
+    color: var(--muted);
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  select, input[type="text"], button {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 12px;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+
+  select:focus, input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
+  }
+
+  button {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+  }
+
+  button:hover {
+    background: var(--panel-hover);
+    border-color: var(--accent);
+  }
+
+  button:active {
+    transform: translateY(1px);
+  }
+
+  button.active {
+    background: var(--accent);
+    color: #001f3f;
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+
+  .presets-cluster {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .spacer-flex {
+    flex: 1 1 auto;
+  }
+
+  /* Stage & Devices */
+  #stage {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    padding: 24px;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .device-wrapper, .device {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    user-select: none;
+  }
+
+  .device-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 4px;
+  }
+
+  .device-info {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .device-name {
+    font-weight: 700;
+    color: #fff;
+    font-size: 13px;
+  }
+
+  .device-res {
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .breakpoint-badge {
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(37, 99, 235, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(37, 99, 235, 0.3);
+  }
+
+  .breakpoint-badge.mobile-narrow {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  .breakpoint-badge.mobile-std {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fcd34d;
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+
+  .breakpoint-badge.tablet {
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+
+  .device-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .action-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--muted);
+    padding: 2px 6px;
+    font-size: 11px;
+    border-radius: 4px;
+  }
+
+  .action-btn:hover {
+    color: #fff;
+    border-color: var(--line);
+    background: var(--panel);
+  }
+
+  /* Hardware Chassis Mockups */
+  .shell {
+    background: #1e293b;
+    border: 3px solid #334155;
+    border-radius: 44px;
+    padding: 12px;
+    box-shadow:
+      0 20px 50px rgba(0, 0, 0, 0.7),
+      0 0 0 1px rgba(255, 255, 255, 0.08),
+      inset 0 0 0 2px rgba(0, 0, 0, 0.6);
+    position: relative;
+    box-sizing: content-box;
+  }
+
+  .shell.phone {
+    border-radius: 44px;
+    padding: 12px;
+  }
+
+  .shell.tablet {
+    border-radius: 26px;
+    padding: 16px;
+    border-width: 3px;
+  }
+
+  .shell.desktop {
+    border-radius: 12px;
+    padding: 10px;
+    border-width: 2px;
+  }
+
+  /* Notches / Cameras */
+  .notch-island {
+    position: absolute;
+    top: 19px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 24px;
+    background: #000;
+    border-radius: 16px;
+    z-index: 50;
+    pointer-events: none;
+    box-shadow: inset 0 0 3px rgba(255, 255, 255, 0.1);
+  }
+
+  .notch-classic {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 140px;
+    height: 22px;
+    background: #000;
+    border-radius: 0 0 14px 14px;
+    z-index: 50;
+    pointer-events: none;
+  }
+
+  .notch-punch {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 14px;
+    background: #000;
+    border-radius: 50%;
+    z-index: 50;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .shell.tablet .notch,
+  .shell.desktop .notch,
+  .shell.landscape .notch {
+    display: none !important;
+  }
+
+  .screen {
+    background: #fff;
+    border-radius: 32px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .shell.phone.se .screen {
+    border-radius: 6px;
+  }
+
+  .shell.tablet .screen {
+    border-radius: 14px;
+  }
+
+  .shell.desktop .screen {
+    border-radius: 6px;
+  }
+
+  iframe {
+    border: 0;
+    display: block;
+    background: #fff;
+  }
+
+  /* Instructions Banner / Footer */
+  footer {
+    padding: 16px 24px 28px;
+    border-top: 1px solid var(--line);
+    background: var(--chrome);
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .footer-content {
+    max-width: 1100px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  footer strong {
+    color: #fff;
+  }
+
+  footer code {
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.1);
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 12px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-group">
+    <div class="brand-title">PT-Kit <span>Mobile Mockup</span></div>
+    <div class="badge">Device Grid</div>
+  </div>
+
+  <div class="control-group">
+    <label for="routeSel">Route:</label>
+    <select id="routeSel">
+      <option value="/" selected>Live Dashboard (/)</option>
+      <option value="/setup-mockup.html">Setup Redesign Mockup (/setup-mockup.html)</option>
+      <option value="/history">Data Archive (/history)</option>
+      <option value="/static/calibration.html">Hardware Calibration (/static/calibration.html)</option>
+    </select>
+  </div>
+
+  <div class="control-group">
+    <label for="customPath">or Path:</label>
+    <input type="text" id="customPath" placeholder="/custom/path" size="16" />
+  </div>
+
+  <div class="control-group">
+    <label for="baseOrigin">Host:</label>
+    <select id="baseOrigin">
+      <option value="" selected>Same Origin (Auto)</option>
+      <option value="http://localhost:8000">FastAPI (:8000)</option>
+      <option value="http://localhost:8765">Mock Server (:8765)</option>
+      <option value="http://127.0.0.1:8000">127.0.0.1:8000</option>
+      <option value="custom">Custom...</option>
+    </select>
+    <input type="text" id="customOrigin" placeholder="http://10.0.0.2:8000" size="18" style="display:none;" />
+  </div>
+
+  <div class="control-group">
+    <label for="zoomSel">Zoom:</label>
+    <select id="zoomSel">
+      <option value="1">100%</option>
+      <option value="0.85">85%</option>
+      <option value="0.75" selected>75%</option>
+      <option value="0.60">60%</option>
+      <option value="0.50">50%</option>
+      <option value="0.40">40%</option>
+    </select>
+  </div>
+
+  <button id="rotateBtn" title="Rotate portrait/landscape">
+    <span>🔄</span> Rotate
+  </button>
+
+  <button id="reloadBtn" title="Reload all mockups">
+    <span>⚡</span> Reload All
+  </button>
+
+  <button id="esp32Btn" title="Toggle the mock ESP32 connected/disconnected, then reload all frames">
+    <span id="esp32Dot">🔴</span> <span id="esp32Label">ESP32: ?</span>
+  </button>
+
+  <div class="spacer-flex"></div>
+
+  <div class="presets-cluster" id="deviceButtons"></div>
+</header>
+
+<main id="stage"></main>
+
+<footer>
+  <div class="footer-content">
+    <div>
+      <span class="pill">📐 <strong>Accurate Viewport:</strong> Real iframes at exact device pixels.</span>
+      <span class="pill">⚡ <strong>CSS Breakpoints:</strong> <code>@media (max-width: 600px)</code> and <code>@media (max-width: 900px)</code> execute authentically.</span>
+      <span class="pill">🔬 <strong>Pop-Out Tool:</strong> Click ↗ on any device header to inspect directly with Chrome DevTools.</span>
+    </div>
+    <div>
+      Note: Touch gestures and native iOS/Android safe-area insets require Chrome DevTools Device Mode (<code>Ctrl+Shift+M</code>) or physical hardware.
+    </div>
+  </div>
+</footer>
+
+<script>
+const DEVICES = [
+  { id: "iphonese", name: "iPhone SE",     w: 375,  h: 667,  kind: "phone",   notch: "none",   bp: "mobile-narrow", label: "< 600px (Compact)" },
+  { id: "iphone15", name: "iPhone 15 Pro", w: 393,  h: 852,  kind: "phone",   notch: "island", bp: "mobile-std",    label: "< 600px (Modern)" },
+  { id: "pixel7",   name: "Pixel 7",       w: 412,  h: 915,  kind: "phone",   notch: "punch",  bp: "mobile-std",    label: "< 600px (Android)" },
+  { id: "galaxys8", name: "Galaxy S8+",    w: 360,  h: 740,  kind: "phone",   notch: "punch",  bp: "mobile-narrow", label: "360px (Narrow)" },
+  { id: "ipadmini", name: "iPad mini",     w: 768,  h: 1024, kind: "tablet",  notch: "none",   bp: "tablet",        label: "600–900px (Tablet)" },
+  { id: "ipadpro",  name: "iPad Pro 11",   w: 834,  h: 1194, kind: "tablet",  notch: "none",   bp: "tablet",        label: "< 900px (Large Tab)" },
+  { id: "desktop",  name: "Laptop Reference", w: 1280, h: 800, kind: "desktop", notch: "none", bp: "desktop",       label: ">= 900px (Desktop)" },
+];
+
+// Shell chassis padding per device kind (MUST strictly match CSS padding)
+const SHELL_PAD = { phone: 12, tablet: 16, desktop: 10 };
+const SHELL_BORDER = 3;
+
+// Active devices default set
+const activeIds = new Set(["iphonese", "iphone15", "pixel7", "galaxys8", "ipadmini"]);
+let isLandscape = false;
+
+const $ = (id) => document.getElementById(id);
+const routeSel = $("routeSel");
+const customPath = $("customPath");
+const baseOrigin = $("baseOrigin");
+const customOrigin = $("customOrigin");
+const zoomSel = $("zoomSel");
+const rotateBtn = $("rotateBtn");
+const reloadBtn = $("reloadBtn");
+const stage = $("stage");
+const deviceButtons = $("deviceButtons");
+
+// Render Preset Buttons
+DEVICES.forEach((d) => {
+  const btn = document.createElement("button");
+  btn.textContent = d.name;
+  btn.className = activeIds.has(d.id) ? "active" : "";
+  btn.onclick = () => {
+    if (activeIds.has(d.id)) {
+      if (activeIds.size > 1) activeIds.delete(d.id);
+    } else {
+      activeIds.add(d.id);
+    }
+    btn.className = activeIds.has(d.id) ? "active" : "";
+    render();
+  };
+  deviceButtons.appendChild(btn);
+});
+
+function getTargetUrl(path) {
+  let host = baseOrigin.value;
+  if (host === "custom") {
+    host = customOrigin.value.trim().replace(/\/+$/, "");
+  }
+  let p = path.startsWith("/") ? path : "/" + path;
+  return host ? `${host}${p}` : p;
+}
+
+function currentRoute() {
+  const custom = customPath.value.trim();
+  return custom ? (custom.startsWith("/") ? custom : "/" + custom) : routeSel.value;
+}
+
+function render() {
+  const zoom = parseFloat(zoomSel.value);
+  const route = currentRoute();
+  const fullUrl = getTargetUrl(route);
+  stage.innerHTML = "";
+
+  DEVICES.filter((d) => activeIds.has(d.id)).forEach((d) => {
+    const isPhoneOrTablet = d.kind !== "desktop";
+    const w = isLandscape && isPhoneOrTablet ? d.h : d.w;
+    const h = isLandscape && isPhoneOrTablet ? d.w : d.h;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "device-wrapper device";
+
+    // Header / Caption
+    const header = document.createElement("div");
+    header.className = "device-header";
+
+    const info = document.createElement("div");
+    info.className = "device-info";
+    info.innerHTML = `
+      <span class="device-name">${d.name}</span>
+      <span class="device-res">${w}×${h}</span>
+      <span class="breakpoint-badge ${d.bp}">${d.label}</span>
+    `;
+
+    const actions = document.createElement("div");
+    actions.className = "device-actions";
+
+    const btnReload = document.createElement("button");
+    btnReload.className = "action-btn";
+    btnReload.title = "Reload frame";
+    btnReload.innerHTML = "🔄";
+    btnReload.onclick = () => {
+      const iframe = wrapper.querySelector("iframe");
+      if (iframe) iframe.src = getTargetUrl(currentRoute()) + (currentRoute().includes("?") ? "&" : "?") + "_r=" + Date.now();
+    };
+
+    const btnPopout = document.createElement("button");
+    btnPopout.className = "action-btn";
+    btnPopout.title = "Pop out into standalone window for DevTools inspection";
+    btnPopout.innerHTML = "↗ Pop-out";
+    btnPopout.onclick = () => {
+      window.open(fullUrl, `ptkit_preview_${d.id}`, `width=${w},height=${h},menubar=no,toolbar=no,location=no,status=no`);
+    };
+
+    actions.appendChild(btnReload);
+    actions.appendChild(btnPopout);
+    header.appendChild(info);
+    header.appendChild(actions);
+
+    // Chassis Shell
+    const shell = document.createElement("div");
+    shell.className = `shell ${d.kind} ${isLandscape ? "landscape" : ""} ${d.id === "iphonese" ? "se" : ""}`;
+    shell.style.transform = `scale(${zoom})`;
+    shell.style.transformOrigin = "top center";
+
+    // Notch
+    if (!isLandscape && d.kind === "phone") {
+      if (d.notch === "island") {
+        const notch = document.createElement("div");
+        notch.className = "notch-island";
+        shell.appendChild(notch);
+      } else if (d.notch === "punch") {
+        const notch = document.createElement("div");
+        notch.className = "notch-punch";
+        shell.appendChild(notch);
+      } else if (d.notch === "classic") {
+        const notch = document.createElement("div");
+        notch.className = "notch-classic";
+        shell.appendChild(notch);
+      }
+    }
+
+    // Screen Box & Iframe
+    const screen = document.createElement("div");
+    screen.className = "screen";
+    screen.style.width = `${w}px`;
+    screen.style.height = `${h}px`;
+
+    const iframe = document.createElement("iframe");
+    iframe.src = fullUrl;
+    iframe.width = w;
+    iframe.height = h;
+    iframe.loading = "eager";
+    iframe.setAttribute("data-device", d.name);
+    iframe.setAttribute("data-target-width", String(w));
+    iframe.setAttribute("data-width", String(w));
+    iframe.setAttribute("data-height", String(h));
+
+    screen.appendChild(iframe);
+    shell.appendChild(screen);
+
+    // Layout Spacer: handles scaled shell geometry without overlaps
+    const pad = SHELL_PAD[d.kind];
+    const totalW = w + pad * 2 + SHELL_BORDER * 2;
+    const totalH = h + pad * 2 + SHELL_BORDER * 2;
+
+    const spacer = document.createElement("div");
+    spacer.style.width = `${totalW * zoom}px`;
+    spacer.style.height = `${totalH * zoom}px`;
+    spacer.style.position = "relative";
+
+    shell.style.position = "absolute";
+    shell.style.left = "0";
+    shell.style.top = "0";
+
+    spacer.appendChild(shell);
+
+    header.style.width = `${totalW * zoom}px`;
+    wrapper.appendChild(header);
+    wrapper.appendChild(spacer);
+    stage.appendChild(wrapper);
+  });
+}
+
+// Event Listeners
+routeSel.onchange = () => { customPath.value = ""; render(); };
+customPath.onchange = render;
+customPath.onkeydown = (e) => { if (e.key === "Enter") render(); };
+
+baseOrigin.onchange = () => {
+  if (baseOrigin.value === "custom") {
+    customOrigin.style.display = "inline-block";
+    customOrigin.focus();
+  } else {
+    customOrigin.style.display = "none";
+    render();
+  }
+};
+customOrigin.onchange = render;
+customOrigin.onkeydown = (e) => { if (e.key === "Enter") render(); };
+
+zoomSel.onchange = render;
+
+rotateBtn.onclick = () => {
+  isLandscape = !isLandscape;
+  rotateBtn.classList.toggle("active", isLandscape);
+  render();
+};
+
+reloadBtn.onclick = () => {
+  render();
+};
+
+// --- ESP32 mock toggle -------------------------------------------------
+// The connected/disconnected state lives in mock_server.py (STATE.connected),
+// flipped via GET /api/toggle_mock and read via /api/current_status.
+// Resolve the API origin from the selected Host (falls back to the mock server,
+// since that's the only origin exposing the toggle endpoint).
+function apiOrigin() {
+  let host = baseOrigin.value;
+  if (host === "custom") host = customOrigin.value.trim().replace(/\/+$/, "");
+  // Same-origin (auto): if this preview is itself served from the mock server, use it;
+  // otherwise default to the known mock server port.
+  if (!host) return location.origin.includes(":8765") ? location.origin : "http://127.0.0.1:8765";
+  return host;
+}
+function setEsp32Ui(connected) {
+  const dot = document.getElementById("esp32Dot");
+  const label = document.getElementById("esp32Label");
+  const btn = document.getElementById("esp32Btn");
+  dot.textContent = connected ? "🟢" : "🔴";
+  label.textContent = connected ? "ESP32: connected" : "ESP32: disconnected";
+  btn.classList.toggle("active", !!connected);
+}
+async function refreshEsp32State() {
+  try {
+    const r = await fetch(apiOrigin() + "/api/current_status", { cache: "no-store" });
+    const d = await r.json();
+    // connected == backend reports at least one recent sample
+    setEsp32Ui(Array.isArray(d.recent_data) && d.recent_data.length > 0);
+  } catch (e) {
+    const label = document.getElementById("esp32Label");
+    if (label) label.textContent = "ESP32: n/a";
+  }
+}
+document.getElementById("esp32Btn").onclick = async () => {
+  const btn = document.getElementById("esp32Btn");
+  btn.disabled = true;
+  try {
+    const r = await fetch(apiOrigin() + "/api/toggle_mock", { cache: "no-store" });
+    const d = await r.json();
+    setEsp32Ui(!!d.connected);
+    // give the mock a beat, then reload all frames so every device reflects the new state
+    setTimeout(render, 150);
+  } catch (e) {
+    alert("Could not reach the mock toggle endpoint at " + apiOrigin() +
+          "/api/toggle_mock\nThe ESP32 toggle only works against the mock server (:8765).");
+  } finally {
+    btn.disabled = false;
+  }
+};
+// keep the pill in sync when the Host changes, and on first load
+baseOrigin.addEventListener("change", refreshEsp32State);
+refreshEsp32State();
+
+// Initial Render
+render();
+</script>
+</body>
+</html>

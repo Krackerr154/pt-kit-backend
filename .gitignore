@@ -17,3 +17,6 @@ ESP32.local.h
 go-monitoring-agent/go-monitoring-agent
 go-monitoring-agent/dashboard/.next/
 go-monitoring-agent/dashboard/node_modules/
+
+# Preview verification artifacts (screenshots etc.)
+artifacts/

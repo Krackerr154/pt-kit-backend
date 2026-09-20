@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PT-Kit — Setup Form Redesign Mockup</title>
+<style>
+  :root { --space:8px; --ink:#17212b; --muted:#52606d; --line:#d9e0e7; --surface:#fff; --surface-soft:#f4f7f9; --navy:#173f67; --accent:#0b5fff; --ok:#137333; --warn:#9a6700; --danger:#b42318; }
+  [data-theme="dark"] { --ink:#e2eaf2; --muted:#93a3b3; --line:#34424f; --surface:#1b242e; --surface-soft:#232f3b; --navy:#4d7fb8; --accent:#5ea3f7; --ok:#55b86f; --warn:#e6c669; --danger:#ffb4ab; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; max-width:100%; overflow-x:clip; }
+  body { font-family:'Roboto','Segoe UI',system-ui,sans-serif; background:#eef2f5; color:var(--ink); font-size:16px; line-height:1.45; }
+  [data-theme="dark"] body { background:#0f151c; }
+
+  /* ---- Shell: sticky top, scroll middle, sticky bottom ---- */
+  .setup-shell { display:flex; flex-direction:column; min-height:100dvh; }
+  .setup-header {
+    position:sticky; top:0; z-index:40; background:var(--surface); border-bottom:1px solid var(--line);
+    padding:10px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px;
+    box-shadow:0 2px 10px rgba(23,63,103,.10);
+  }
+  .setup-header h1 { margin:0; font-size:1.05rem; letter-spacing:-.01em; }
+  .setup-header .sub { color:var(--muted); font-size:.72rem; }
+  .conn-pill { display:inline-flex; align-items:center; gap:6px; font-size:.74rem; font-weight:700; padding:5px 9px; border-radius:999px; background:#e8f5ec; color:var(--ok); border:1px solid #bfe3ca; white-space:nowrap; }
+  [data-theme="dark"] .conn-pill { background:#16281c; border-color:#2f5d3c; }
+
+  .setup-scroll { flex:1 1 auto; overflow-y:auto; padding:14px 14px 120px; }
+
+  /* ---- Section title ---- */
+  .step-eyebrow { font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:700; margin:2px 0 8px; }
+
+  /* ---- Mode cards (idea 3) ---- */
+  .mode-cards { display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
+  .mode-card {
+    display:flex; gap:12px; align-items:flex-start; width:100%; text-align:left;
+    padding:14px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface);
+    cursor:pointer; font:inherit; color:inherit; transition:border-color .12s, background .12s, box-shadow .12s;
+  }
+  .mode-card:hover { border-color:#aeb8c2; }
+  .mode-card[aria-pressed="true"] { border-color:var(--accent); background:#f3f8ff; box-shadow:0 0 0 3px rgba(11,95,255,.12); }
+  [data-theme="dark"] .mode-card[aria-pressed="true"] { background:#12233b; }
+  .mode-card .mc-icon { flex:0 0 auto; width:40px; height:40px; border-radius:10px; display:grid; place-content:center; font-size:1.25rem; background:var(--surface-soft); border:1px solid var(--line); }
+  .mode-card[aria-pressed="true"] .mc-icon { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .mode-card .mc-body { min-width:0; flex:1 1 auto; }
+  .mode-card .mc-title { font-weight:700; font-size:.98rem; display:flex; align-items:center; gap:8px; }
+  .mode-card .mc-desc { color:var(--muted); font-size:.82rem; margin-top:3px; line-height:1.4; }
+  .mode-card .mc-check { flex:0 0 auto; width:22px; height:22px; border-radius:50%; border:2px solid var(--line); display:grid; place-content:center; color:#fff; font-size:.8rem; }
+  .mode-card[aria-pressed="true"] .mc-check { background:var(--accent); border-color:var(--accent); }
+  .mode-card[aria-pressed="true"] .mc-check::after { content:"\2713"; }
+
+  /* ---- Accordion groups (idea 2) ---- */
+  .accordion { display:flex; flex-direction:column; gap:10px; }
+  .acc-group { border:1px solid var(--line); border-radius:12px; background:var(--surface); overflow:hidden; }
+  .acc-head {
+    width:100%; display:flex; align-items:center; gap:12px; padding:14px; border:0; background:transparent;
+    font:inherit; color:inherit; cursor:pointer; text-align:left; min-height:56px;
+  }
+  .acc-head .acc-num { flex:0 0 auto; width:26px; height:26px; border-radius:50%; background:var(--surface-soft); border:1px solid var(--line); display:grid; place-content:center; font-size:.82rem; font-weight:700; color:var(--muted); }
+  .acc-group[data-done="true"] .acc-num { background:var(--ok); border-color:var(--ok); color:#fff; }
+  .acc-group[data-done="true"] .acc-num::after { content:"\2713"; }
+  .acc-group[data-done="true"] .acc-num .n { display:none; }
+  .acc-head .acc-titles { flex:1 1 auto; min-width:0; }
+  .acc-head .acc-title { font-weight:700; font-size:.95rem; }
+  .acc-head .acc-summary { color:var(--muted); font-size:.8rem; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .acc-head .acc-chevron { flex:0 0 auto; color:var(--muted); font-size:1.1rem; transition:transform .18s; }
+  .acc-group[data-open="true"] .acc-chevron { transform:rotate(180deg); }
+  .acc-body { padding:0 14px 14px; display:none; }
+  .acc-group[data-open="true"] .acc-body { display:block; }
+  .acc-group[data-open="true"] .acc-summary { display:none; }
+
+  /* ---- Fields ---- */
+  .field { margin-bottom:12px; }
+  .field:last-child { margin-bottom:0; }
+  .field label { display:block; font-size:.82rem; font-weight:600; color:var(--ink); margin-bottom:5px; }
+  .field .hint { color:var(--muted); font-size:.74rem; font-weight:400; }
+  input, select { width:100%; min-height:44px; padding:10px 12px; border:1px solid #aeb8c2; border-radius:8px; background:#fff; color:var(--ink); font:inherit; }
+  [data-theme="dark"] input, [data-theme="dark"] select { border-color:#3c4c5c; background:#131b23; color:var(--ink); }
+  input:focus, select:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+  .field-pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  /* ---- Segmented (control sensor etc) ---- */
+  .seg { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:5px; border:1px solid #aeb8c2; border-radius:10px; background:var(--surface-soft); }
+  .seg button { min-height:40px; border:0; border-radius:7px; background:transparent; color:var(--ink); font:inherit; font-weight:600; cursor:pointer; }
+  .seg button[aria-pressed="true"] { background:var(--navy); color:#fff; }
+
+  /* ---- Sticky bottom action bar (idea 1) ---- */
+  .action-bar {
+    position:fixed; left:0; right:0; bottom:0; z-index:50;
+    background:var(--surface); border-top:1px solid var(--line);
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+    display:flex; align-items:center; gap:12px;
+    box-shadow:0 -6px 20px rgba(23,63,103,.14);
+  }
+  .action-summary { flex:1 1 auto; min-width:0; }
+  .action-summary .ready-line { font-size:.86rem; font-weight:700; color:var(--ink); display:flex; align-items:center; gap:6px; }
+  .action-summary .ready-line.ok { color:var(--ok); }
+  .action-summary .ready-line.warn { color:var(--warn); }
+  .action-summary .detail { color:var(--muted); font-size:.76rem; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .btn-start {
+    flex:0 0 auto; min-height:48px; min-width:132px; padding:0 20px; border:0; border-radius:10px;
+    background:var(--accent); color:#fff; font:inherit; font-weight:700; font-size:.95rem; cursor:pointer;
+  }
+  .btn-start:disabled { background:#9fb4c9; cursor:not-allowed; }
+  .btn-start:not(:disabled):hover { background:#0a52dd; }
+
+  /* toolbar note for the mockup itself */
+  .mock-note { background:#fff8e1; border-bottom:1px solid #e8d48a; color:#725400; font-size:.76rem; padding:6px 14px; text-align:center; }
+  [data-theme="dark"] .mock-note { background:#3e300a; color:#f3d36b; border-color:#6b5310; }
+  .mock-note button { margin-left:8px; font-size:.72rem; padding:3px 8px; border:1px solid currentColor; border-radius:5px; background:transparent; color:inherit; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="setup-shell">
+  <div class="mock-note">
+    Redesign mockup — setup form only.
+    <button onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')">Toggle theme</button>
+  </div>
+
+  <!-- Sticky top: identity + connection -->
+  <header class="setup-header">
+    <div>
+      <h1>New experiment</h1>
+      <div class="sub">PT-Kit · Thermal photostability</div>
+    </div>
+    <span class="conn-pill">🟢 ESP32 connected</span>
+  </header>
+
+  <!-- Scrollable middle -->
+  <div class="setup-scroll">
+
+    <!-- Step 1: choose mode as full-width cards -->
+    <div class="step-eyebrow">Step 1 · Experiment type</div>
+    <div class="mode-cards" role="group" aria-label="Experiment mode">
+      <button class="mode-card" aria-pressed="true" data-mode="cyclic" onclick="selectMode(this)">
+        <span class="mc-icon">🔁</span>
+        <span class="mc-body">
+          <span class="mc-title">Normal cyclic</span>
+          <span class="mc-desc">Repeat heat/cool cycles for a fixed count. Classic photostability run.</span>
+        </span>
+        <span class="mc-check" aria-hidden="true"></span>
+      </button>
+      <button class="mode-card" aria-pressed="false" data-mode="fixed" onclick="selectMode(this)">
+        <span class="mc-icon">🌡️</span>
+        <span class="mc-body">
+          <span class="mc-title">Fixed temperature</span>
+          <span class="mc-desc">Hold a set temperature within tolerance for a qualified duration.</span>
+        </span>
+        <span class="mc-check" aria-hidden="true"></span>
+      </button>
+      <button class="mode-card" aria-pressed="false" data-mode="plateau" onclick="selectMode(this)">
+        <span class="mc-icon">📈</span>
+        <span class="mc-body">
+          <span class="mc-title">Plateau auto-detect</span>
+          <span class="mc-desc">Ramp until the system finds and confirms a natural thermal plateau.</span>
+        </span>
+        <span class="mc-check" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <!-- Step 2: grouped fields as accordion -->
+    <div class="step-eyebrow">Step 2 · Configure</div>
+    <div class="accordion" id="accordion">
+
+      <section class="acc-group" data-open="true" data-done="false" id="grpIdentity">
+        <button class="acc-head" onclick="toggleGroup('grpIdentity')" aria-expanded="true">
+          <span class="acc-num"><span class="n">1</span></span>
+          <span class="acc-titles">
+            <span class="acc-title">Sample identity</span>
+            <span class="acc-summary" id="sumIdentity">Operator and sample name</span>
+          </span>
+          <span class="acc-chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div class="acc-body">
+          <div class="field">
+            <label for="operator">Operator name</label>
+            <input id="operator" type="text" placeholder="e.g. Gerald A. D." oninput="recompute()">
+          </div>
+          <div class="field">
+            <label for="sample">Sample name</label>
+            <input id="sample" type="text" placeholder="e.g. SiAuNPs (3.5:1) Method A" oninput="recompute()">
+          </div>
+        </div>
+      </section>
+
+      <section class="acc-group" data-open="false" data-done="false" id="grpParams">
+        <button class="acc-head" onclick="toggleGroup('grpParams')" aria-expanded="false">
+          <span class="acc-num"><span class="n">2</span></span>
+          <span class="acc-titles">
+            <span class="acc-title">Run parameters</span>
+            <span class="acc-summary" id="sumParams">Duration, cycles, safety limit</span>
+          </span>
+          <span class="acc-chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div class="acc-body" id="paramsBody">
+          <!-- cyclic default fields -->
+          <div class="field-pair">
+            <div class="field">
+              <label for="duration">Duration <span class="hint">sec/cycle</span></label>
+              <input id="duration" type="number" value="600" oninput="recompute()">
+            </div>
+            <div class="field">
+              <label for="cycles">Total cycles</label>
+              <input id="cycles" type="number" value="12" oninput="recompute()">
+            </div>
+          </div>
+          <div class="field">
+            <label>Control sensor</label>
+            <div class="seg" role="group" aria-label="Control sensor">
+              <button type="button" aria-pressed="true" onclick="segPick(this)">TC (thermocouple)</button>
+              <button type="button" aria-pressed="false" onclick="segPick(this)">IR (infrared)</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="maxtemp">Max temperature <span class="hint">°C · safety cutoff</span></label>
+            <input id="maxtemp" type="number" value="85" oninput="recompute()">
+          </div>
+        </div>
+      </section>
+
+      <section class="acc-group" data-open="false" data-done="false" id="grpAdvanced">
+        <button class="acc-head" onclick="toggleGroup('grpAdvanced')" aria-expanded="false">
+          <span class="acc-num"><span class="n">3</span></span>
+          <span class="acc-titles">
+            <span class="acc-title">Illumination &amp; acquisition</span>
+            <span class="acc-summary" id="sumAdvanced">Target lux · logging interval</span>
+          </span>
+          <span class="acc-chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div class="acc-body">
+          <div class="field-pair">
+            <div class="field">
+              <label for="lux">Target lux <span class="hint">max 50000</span></label>
+              <input id="lux" type="number" value="38000" oninput="recompute()">
+            </div>
+            <div class="field">
+              <label for="loginterval">Logging <span class="hint">sec</span></label>
+              <input id="loginterval" type="number" value="1" oninput="recompute()">
+            </div>
+          </div>
+          <div class="field">
+            <label for="illum">Illumination mode</label>
+            <select id="illum" onchange="recompute()">
+              <option>Target lux (closed-loop)</option>
+              <option>Maximum output</option>
+              <option>Temperature-controlled</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Sticky bottom action -->
+  <div class="action-bar">
+    <div class="action-summary">
+      <div class="ready-line warn" id="readyLine">⚠ Sample name needed</div>
+      <div class="detail" id="readyDetail">Normal cyclic · 12 cycles · ~2h 0m · max 85 °C</div>
+    </div>
+    <button class="btn-start" id="startBtn" disabled onclick="alert('Would open the Review & start confirmation.')">Review</button>
+  </div>
+</div>
+
+<script>
+  const MODE_LABEL = { cyclic:"Normal cyclic", fixed:"Fixed temperature", plateau:"Plateau auto-detect" };
+  let currentMode = "cyclic";
+
+  function selectMode(btn){
+    document.querySelectorAll('.mode-card').forEach(c=>c.setAttribute('aria-pressed','false'));
+    btn.setAttribute('aria-pressed','true');
+    currentMode = btn.getAttribute('data-mode');
+    // auto-open params so the user sees the next step
+    openOnly('grpParams');
+    recompute();
+  }
+
+  function toggleGroup(id){
+    const g = document.getElementById(id);
+    const open = g.getAttribute('data-open')==='true';
+    if(open){ g.setAttribute('data-open','false'); g.querySelector('.acc-head').setAttribute('aria-expanded','false'); }
+    else { openOnly(id); }
+  }
+  function openOnly(id){
+    document.querySelectorAll('.acc-group').forEach(g=>{
+      const on = g.id===id;
+      g.setAttribute('data-open', on?'true':'false');
+      g.querySelector('.acc-head').setAttribute('aria-expanded', on?'true':'false');
+    });
+  }
+
+  function segPick(btn){
+    btn.parentElement.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed','false'));
+    btn.setAttribute('aria-pressed','true');
+    recompute();
+  }
+
+  function val(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
+
+  function recompute(){
+    const operator = val('operator');
+    const sample = val('sample');
+    const dur = Number(val('duration'))||0;
+    const cyc = Number(val('cycles'))||0;
+    const maxt = val('maxtemp');
+    const lux = Number(val('lux'))||0;
+
+    // summaries
+    document.getElementById('sumIdentity').textContent =
+      (operator||sample) ? [operator, sample].filter(Boolean).join(' · ') : 'Operator and sample name';
+    document.getElementById('grpIdentity').setAttribute('data-done', (operator&&sample)?'true':'false');
+
+    const totalSec = dur*cyc;
+    const h = Math.floor(totalSec/3600), m = Math.round((totalSec%3600)/60);
+    const durText = totalSec ? (h?`~${h}h ${m}m`:`~${m}m`) : '—';
+    document.getElementById('sumParams').textContent = `${cyc} cycles · ${durText} · max ${maxt||'?'} °C`;
+    document.getElementById('grpParams').setAttribute('data-done', (dur&&cyc&&maxt)?'true':'false');
+
+    document.getElementById('sumAdvanced').textContent = `${lux.toLocaleString()} lx · log ${val('loginterval')||'?'} s`;
+    document.getElementById('grpAdvanced').setAttribute('data-done', lux?'true':'false');
+
+    // readiness at the CTA
+    const line = document.getElementById('readyLine');
+    const detail = document.getElementById('readyDetail');
+    const btn = document.getElementById('startBtn');
+    detail.textContent = `${MODE_LABEL[currentMode]} · ${cyc} cycles · ${durText} · max ${maxt||'?'} °C`;
+    if(!sample){
+      line.className='ready-line warn'; line.textContent='⚠ Sample name needed';
+      btn.disabled=true; btn.textContent='Review';
+    } else if(!dur||!cyc){
+      line.className='ready-line warn'; line.textContent='⚠ Run parameters incomplete';
+      btn.disabled=true; btn.textContent='Review';
+    } else {
+      line.className='ready-line ok'; line.textContent='✓ Ready to start';
+      btn.disabled=false; btn.textContent='Review & start';
+    }
+  }
+  recompute();
+</script>
+</body>
+</html>
