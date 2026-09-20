@@ -147,6 +147,41 @@
     flex: 1 1 auto;
   }
 
+  /* Virtual-ESP32 test toolbar */
+  .sim-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 8px 3px 6px;
+    border: 1px solid rgba(var(--accent-rgb), 0.4);
+    border-radius: 8px;
+    background: rgba(var(--accent-rgb), 0.06);
+  }
+  .sim-toolbar[hidden] { display: none; }
+  .sim-tag {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.15);
+    border: 1px solid rgba(var(--accent-rgb), 0.35);
+    border-radius: 4px;
+    padding: 2px 5px;
+  }
+  #simStartBtn { color: #063; border-color: #2e7d55; }
+  #simStartBtn:hover { background: #10331f; border-color: #34a06a; }
+  #simStopBtn { color: #b45; border-color: #7d2e3e; }
+  #simStopBtn:hover { background: #331016; border-color: #a03444; }
+  .sim-state {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    min-width: 96px;
+    white-space: nowrap;
+  }
+  .sim-state.running { color: var(--accent); }
+  .sim-state.done { color: #34a06a; }
+
   /* Stage & Devices */
   #stage {
     flex: 1;
@@ -439,6 +474,35 @@
     <span id="esp32Dot">🔴</span> <span id="esp32Label">ESP32: ?</span>
   </button>
 
+  <div class="sim-toolbar" id="simToolbar" title="Virtual-ESP32 test controls (mock server only)">
+    <span class="sim-tag">SIM</span>
+    <div class="control-group">
+      <label for="simModeSel">Mode:</label>
+      <select id="simModeSel">
+        <option value="NORMAL_CYCLIC" selected>Normal cyclic</option>
+        <option value="FIXED_TEMPERATURE">Fixed temp</option>
+        <option value="NATURAL_PLATEAU">Plateau</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="simSpeedSel">Speed:</label>
+      <select id="simSpeedSel">
+        <option value="1">1×</option>
+        <option value="2">2×</option>
+        <option value="4">4×</option>
+        <option value="6" selected>6×</option>
+        <option value="8">8×</option>
+      </select>
+    </div>
+    <button id="simStartBtn" title="Start a virtual experiment; all device frames animate the run">
+      <span>▶</span> Start run
+    </button>
+    <button id="simStopBtn" title="Stop the virtual experiment">
+      <span>■</span> Stop
+    </button>
+    <span id="simState" class="sim-state">idle</span>
+  </div>
+
   <div class="spacer-flex"></div>
 
   <div class="presets-cluster" id="deviceButtons"></div>
@@ -716,6 +780,100 @@ document.getElementById("esp32Btn").onclick = async () => {
 // keep the pill in sync when the Host changes, and on first load
 baseOrigin.addEventListener("change", refreshEsp32State);
 refreshEsp32State();
+
+// --- Virtual-ESP32 test controls -------------------------------------
+// These hit endpoints that only exist on the mock server (:8765). The whole
+// SIM toolbar hides itself if the target origin doesn't expose /api/sim_speed,
+// so it never misleads when pointed at the real FastAPI backend.
+const simToolbar = document.getElementById("simToolbar");
+const simModeSel = document.getElementById("simModeSel");
+const simSpeedSel = document.getElementById("simSpeedSel");
+const simStateEl = document.getElementById("simState");
+
+// Default configs per mode so Start needs no extra input.
+const SIM_CONFIGS = {
+  NORMAL_CYCLIC: { mode: "NORMAL_CYCLIC", operator_name: "Preview", sample_name: "SIM-Run",
+    duration: 60, cycles: 3, max_temp: 80, interval: 1, target_lux: 38000, illumination_mode: "TARGET_LUX" },
+  FIXED_TEMPERATURE: { mode: "FIXED_TEMPERATURE", operator_name: "Preview", sample_name: "SIM-Run",
+    target_temperature: 60, hold_duration_s: 600, temperature_tolerance: 1, qualification_dwell_s: 30,
+    ramp_rate: 5, max_temp: 100, interval: 1, control_sensor: "TC", illumination_mode: "TEMPERATURE_CONTROLLED" },
+  NATURAL_PLATEAU: { mode: "NATURAL_PLATEAU", operator_name: "Preview", sample_name: "SIM-Run",
+    hold_duration_s: 600, plateau_window_s: 30, plateau_max_slope: 0.2, plateau_max_range: 1,
+    plateau_confirmation_s: 60, plateau_max_discovery_s: 3600, max_temp: 100, interval: 1,
+    control_sensor: "TC", target_lux: 38000, illumination_mode: "TARGET_LUX", post_plateau_mode: "PASSIVE" },
+};
+
+async function simProbe() {
+  // Show the toolbar only if the sim endpoint responds.
+  try {
+    const r = await fetch(apiOrigin() + "/api/sim_speed", { cache: "no-store" });
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    if (d && typeof d.speed !== "undefined") {
+      simToolbar.hidden = false;
+      // reflect current speed
+      const opt = [...simSpeedSel.options].find(o => Number(o.value) === Number(d.speed));
+      if (opt) simSpeedSel.value = opt.value;
+      return;
+    }
+    throw new Error();
+  } catch (e) {
+    simToolbar.hidden = true; // not a mock server — hide test controls
+  }
+}
+function setSimState(text, cls) {
+  simStateEl.textContent = text;
+  simStateEl.className = "sim-state" + (cls ? " " + cls : "");
+}
+simSpeedSel.onchange = async () => {
+  try { await fetch(apiOrigin() + "/api/sim_speed?x=" + encodeURIComponent(simSpeedSel.value), { cache: "no-store" }); }
+  catch (e) { /* mock only */ }
+};
+document.getElementById("simStartBtn").onclick = async () => {
+  const cfg = SIM_CONFIGS[simModeSel.value] || SIM_CONFIGS.NORMAL_CYCLIC;
+  try {
+    // ensure connected first (Start requires a live device)
+    const s = await (await fetch(apiOrigin() + "/api/current_status", { cache: "no-store" })).json();
+    if (!(Array.isArray(s.recent_data) && s.recent_data.length > 0)) {
+      await fetch(apiOrigin() + "/api/toggle_mock", { cache: "no-store" });
+      setEsp32Ui(true);
+    }
+    await fetch(apiOrigin() + "/api/sim_speed?x=" + encodeURIComponent(simSpeedSel.value), { cache: "no-store" });
+    const r = await fetch(apiOrigin() + "/api/start_experiment", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cfg),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || ("HTTP " + r.status));
+    setSimState("running: " + simModeSel.value.replace("_", " ").toLowerCase(), "running");
+    setTimeout(render, 200);          // frames pick up the run
+    simPoll();
+  } catch (e) {
+    alert("Could not start virtual run at " + apiOrigin() + "\n" + e +
+          "\n(These controls only work against the mock server on :8765.)");
+  }
+};
+document.getElementById("simStopBtn").onclick = async () => {
+  try {
+    await fetch(apiOrigin() + "/api/stop_experiment", { method: "POST" });
+    setSimState("stopped");
+    setTimeout(render, 200);
+  } catch (e) { /* mock only */ }
+};
+// Poll the run so the state pill tracks progress and settles on done/idle.
+let simPollTimer = null;
+async function simPoll() {
+  clearTimeout(simPollTimer);
+  try {
+    const d = await (await fetch(apiOrigin() + "/api/current_status", { cache: "no-store" })).json();
+    const r = (d.recent_data && d.recent_data[0]) || {};
+    const label = r.state_label;
+    if (label === "DONE") { setSimState("done", "done"); return; }
+    if (!label || label === "IDLE") { setSimState("idle"); return; }
+    setSimState("running: " + label.toLowerCase().replace(/_/g, " "), "running");
+    simPollTimer = setTimeout(simPoll, 1000);
+  } catch (e) { setSimState("idle"); }
+}
+simProbe();
 
 // Initial Render
 render();
