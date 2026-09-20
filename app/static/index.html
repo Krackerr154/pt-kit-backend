@@ -150,6 +150,10 @@
     .chart-control-group legend { float:left; width:100%; margin-bottom:4px; font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
     .chart-controls button { min-height:44px; border:1px solid #8090a0; background:#fff; border-radius:6px; padding:6px 10px; color:var(--ink); font-weight:500; }
     .chart-controls button[aria-pressed="true"] { background:#173f67; color:#fff; }
+    /* Desktop: options are always shown inline; toggle button hidden (row has room). */
+    .chart-options-toggle { display:none; }
+    .chart-options-body { display:contents; }
+    [data-theme="dark"] .chart-controls button { border-color:#4d5f70; background:#232f3b; }
     .setup-column { display:contents; }
     #setupForm fieldset { border:0; border-top:1px solid var(--line); border-radius:0; margin:0; padding:16px 0 4px; }
     #setupForm .setup-column-primary > fieldset:first-child { border-top:0; padding-top:0; }
@@ -544,6 +548,42 @@
       .mobile-review-ready.ready-warn { color:var(--warn,#9a6700); }
       .mobile-review-ready.ready-blocked { color:var(--danger,#b42318); }
       .mobile-review-bar .btn-start { min-height:48px; }
+
+      /* ===== Chart controls de-clutter (mobile) ===== */
+      /* Primary View row = segmented pill group, always visible */
+      .chart-controls { gap:8px; margin:8px 0 12px; align-items:stretch; flex-direction:column; }
+      .monitoring-view-group { display:grid !important; grid-template-columns:repeat(3,1fr); gap:0; margin:0; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+      .monitoring-view-group legend { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); border:0; }
+      .monitoring-view-group button { min-height:42px; border:0; border-right:1px solid var(--line); border-radius:0; background:var(--surface); font-weight:600; }
+      .monitoring-view-group button:last-child { border-right:0; }
+      .monitoring-view-group button[aria-pressed="true"] { background:var(--accent); color:#fff; }
+
+      /* Options disclosure: Range + Series collapse behind a toggle */
+      .chart-options-toggle { display:inline-flex; align-items:center; gap:6px; align-self:flex-start;
+        min-height:40px; padding:6px 12px; border:1px solid var(--line); border-radius:8px;
+        background:var(--surface-soft); color:var(--navy); font-weight:600; }
+      .chart-options-toggle::after { content:'▾'; color:var(--muted); }
+      .chart-options-toggle[aria-expanded="true"]::after { content:'▴'; }
+      .chart-options-body { display:none; flex-direction:column; gap:12px; }
+      .chart-options-body.open { display:flex; }
+      .chart-options-body .chart-control-group { flex-direction:column; align-items:stretch; gap:6px; }
+      .chart-options-body legend { position:static; float:none; width:auto; margin-bottom:4px; }
+
+      /* Range as a segmented pill group */
+      .chart-options-body .chart-control-group:not(.chart-series-group) { }
+      .chart-options-body .chart-control-group:not(.chart-series-group) > button:not(#resetZoomButton) {
+        min-height:40px; }
+      /* Series as compact colour-dot chips */
+      .chart-series-group { }
+      .chart-series-group button { display:inline-flex; align-items:center; gap:7px; min-height:38px;
+        border-radius:999px; padding:6px 12px 6px 10px; font-size:.82rem; }
+      .chart-series-group button::before { content:''; width:10px; height:10px; border-radius:50%;
+        background:currentColor; flex:0 0 auto; opacity:.9; }
+      .chart-series-group button[aria-pressed="false"] { opacity:.5; }
+      #toggleIR::before { color:#007bff; } #toggleTC::before { color:#dc3545; }
+      #toggleLux::before { color:#765a00; } #toggleSetpoint::before { color:#6542a6; }
+      .chart-series-group { display:flex; flex-wrap:wrap; gap:6px; }
+      .chart-series-group button[aria-pressed="true"] { background:var(--surface); color:var(--ink); border-color:#8090a0; }
     }
     @media (min-width:360px) and (max-width:600px) {
       #normalFields .form-pair, #illuminationAdvanced .form-pair { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
@@ -632,8 +672,11 @@
                 <div id="telemetryNotice" class="telemetry-notice" role="status" aria-live="assertive" hidden></div>
                 <div id="chartToolbar" class="chart-controls" aria-label="Scientific chart controls">
                     <fieldset class="chart-control-group monitoring-view-group"><legend>View</legend><button type="button" data-view="temperature" aria-pressed="true">Temperature</button><button type="button" data-view="illuminance" aria-pressed="false">Illuminance</button><button type="button" data-view="both" aria-pressed="false">Both</button></fieldset>
+                    <button type="button" id="chartOptionsToggle" class="chart-options-toggle" aria-expanded="false" aria-controls="chartOptionsBody" onclick="toggleChartOptions()">⚙ Options</button>
+                    <div id="chartOptionsBody" class="chart-options-body">
                     <fieldset class="chart-control-group"><legend>Range</legend><button type="button" data-window="live" aria-pressed="true">Live (latest 60s)</button><button type="button" data-window="1m" aria-pressed="false">1 min</button><button type="button" data-window="5m" aria-pressed="false">5 min</button><button type="button" data-window="all" aria-pressed="false">All</button><button id="resetZoomButton" type="button" onclick="resetZoom()" hidden disabled>Reset zoom</button></fieldset>
-                    <fieldset class="chart-control-group"><legend>Series</legend><button id="toggleIR" type="button" aria-pressed="true" data-channel="ir">IR temperature</button><button id="toggleTC" type="button" aria-pressed="true" data-channel="tc">TC temperature</button><button id="toggleLux" type="button" aria-pressed="true" data-channel="lux">Illuminance</button><button id="toggleSetpoint" type="button" aria-pressed="true" data-channel="setpoint">Setpoint &amp; limits</button></fieldset>
+                    <fieldset class="chart-control-group chart-series-group"><legend>Series</legend><button id="toggleIR" type="button" aria-pressed="true" data-channel="ir">IR temperature</button><button id="toggleTC" type="button" aria-pressed="true" data-channel="tc">TC temperature</button><button id="toggleLux" type="button" aria-pressed="true" data-channel="lux">Illuminance</button><button id="toggleSetpoint" type="button" aria-pressed="true" data-channel="setpoint">Setpoint &amp; limits</button></fieldset>
+                    </div>
                 </div>
                 <div class="chart-container"><div id="chartOverlay" class="chart-overlay" aria-live="assertive" hidden></div><canvas id="liveChart" aria-label="Temperature over time" ondblclick="resetZoom()"></canvas></div>
                 <div class="lux-chart-container"><canvas id="luxChart" aria-label="Illuminance over time"></canvas></div>
@@ -895,6 +938,7 @@ function updateModeFields() {
     if(document&&typeof document.querySelector==='function'&&typeof setTimeout==='function')setTimeout(updateControlScrollHint,0);
 }
 function toggleSystemLog(forceOpen) { var card=document.getElementById('systemLogCard'),toggle=document.getElementById('systemLogToggle');if(!card||!toggle)return;card.dataset=card.dataset||{};var open=forceOpen===true||(forceOpen!==false&&card.dataset.collapsed==='true');card.dataset.collapsed=open?'false':'true';toggle.setAttribute('aria-expanded',String(open)); }
+function toggleChartOptions() { var body=document.getElementById('chartOptionsBody'),btn=document.getElementById('chartOptionsToggle');if(!body||!btn)return;var open=!body.classList.contains('open');body.classList.toggle('open',open);btn.setAttribute('aria-expanded',String(open)); }
 function toggleUtilitiesMenu(forceOpen) {
     var menu=document.getElementById('utilitiesMenu'),btn=document.getElementById('utilitiesMenuBtn');
     if(!menu||!btn)return;
