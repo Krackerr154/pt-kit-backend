@@ -321,24 +321,13 @@
     .mode-tab .mt-desc { display:none; }
     .mode-tab-panel { display:none; border:1px solid var(--line); border-top:0; border-radius:0 0 8px 8px; padding:12px; background:var(--surface); }
     .mode-tab-panel.active { display:block; }
-    /* Scope the View Transition to just the active panel so only it crossfades,
-       not the whole page. The old->new snapshot pair animates under this name. */
-    .mode-tab-panel.active { view-transition-name: mode-panel; }
+    /* Animate the mode swap with a plain fade-in on the newly shown panel.
+       The outgoing panel is display:none the same frame, so nothing can overlap
+       the card above (unlike a View Transition, whose old-panel snapshot paints
+       in an unclipped overlay and bled over the card when heights differed). */
     @media (prefers-reduced-motion: no-preference) {
-      /* Opacity-only crossfade. Two guards against overlapping the card above:
-         (1) no transforms (slide/scale paint unclipped in the overlay);
-         (2) clip the group box so the taller old-panel snapshot cannot bleed
-         past the group bounds while the height morphs. */
-      ::view-transition-group(mode-panel) { overflow:clip; animation-duration:200ms; animation-timing-function:cubic-bezier(.4,0,.2,1); }
-      ::view-transition-old(mode-panel), ::view-transition-new(mode-panel) { animation-duration:200ms; animation-timing-function:cubic-bezier(.4,0,.2,1); }
-      ::view-transition-old(mode-panel) { animation-name: mp-fade-out; }
-      ::view-transition-new(mode-panel) { animation-name: mp-fade-in; }
-      @keyframes mp-fade-out { to { opacity:0; } }
-      @keyframes mp-fade-in { from { opacity:0; } }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      /* No motion: instant swap even where the API runs. */
-      ::view-transition-group(mode-panel), ::view-transition-old(mode-panel), ::view-transition-new(mode-panel) { animation:none !important; }
+      .mode-tab-panel.active { animation: mode-panel-in 200ms cubic-bezier(.4,0,.2,1) both; }
+      @keyframes mode-panel-in { from { opacity:0; } to { opacity:1; } }
     }
     .mode-desc { font-size:.82rem; color:var(--muted); margin:0 0 10px; line-height:1.45; }
     .tabbed-layout { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:14px; }
@@ -949,14 +938,10 @@ function applyModeTabSwitch(mode) {
     });
 }
 function switchModeTab(mode, fromSelect) {
-    // Crossfade the panel swap via the View Transitions API when available and
-    // motion is allowed; otherwise mutate instantly (graceful, universal fallback).
-    var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if(document.startViewTransition&&!reduce){
-        document.startViewTransition(function(){applyModeTabSwitch(mode);});
-    } else {
-        applyModeTabSwitch(mode);
-    }
+    // Instant DOM swap; the incoming panel's CSS fade-in (mode-panel-in) provides
+    // the animation. The outgoing panel is display:none the same frame, so it
+    // cannot overlap the card above.
+    applyModeTabSwitch(mode);
     var sel=document.getElementById('experimentMode');
     if(sel&&sel.value!==mode){sel.value=mode;if(!fromSelect)updateModeFields();}
     renderModeHelp();
