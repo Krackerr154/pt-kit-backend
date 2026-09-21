@@ -82,7 +82,7 @@
     [data-theme="dark"] .mobile-review-bar { box-shadow:0 2px 10px rgba(0,0,0,.4); }
     [data-theme="dark"] #reviewModal .modal-handle { background:#4d5f70; }
     * { box-sizing:border-box; }
-    html, body { max-width:100%; overflow-x:hidden; }
+    html, body { max-width:100%; overflow-x:clip; }
     body { font-family:'Roboto',sans-serif; background:#eef2f5; margin:0; padding:16px; color:var(--ink); font-size:16px; line-height:1.45; }
     /* === FLUID RESPONSIVE SYSTEM (4 tiers, no breakpoint conflicts) === */
     .page-shell { width:100%; max-width:none; margin:0; }
@@ -148,8 +148,12 @@
     .chart-controls { display:flex; flex-wrap:wrap; align-items:end; gap:8px 16px; margin:8px 0 16px; }
     .chart-control-group { display:flex; flex-wrap:wrap; gap:8px; border:0; padding:0; margin:0; min-width:0; }
     .chart-control-group legend { float:left; width:100%; margin-bottom:4px; font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
-    .chart-controls button { min-height:40px; border:1px solid #8090a0; background:#fff; border-radius:6px; padding:6px 10px; color:var(--ink); font-weight:500; }
+    .chart-controls button { min-height:44px; border:1px solid #8090a0; background:#fff; border-radius:6px; padding:6px 10px; color:var(--ink); font-weight:500; }
     .chart-controls button[aria-pressed="true"] { background:#173f67; color:#fff; }
+    /* Desktop: options are always shown inline; toggle button hidden (row has room). */
+    .chart-options-toggle { display:none; }
+    .chart-options-body { display:contents; }
+    [data-theme="dark"] .chart-controls button { border-color:#4d5f70; background:#232f3b; }
     .setup-column { display:contents; }
     #setupForm fieldset { border:0; border-top:1px solid var(--line); border-radius:0; margin:0; padding:16px 0 4px; }
     #setupForm .setup-column-primary > fieldset:first-child { border-top:0; padding-top:0; }
@@ -312,11 +316,51 @@
     .mode-tab:hover { background:#e8eef3; color:var(--ink); }
     .mode-tab.active { background:var(--surface); border-bottom-color:var(--accent); color:var(--navy); }
     .mode-tab small { display:block; font-weight:400; font-size:.68rem; opacity:.75; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+    /* Icon + description spans: mobile cards show them; desktop row-tabs hide them */
+    .mode-tab .mt-icon { display:none; }
+    .mode-tab .mt-desc { display:none; }
     .mode-tab-panel { display:none; border:1px solid var(--line); border-top:0; border-radius:0 0 8px 8px; padding:12px; background:var(--surface); }
     .mode-tab-panel.active { display:block; }
+    /* Animate the mode swap with a plain fade-in on the newly shown panel.
+       The outgoing panel is display:none the same frame, so nothing can overlap
+       the card above (unlike a View Transition, whose old-panel snapshot paints
+       in an unclipped overlay and bled over the card when heights differed). */
+    @media (prefers-reduced-motion: no-preference) {
+      /* Longer ease-out fade with a top-anchored settle. transform-origin:top +
+         scale 0.99->1 means the panel only ever occupies <= its own box, so it
+         cannot overlap the card above or content below. */
+      .mode-tab-panel.active { animation: mode-panel-in 360ms cubic-bezier(.22,.61,.36,1) both; transform-origin: top center; }
+      @keyframes mode-panel-in { from { opacity:0; transform:scale(.99); } to { opacity:1; transform:scale(1); } }
+    }
     .mode-desc { font-size:.82rem; color:var(--muted); margin:0 0 10px; line-height:1.45; }
     .tabbed-layout { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:14px; }
     button:disabled { cursor:not-allowed; opacity:.48; }
+    /* --- Field affordances: unit suffix, hints, clusters, derived summary --- */
+    .input-unit { position:relative; display:flex; align-items:center; }
+    .input-unit > input { flex:1 1 auto; padding-right:2.6rem; }
+    .input-unit > .unit { position:absolute; right:10px; pointer-events:none; color:var(--muted); font-size:.8rem; font-weight:600; }
+    .field-hint { display:block; margin-top:4px; font-size:.72rem; line-height:1.35; color:var(--muted); }
+    .field-hint:empty { display:none; }
+    .field-group-label { display:block; margin-bottom:5px; font-weight:600; font-size:.82rem; color:var(--ink); }
+    .field-cluster { border:0; padding:0; margin:0 0 6px; }
+    .field-cluster > .cluster-label { display:block; margin:2px 0 8px; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; font-weight:700; color:var(--muted); }
+    .field-cluster + .field-cluster { margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+    .derived-summary { margin-top:10px; padding:8px 10px; border-radius:8px; background:var(--surface-soft); border:1px solid var(--line);
+      font-size:.78rem; color:var(--ink); display:flex; align-items:center; gap:6px; }
+    .derived-summary .ds-icon { color:var(--accent); }
+    .derived-summary strong { color:var(--navy); font-weight:700; }
+    [data-theme="dark"] .derived-summary { background:var(--surface-soft); }
+    /* --- Mode micro-diagram (thermal profile schematic) --- */
+    .mode-diagram { margin:0 0 12px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface-soft); }
+    .mode-diagram svg { display:block; width:100%; height:auto; }
+    /* modeProgress is live run telemetry; hide it while idle (setup panel already shows the mode) */
+    .dashboard-grid[data-ui-state="IDLE"] #modeProgress { display:none; }
+    .md-axis { stroke:var(--line); stroke-width:1; fill:none; }
+    .md-band { fill:var(--accent); opacity:.13; }
+    .md-target { stroke:var(--muted); stroke-width:1; stroke-dasharray:3 3; }
+    .md-trace { fill:none; stroke:var(--accent); stroke-width:2.5; stroke-linejoin:round; stroke-linecap:round; }
+    .md-dot { fill:var(--accent); }
+    .md-label { fill:var(--muted); font-size:8.5px; font-family:inherit; font-weight:600; }
     /* --- TIER 1: Wide desktop — viewport-contained layout, right panel gets more room --- */
     @media (min-width: 1360px) and (min-height: 800px) {
       .dashboard-grid { grid-template-columns:minmax(0,1fr) clamp(420px, min(28vw, 580px), 580px); height:calc(100dvh - 152px); min-height:0; }
@@ -429,9 +473,11 @@
       .segmented-control input[type="radio"] { width:1px; height:1px; min-height:0; margin:-1px; }
       .mobile-advanced-fieldset { padding:0 !important; border-top:1px solid var(--line) !important; }
       .mobile-advanced-fieldset > legend { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
-      .mobile-advanced-toggle { display:flex; width:100%; min-height:52px; align-items:center; justify-content:space-between; gap:10px; border:0; background:transparent; color:var(--navy); padding:6px 0; font:inherit; font-weight:700; text-align:left; cursor:pointer; }
-      .mobile-advanced-toggle::after { content:'+'; color:var(--muted); font-size:1.2rem; }
+      .mobile-advanced-toggle { display:flex; width:100%; min-height:52px; align-items:center; justify-content:space-between; gap:10px; border:0; background:transparent; color:var(--navy); padding:10px 12px; font:inherit; font-weight:700; text-align:left; cursor:pointer; }
+      .mobile-advanced-toggle::after { content:'+'; color:var(--muted); font-size:1.2rem; line-height:1; }
       .mobile-advanced-fieldset[data-expanded="true"] .mobile-advanced-toggle::after { content:'−'; }
+      /* Expanded advanced content gets inner padding so fields don't touch the card edge */
+      .mobile-advanced-content { padding:0 12px 12px; }
       .mobile-advanced-content[hidden] { display:none !important; }
       .system-log-card { padding-top:8px; padding-bottom:8px; }
       .system-log-card[data-collapsed="true"] .system-log-content { display:none; }
@@ -471,6 +517,92 @@
       /* placeholder / colspan rows: no label, centered */
       table.cycle-table td[colspan]::before { content:none; }
       table.cycle-table td[colspan] { justify-content:center; text-align:center; }
+      /* Sticky, condensed top chrome: keep run state + ESP32 link visible while scrolling */
+      .instrument-header { position:sticky; top:0; z-index:40; margin-bottom:10px; padding:8px 12px; box-shadow:0 2px 10px rgba(23,63,103,.12); }
+      .instrument-title h1 { font-size:1.1rem; }
+      .health-cluster { margin-top:6px; }
+      .instrument-status { gap:4px 10px; font-size:.8rem; }
+      .instrument-status .status-text { min-height:24px; }
+      /* Readability floor: no body-adjacent text below 12px on phones */
+      .stat-meta { font-size:.78rem; }
+      .csel-opt .csel-desc { font-size:.78rem; }
+      .mode-tab small { font-size:.75rem; }
+      .control-scroll-hint { font-size:.75rem; }
+      .archive-badge { font-size:.75rem; min-width:20px; height:20px; }
+
+      /* ===== Setup redesign (mobile): mode cards + sticky action + readiness ===== */
+      /* Mode selector becomes stacked full-width cards with descriptions */
+      .control-card .mode-tabs { flex-direction:column; gap:8px; border:0; border-radius:0; overflow:visible; margin-bottom:4px; }
+      .control-card .mode-tab { flex-direction:row; align-items:flex-start; gap:10px; text-align:left; padding:12px; min-height:auto;
+        border:1.5px solid var(--line); border-radius:12px; background:var(--surface); }
+      .control-card .mode-tab { transition:background .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease; }
+      .control-card .mode-tab.active { border-color:var(--accent); background:#f3f8ff; border-bottom-color:var(--accent); box-shadow:0 0 0 3px rgba(11,95,255,.12); }
+      [data-theme="dark"] .control-card .mode-tab.active { background:#12233b; }
+      @media (prefers-reduced-motion: no-preference) {
+        /* Selected card gives a quick settle; icon fill eases in. */
+        .control-card .mode-tab.active { animation: card-settle .22s cubic-bezier(.34,1.4,.64,1); }
+        .control-card .mode-tab .mt-icon { transition:background .18s ease, border-color .18s ease, transform .18s ease; }
+        .control-card .mode-tab.active .mt-icon { transform:scale(1.06); }
+        @keyframes card-settle { 0%{transform:scale(.99);} 60%{transform:scale(1.012);} 100%{transform:scale(1);} }
+      }
+      .control-card .mode-tab .mt-icon { display:grid; flex:0 0 auto; width:34px; height:34px; border-radius:9px; place-content:center; font-size:1.05rem;
+        background:var(--surface-soft); border:1px solid var(--line); }
+      .control-card .mode-tab.active .mt-icon { background:var(--accent); border-color:var(--accent); }
+      .control-card .mode-tab .mt-label { font-weight:700; font-size:.92rem; color:var(--navy); display:flex; flex-direction:column; }
+      .control-card .mode-tab .mt-label small { font-weight:400; font-size:.72rem; opacity:.8; }
+      .control-card .mode-tab .mt-desc { display:block; flex:1 1 100%; width:100%; margin-top:4px; font-size:.76rem; font-weight:400; color:var(--muted); line-height:1.35; white-space:normal; }
+
+      /* Grouped fieldsets look like cards (identity + mode + advanced share the styling) */
+      #setupForm .setup-section { border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:10px; background:var(--surface); border-top:1px solid var(--line); }
+      #setupForm .setup-section > legend { font-size:.7rem; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:700; padding:0; }
+
+      /* Sticky bottom action bar with readiness chip */
+      body.mobile-review-visible { padding-bottom:96px; }
+      .mobile-review-bar { position:fixed; left:0; right:0; bottom:0; z-index:50; width:auto; margin:0;
+        border:0; border-top:1px solid var(--line); border-radius:0;
+        padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+        box-shadow:0 -6px 20px rgba(23,63,103,.16); }
+      .mobile-review-ready { display:block; font-size:.82rem; font-weight:700; margin-bottom:2px; color:var(--muted); }
+      .mobile-review-ready.ready-ok { color:var(--ok,#137333); }
+      .mobile-review-ready.ready-warn { color:var(--warn,#9a6700); }
+      .mobile-review-ready.ready-blocked { color:var(--danger,#b42318); }
+      .mobile-review-bar .btn-start { min-height:48px; }
+
+      /* ===== Chart controls de-clutter (mobile) ===== */
+      /* Primary View row = segmented pill group, always visible */
+      .chart-controls { gap:8px; margin:8px 0 12px; align-items:stretch; flex-direction:column; }
+      .monitoring-view-group { display:grid !important; grid-template-columns:repeat(3,1fr); gap:0; margin:0; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+      .monitoring-view-group legend { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); border:0; }
+      .monitoring-view-group button { min-height:42px; border:0; border-right:1px solid var(--line); border-radius:0; background:var(--surface); font-weight:600; }
+      .monitoring-view-group button:last-child { border-right:0; }
+      .monitoring-view-group button[aria-pressed="true"] { background:var(--accent); color:#fff; }
+
+      /* Options disclosure: Range + Series collapse behind a toggle */
+      .chart-options-toggle { display:inline-flex; align-items:center; gap:6px; align-self:flex-start;
+        min-height:40px; padding:6px 12px; border:1px solid var(--line); border-radius:8px;
+        background:var(--surface-soft); color:var(--navy); font-weight:600; }
+      .chart-options-toggle::after { content:'▾'; color:var(--muted); }
+      .chart-options-toggle[aria-expanded="true"]::after { content:'▴'; }
+      .chart-options-body { display:none; flex-direction:column; gap:12px; }
+      .chart-options-body.open { display:flex; }
+      .chart-options-body .chart-control-group { flex-direction:column; align-items:stretch; gap:6px; }
+      .chart-options-body legend { position:static; float:none; width:auto; margin-bottom:4px; }
+
+      /* Range as a segmented pill group */
+      .chart-options-body .chart-control-group:not(.chart-series-group) { }
+      .chart-options-body .chart-control-group:not(.chart-series-group) > button:not(#resetZoomButton) {
+        min-height:40px; }
+      /* Series as compact colour-dot chips */
+      .chart-series-group { }
+      .chart-series-group button { display:inline-flex; align-items:center; gap:7px; min-height:38px;
+        border-radius:999px; padding:6px 12px 6px 10px; font-size:.82rem; }
+      .chart-series-group button::before { content:''; width:10px; height:10px; border-radius:50%;
+        background:currentColor; flex:0 0 auto; opacity:.9; }
+      .chart-series-group button[aria-pressed="false"] { opacity:.5; }
+      #toggleIR::before { color:#007bff; } #toggleTC::before { color:#dc3545; }
+      #toggleLux::before { color:#765a00; } #toggleSetpoint::before { color:#6542a6; }
+      .chart-series-group { display:flex; flex-wrap:wrap; gap:6px; }
+      .chart-series-group button[aria-pressed="true"] { background:var(--surface); color:var(--ink); border-color:#8090a0; }
     }
     @media (min-width:360px) and (max-width:600px) {
       #normalFields .form-pair, #illuminationAdvanced .form-pair { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
@@ -559,8 +691,11 @@
                 <div id="telemetryNotice" class="telemetry-notice" role="status" aria-live="assertive" hidden></div>
                 <div id="chartToolbar" class="chart-controls" aria-label="Scientific chart controls">
                     <fieldset class="chart-control-group monitoring-view-group"><legend>View</legend><button type="button" data-view="temperature" aria-pressed="true">Temperature</button><button type="button" data-view="illuminance" aria-pressed="false">Illuminance</button><button type="button" data-view="both" aria-pressed="false">Both</button></fieldset>
+                    <button type="button" id="chartOptionsToggle" class="chart-options-toggle" aria-expanded="false" aria-controls="chartOptionsBody" onclick="toggleChartOptions()">⚙ Options</button>
+                    <div id="chartOptionsBody" class="chart-options-body">
                     <fieldset class="chart-control-group"><legend>Range</legend><button type="button" data-window="live" aria-pressed="true">Live (latest 60s)</button><button type="button" data-window="1m" aria-pressed="false">1 min</button><button type="button" data-window="5m" aria-pressed="false">5 min</button><button type="button" data-window="all" aria-pressed="false">All</button><button id="resetZoomButton" type="button" onclick="resetZoom()" hidden disabled>Reset zoom</button></fieldset>
-                    <fieldset class="chart-control-group"><legend>Series</legend><button id="toggleIR" type="button" aria-pressed="true" data-channel="ir">IR temperature</button><button id="toggleTC" type="button" aria-pressed="true" data-channel="tc">TC temperature</button><button id="toggleLux" type="button" aria-pressed="true" data-channel="lux">Illuminance</button><button id="toggleSetpoint" type="button" aria-pressed="true" data-channel="setpoint">Setpoint &amp; limits</button></fieldset>
+                    <fieldset class="chart-control-group chart-series-group"><legend>Series</legend><button id="toggleIR" type="button" aria-pressed="true" data-channel="ir">IR temperature</button><button id="toggleTC" type="button" aria-pressed="true" data-channel="tc">TC temperature</button><button id="toggleLux" type="button" aria-pressed="true" data-channel="lux">Illuminance</button><button id="toggleSetpoint" type="button" aria-pressed="true" data-channel="setpoint">Setpoint &amp; limits</button></fieldset>
+                    </div>
                 </div>
                 <div class="chart-container"><div id="chartOverlay" class="chart-overlay" aria-live="assertive" hidden></div><canvas id="liveChart" aria-label="Temperature over time" ondblclick="resetZoom()"></canvas></div>
                 <div class="lux-chart-container"><canvas id="luxChart" aria-label="Illuminance over time"></canvas></div>
@@ -608,41 +743,77 @@
                 <div class="form-group"><label for="sampleName">Sample Name</label><input type="text" id="sampleName" placeholder="e.g. MOF-Batch-1" title="Shortcut: Ctrl+S focuses this field"></div></div></fieldset>
                 <fieldset class="setup-section"><legend>Experiment mode</legend>
                 <div class="mode-tabs" role="tablist" aria-label="Experiment mode">
-                  <button id="tabNormal" class="mode-tab active" type="button" role="tab" aria-selected="true" aria-controls="panelNormal" onclick="switchModeTab('NORMAL_CYCLIC')">Normal<small>Cyclic</small></button>
-                  <button id="tabFixed" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="panelFixed" onclick="switchModeTab('FIXED_TEMPERATURE')">Fixed<small>Temperature</small></button>
-                  <button id="tabPlateau" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="panelPlateau" onclick="switchModeTab('NATURAL_PLATEAU')">Plateau<small>Auto-detect</small></button>
+                  <button id="tabNormal" class="mode-tab active" type="button" role="tab" aria-selected="true" aria-controls="panelNormal" onclick="switchModeTab('NORMAL_CYCLIC')"><span class="mt-icon" aria-hidden="true">🔁</span><span class="mt-label">Normal<small>Cyclic</small></span><span class="mt-desc">Repeat heat/cool cycles for a fixed count.</span></button>
+                  <button id="tabFixed" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="panelFixed" onclick="switchModeTab('FIXED_TEMPERATURE')"><span class="mt-icon" aria-hidden="true">🌡️</span><span class="mt-label">Fixed<small>Temperature</small></span><span class="mt-desc">Hold a set temperature within tolerance.</span></button>
+                  <button id="tabPlateau" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="panelPlateau" onclick="switchModeTab('NATURAL_PLATEAU')"><span class="mt-icon" aria-hidden="true">📈</span><span class="mt-label">Plateau<small>Auto-detect</small></span><span class="mt-desc">Ramp until a natural thermal plateau is found.</span></button>
                 </div>
                 <div id="panelNormal" class="mode-tab-panel active" role="tabpanel" aria-labelledby="tabNormal">
                   <p class="mode-desc">Run the existing heat/cool cycles.</p>
+                  <div class="mode-diagram"><svg viewBox="0 0 240 70" role="img" aria-label="Thermal profile: repeated heating and cooling cycles (sawtooth).">
+                    <path class="md-axis" d="M22 8 V60 H236"/>
+                    <path class="md-trace" d="M22 56 L52 16 L82 56 L112 16 L142 56 L172 16 L202 56"/>
+                    <text class="md-label" x="8" y="14" transform="rotate(-90 8 14)">Temp</text>
+                    <text class="md-label" x="200" y="69">cycles →</text>
+                  </svg></div>
                   <div class="tabbed-layout">
-                    <div><div class="form-group"><label for="duration">Target Duration (sec/cycle)</label><input type="number" id="duration" value="60"></div>
-                    <div class="form-group"><label for="cycles">Total Cycles</label><input type="number" id="cycles" value="5"></div></div>
-                    <div></div>
+                    <div class="form-group"><label for="duration">Target duration</label><div class="input-unit"><input type="number" id="duration" value="60" min="1"><span class="unit">s/cycle</span></div><small class="field-hint">Time per heat/cool cycle.</small></div>
+                    <div class="form-group"><label for="cycles">Total cycles</label><div class="input-unit"><input type="number" id="cycles" value="5" min="1"><span class="unit">×</span></div><small class="field-hint">How many cycles to run.</small></div>
                   </div>
+                  <div id="normalDerived" class="derived-summary" aria-live="polite"><span class="ds-icon" aria-hidden="true">∑</span><span></span></div>
                 </div>
                 <div id="panelFixed" class="mode-tab-panel" role="tabpanel" aria-labelledby="tabFixed">
                   <p class="mode-desc">Ramp to target, qualify within tolerance, then accumulate qualified hold time.</p>
+                  <div class="mode-diagram"><svg viewBox="0 0 240 70" role="img" aria-label="Thermal profile: ramp up to the target temperature, then hold flat within a tolerance band.">
+                    <path class="md-axis" d="M22 8 V60 H236"/>
+                    <rect class="md-band" x="88" y="16" width="148" height="14"/>
+                    <line class="md-target" x1="88" y1="23" x2="236" y2="23"/>
+                    <path class="md-trace" d="M22 56 L88 23 L232 23"/>
+                    <text class="md-label" x="8" y="14" transform="rotate(-90 8 14)">Temp</text>
+                    <text class="md-label" x="150" y="42">hold ± tol</text>
+                    <text class="md-label" x="30" y="52">ramp</text>
+                  </svg></div>
+                  <fieldset class="field-cluster"><span class="cluster-label">Target</span>
                   <div class="tabbed-layout">
-                    <div><div class="form-group"><label for="targetTemperature">Target Temperature (°C)</label><input type="number" id="targetTemperature" value="60"></div>
-                    <div class="form-group"><label for="qualifiedHoldMinutes">Qualified Hold Duration (minutes)</label><input type="number" id="qualifiedHoldMinutes" value="10" min="0.1" step="0.1"></div>
-                    <div class="form-group"><label for="temperatureTolerance">Tolerance (°C)</label><input type="number" id="temperatureTolerance" value="1" step="0.1"></div>
-                    <div class="form-group"><label for="qualificationDwell">Qualification Dwell (sec)</label><input type="number" id="qualificationDwell" value="30"></div></div>
-                    <div><div class="form-group"><label for="fixedControlSensor">Control Sensor</label><select id="fixedControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div>
-                    <div class="form-group"><label for="rampRate">Ramp Rate (°C/min)</label><input type="number" id="rampRate" value="5" step="0.1"></div></div>
-                  </div>
+                    <div class="form-group"><label for="targetTemperature">Target temperature</label><div class="input-unit"><input type="number" id="targetTemperature" value="60"><span class="unit">°C</span></div><small class="field-hint">Setpoint the ramp aims for.</small></div>
+                    <div class="form-group"><label for="rampRate">Ramp rate</label><div class="input-unit"><input type="number" id="rampRate" value="5" step="0.1"><span class="unit">°C/min</span></div><small class="field-hint">How fast to approach the target.</small></div>
+                    <div class="form-group"><label for="fixedControlSensor">Control sensor</label><select id="fixedControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select><small class="field-hint">Sensor that regulates the loop.</small></div>
+                  </div></fieldset>
+                  <fieldset class="field-cluster"><span class="cluster-label">Qualification</span>
+                  <div class="tabbed-layout">
+                    <div class="form-group"><label for="temperatureTolerance">Tolerance</label><div class="input-unit"><input type="number" id="temperatureTolerance" value="1" step="0.1"><span class="unit">±°C</span></div><small class="field-hint">Band around target that counts as qualified.</small></div>
+                    <div class="form-group"><label for="qualificationDwell">Qualification dwell</label><div class="input-unit"><input type="number" id="qualificationDwell" value="30"><span class="unit">s</span></div><small class="field-hint">Time within tolerance before hold starts.</small></div>
+                    <div class="form-group"><label for="qualifiedHoldMinutes">Qualified hold</label><div class="input-unit"><input type="number" id="qualifiedHoldMinutes" value="10" min="0.1" step="0.1"><span class="unit">min</span></div><small class="field-hint">Qualified time to accumulate at target.</small></div>
+                  </div></fieldset>
+                  <div id="fixedDerived" class="derived-summary" aria-live="polite"><span class="ds-icon" aria-hidden="true">∑</span><span></span></div>
                 </div>
                 <div id="panelPlateau" class="mode-tab-panel" role="tabpanel" aria-labelledby="tabPlateau">
                   <p class="mode-desc">Illuminate each sample while detecting its natural thermal plateau, confirm it, then hold.</p>
+                  <div class="mode-diagram"><svg viewBox="0 0 240 70" role="img" aria-label="Thermal profile: temperature rises under illumination and levels into a natural plateau, which is detected and held.">
+                    <path class="md-axis" d="M22 8 V60 H236"/>
+                    <path class="md-trace" d="M22 56 C70 54 96 30 140 24 C176 20 200 22 232 22"/>
+                    <circle class="md-dot" cx="150" cy="23" r="3.2"/>
+                    <text class="md-label" x="8" y="14" transform="rotate(-90 8 14)">Temp</text>
+                    <text class="md-label" x="150" y="16">plateau</text>
+                    <text class="md-label" x="34" y="52">rise</text>
+                  </svg></div>
+                  <fieldset class="field-cluster"><span class="cluster-label">Hold</span>
                   <div class="tabbed-layout">
-                    <div><div class="form-group"><label for="plateauHoldMinutes">Plateau Hold Duration (minutes)</label><input type="number" id="plateauHoldMinutes" value="10" min="0.1" step="0.1"></div>
-                    <div class="form-group"><label for="plateauControlSensor">Control Sensor</label><select id="plateauControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select></div>
-                    <div class="form-group"><label for="detectionWindow">Detection Window (sec)</label><input type="number" id="detectionWindow" value="30" min="3" max="30"></div>
-                    <div class="form-group"><label for="maxAbsSlope">Max Abs Slope (°C/min)</label><input type="number" id="maxAbsSlope" value="0.2" step="0.01"></div></div>
-                    <div><div class="form-group"><label for="maxPeakToPeak">Max Peak-to-Peak (°C)</label><input type="number" id="maxPeakToPeak" value="1" step="0.1"></div>
-                    <div class="form-group"><label for="confirmationDuration">Confirmation Duration (sec)</label><input type="number" id="confirmationDuration" value="60"></div>
-                    <div class="form-group"><label for="maxDiscoveryTime">Max Discovery Time (minutes)</label><input type="number" id="maxDiscoveryTime" value="60"></div>
-                    <div class="form-group"><label for="postPlateauBehavior">Post-plateau Behavior</label><select id="postPlateauBehavior"><option value="PASSIVE" selected>Passive (same illumination)</option><option value="REGULATED">Regulated</option></select></div></div>
-                  </div>
+                    <div class="form-group"><label for="plateauHoldMinutes">Plateau hold</label><div class="input-unit"><input type="number" id="plateauHoldMinutes" value="10" min="0.1" step="0.1"><span class="unit">min</span></div><small class="field-hint">Time to hold once the plateau is confirmed.</small></div>
+                    <div class="form-group"><label for="plateauControlSensor">Control sensor</label><select id="plateauControlSensor"><option value="TC">TC</option><option value="IR">IR</option></select><small class="field-hint">Sensor used for detection and hold.</small></div>
+                  </div></fieldset>
+                  <fieldset class="field-cluster"><span class="cluster-label">Detection</span>
+                  <div class="tabbed-layout">
+                    <div class="form-group"><label for="detectionWindow">Detection window</label><div class="input-unit"><input type="number" id="detectionWindow" value="30" min="3" max="30"><span class="unit">s</span></div><small class="field-hint">Rolling window for the slope check (3–30 s).</small></div>
+                    <div class="form-group"><label for="maxAbsSlope">Max abs slope</label><div class="input-unit"><input type="number" id="maxAbsSlope" value="0.2" step="0.01"><span class="unit">°C/min</span></div><small class="field-hint">At or below this counts as flat.</small></div>
+                    <div class="form-group"><label for="maxPeakToPeak">Max peak-to-peak</label><div class="input-unit"><input type="number" id="maxPeakToPeak" value="1" step="0.1"><span class="unit">°C</span></div><small class="field-hint">Max wobble allowed within the window.</small></div>
+                    <div class="form-group"><label for="confirmationDuration">Confirmation</label><div class="input-unit"><input type="number" id="confirmationDuration" value="60"><span class="unit">s</span></div><small class="field-hint">Stable time needed to confirm the plateau.</small></div>
+                    <div class="form-group"><label for="maxDiscoveryTime">Max discovery time</label><div class="input-unit"><input type="number" id="maxDiscoveryTime" value="60"><span class="unit">min</span></div><small class="field-hint">Give up searching after this long.</small></div>
+                  </div></fieldset>
+                  <fieldset class="field-cluster"><span class="cluster-label">After plateau</span>
+                  <div class="tabbed-layout">
+                    <div class="form-group"><label for="postPlateauBehavior">Post-plateau behavior</label><select id="postPlateauBehavior"><option value="PASSIVE" selected>Passive (same illumination)</option><option value="REGULATED">Regulated</option></select><small class="field-hint">How the lamp behaves during the hold.</small></div>
+                  </div></fieldset>
+                  <div id="plateauDerived" class="derived-summary" aria-live="polite"><span class="ds-icon" aria-hidden="true">∑</span><span></span></div>
                 </div>
                 <select id="experimentMode" class="visually-hidden"><option value="NORMAL_CYCLIC" selected>Normal cyclic</option><option value="FIXED_TEMPERATURE">Fixed temperature</option><option value="NATURAL_PLATEAU">Natural plateau</option></select>
                 </fieldset>
@@ -651,14 +822,13 @@
                 <fieldset id="illuminationFieldset" class="mobile-advanced-fieldset setup-section setup-section-advanced" data-expanded="false"><legend>Illumination &amp; acquisition</legend>
                 <button class="mobile-advanced-toggle" type="button" aria-expanded="false" aria-controls="illuminationAdvanced" onclick="toggleMobileAdvanced('illuminationFieldset')"><span>Illumination &amp; acquisition</span><span id="illuminationMobileSummary" class="mobile-advanced-summary">Target lux · 38,000 lx · log 1 s</span></button>
                 <div id="illuminationAdvanced" class="mobile-advanced-content">
-                <div id="illuminationModeControl" class="form-group"><span id="illuminationModeLabel" style="display:block;margin-bottom:5px;font-weight:500;font-size:.9rem;">Illumination mode</span><div class="segmented-control" role="radiogroup" aria-labelledby="illuminationModeLabel"><label for="illuminationTarget"><input id="illuminationTarget" type="radio" name="illuminationMode" value="TARGET_LUX" checked onchange="updateIlluminationFields()"><span>Target lux</span></label><label for="illuminationMaximum"><input id="illuminationMaximum" type="radio" name="illuminationMode" value="MAX_OUTPUT" onchange="updateIlluminationFields()"><span>Maximum output</span></label></div></div>
+                <div id="illuminationModeControl" class="form-group"><span id="illuminationModeLabel" class="field-group-label">Illumination mode</span><div class="segmented-control" role="radiogroup" aria-labelledby="illuminationModeLabel"><label for="illuminationTarget"><input id="illuminationTarget" type="radio" name="illuminationMode" value="TARGET_LUX" checked onchange="updateIlluminationFields()"><span>Target lux</span></label><label for="illuminationMaximum"><input id="illuminationMaximum" type="radio" name="illuminationMode" value="MAX_OUTPUT" onchange="updateIlluminationFields()"><span>Maximum output</span></label></div></div>
                 <p id="maxOutputNotice" class="illumination-notice" hidden>Maximum output drives the lamp at 100% PWM during active illumination phases. Measured lux is still recorded.</p>
                 <p id="temperatureControlNotice" class="illumination-notice" hidden>Lamp PWM is controlled automatically to maintain the selected temperature.</p>
-                <div class="form-pair"><div id="targetLuxGroup" class="form-group"><label for="targetLux">Target Lux (lx) <small id="maxLuxHint" style="color:#52606d;"></small></label><input type="number" id="targetLux" value="38000"></div>
-                <div class="form-group"><label for="interval">Logging Interval (sec)</label><input type="number" id="interval" value="1" min="1"></div></div></div></fieldset>
-                <fieldset id="safetyFieldset" class="mobile-advanced-fieldset setup-section setup-section-advanced" data-expanded="false"><legend>Safety</legend><button class="mobile-advanced-toggle" type="button" aria-expanded="false" aria-controls="safetyAdvanced" onclick="toggleMobileAdvanced('safetyFieldset')"><span>Safety</span><span id="safetyMobileSummary" class="mobile-advanced-summary">Maximum · 100 °C</span></button><div id="safetyAdvanced" class="mobile-advanced-content"><div class="form-group"><label for="maxTemp">Max Temp (°C)</label><input type="number" id="maxTemp" value="100"></div></div></fieldset>
+                <div class="form-pair"><div id="targetLuxGroup" class="form-group"><label for="targetLux">Target lux</label><div class="input-unit"><input type="number" id="targetLux" value="38000"><span class="unit">lx</span></div><small class="field-hint"><span id="maxLuxHint"></span></small></div>
+                <div class="form-group"><label for="interval">Logging interval</label><div class="input-unit"><input type="number" id="interval" value="1" min="1"><span class="unit">s</span></div><small class="field-hint">How often to record a sample.</small></div></div></div></fieldset>
+                <fieldset id="safetyFieldset" class="mobile-advanced-fieldset setup-section setup-section-advanced" data-expanded="false"><legend>Safety</legend><button class="mobile-advanced-toggle" type="button" aria-expanded="false" aria-controls="safetyAdvanced" onclick="toggleMobileAdvanced('safetyFieldset')"><span>Safety</span><span id="safetyMobileSummary" class="mobile-advanced-summary">Maximum · 100 °C</span></button><div id="safetyAdvanced" class="mobile-advanced-content"><div class="form-group"><label for="maxTemp">Max temperature</label><div class="input-unit"><input type="number" id="maxTemp" value="100"><span class="unit">°C</span></div><small class="field-hint">Hard safety cutoff — the lamp shuts off if exceeded.</small></div></div></fieldset>
                 </div>
-                <div id="modeSummary" class="mode-summary"></div>
             </div>
 
             <div id="runOverview" class="run-overview" hidden><strong id="runOverviewTitle">Run overview — configuration locked</strong><div id="controlMetric" class="primary-metric">Control temperature: -- °C</div><div id="runSummary">Waiting for run details…</div></div>
@@ -673,14 +843,14 @@
 
             <div class="control-timing" style="margin-top:20px; text-align:center;">
                 <div id="modeProgress" aria-live="polite">Mode: Normal cyclic</div>
-                <div class="stat-label">Total Time</div>
+                <div class="stat-label" id="timeLabel">Planned total</div>
                 <div class="stat-val" style="font-size:1.2rem; color:#666;" id="valTime">00:00</div>
             </div>
         </div>
-        <div id="mobileReviewBar" class="mobile-review-bar" aria-label="Experiment review action"><div class="mobile-review-summary"><strong id="mobileReviewTitle">Normal cyclic · 5 cycles</strong><span id="mobileReviewDetail">Target lux · 38,000 lx</span></div><button id="mobileReviewBtn" class="btn-start" type="button" onclick="openReviewModal()">Review experiment</button></div>
+        <div id="mobileReviewBar" class="mobile-review-bar" aria-label="Experiment review action"><div class="mobile-review-summary"><strong id="mobileReviewReady" class="mobile-review-ready" aria-live="polite">Checking…</strong><strong id="mobileReviewTitle">Normal cyclic · 5 cycles</strong><span id="mobileReviewDetail">Target lux · 38,000 lx</span></div><button id="mobileReviewBtn" class="btn-start" type="button" onclick="openReviewModal()">Review experiment</button></div>
         <div id="systemLogCard" class="card system-log-card" data-collapsed="true">
             <button id="systemLogToggle" class="system-log-toggle" type="button" aria-expanded="false" aria-controls="sysLog" onclick="toggleSystemLog()"><span>ℹ️ System Log</span><span id="systemLogStatus" class="mobile-advanced-summary">System ready</span></button>
-            <div id="sysLog" class="system-log-content" style="height:150px; overflow-y:auto; font-size:0.8rem; color:#555; font-family:monospace;">System Ready...</div>
+            <div id="sysLog" class="system-log-content" style="height:150px; overflow-y:auto; font-size:0.8rem; color:#555; font-family:monospace;"><div class="log-seed">System ready.</div></div>
         </div>
     </div>
 </div>
@@ -760,15 +930,21 @@ function isMobileSetup() { return window.matchMedia && window.matchMedia('(max-w
 function setMobileAdvancedExpanded(fieldset,expanded,focusTarget) { if(!fieldset)return;var button=fieldset.querySelector('.mobile-advanced-toggle'),content=fieldset.querySelector('.mobile-advanced-content');if(!button||!content)return;fieldset.dataset=fieldset.dataset||{};fieldset.dataset.expanded=expanded?'true':'false';button.setAttribute('aria-expanded',String(expanded));content.hidden=!expanded;if(expanded&&focusTarget)setTimeout(function(){focusTarget.focus();},0); }
 function toggleMobileAdvanced(id) { var fieldset=document.getElementById(id);if(!fieldset)return;var ds=fieldset.dataset||{};setMobileAdvancedExpanded(fieldset,ds.expanded!=='true'); }
 function syncMobileAdvancedVisibility() { ['illuminationFieldset','safetyFieldset'].forEach(function(id){var fieldset=document.getElementById(id);if(fieldset){var expanded=fieldset.dataset&&fieldset.dataset.expanded==='true';setMobileAdvancedExpanded(fieldset,expanded);}}); }
-function updateMobileSetupSummary() { var mode=valueOf('experimentMode'),illum=mode==='FIXED_TEMPERATURE'?'TEMPERATURE_CONTROLLED':selectedIlluminationMode(),lux=numberOf('targetLux'),interval=valueOf('interval'),max=valueOf('maxTemp'),modeLabel=mode==='NORMAL_CYCLIC'?'Normal cyclic · '+valueOf('cycles')+' cycles':mode==='FIXED_TEMPERATURE'?'Fixed temperature · '+valueOf('targetTemperature')+' °C':'Natural plateau · '+valueOf('plateauHoldMinutes')+' min hold',illumLabel=illum==='MAX_OUTPUT'?'Maximum output':illum==='TEMPERATURE_CONTROLLED'?'Temperature controlled':'Target lux · '+(Number.isFinite(lux)?lux.toLocaleString():'—')+'\u00A0lx';document.getElementById('illuminationMobileSummary').textContent=illumLabel+' · log '+interval+' s';document.getElementById('safetyMobileSummary').textContent='Maximum · '+max+' °C';document.getElementById('mobileReviewTitle').textContent=modeLabel;var luxVal=(Number.isFinite(lux)?lux.toLocaleString():'—')+'\u00A0lx',safetyVal='safety\u00A0'+max+'\u00A0°C';document.getElementById('mobileReviewDetail').innerHTML='<span style="white-space:nowrap">'+illumLabel+'</span><span style="white-space:nowrap">\u00A0·\u00A0'+safetyVal+'</span>'; }
+function updateMobileSetupSummary() { var mode=valueOf('experimentMode'),illum=mode==='FIXED_TEMPERATURE'?'TEMPERATURE_CONTROLLED':selectedIlluminationMode(),lux=numberOf('targetLux'),interval=valueOf('interval'),max=valueOf('maxTemp'),modeLabel=mode==='NORMAL_CYCLIC'?'Normal cyclic · '+valueOf('cycles')+' cycles':mode==='FIXED_TEMPERATURE'?'Fixed temperature · '+valueOf('targetTemperature')+' °C':'Natural plateau · '+valueOf('plateauHoldMinutes')+' min hold',illumLabel=illum==='MAX_OUTPUT'?'Maximum output':illum==='TEMPERATURE_CONTROLLED'?'Temperature controlled':'Target lux · '+(Number.isFinite(lux)?lux.toLocaleString():'—')+'\u00A0lx';document.getElementById('illuminationMobileSummary').textContent=illumLabel+' · log '+interval+' s';document.getElementById('safetyMobileSummary').textContent='Maximum · '+max+' °C';document.getElementById('mobileReviewTitle').textContent=modeLabel;var luxVal=(Number.isFinite(lux)?lux.toLocaleString():'—')+'\u00A0lx',safetyVal='safety\u00A0'+max+'\u00A0°C';document.getElementById('mobileReviewDetail').innerHTML='<span style="white-space:nowrap">'+illumLabel+'</span><span style="white-space:nowrap">\u00A0·\u00A0'+safetyVal+'</span>';if(typeof renderReadyChip==='function'&&typeof getReadinessModel==='function'){renderReadyChip(getReadinessModel(lastEsp32State));} }
 function updateIlluminationFields() { var fixed=valueOf('experimentMode')==='FIXED_TEMPERATURE',maximum=!fixed&&selectedIlluminationMode()==='MAX_OUTPUT';document.getElementById('illuminationModeControl').hidden=fixed;document.getElementById('targetLuxGroup').hidden=fixed||maximum;document.getElementById('maxOutputNotice').hidden=!maximum;document.getElementById('temperatureControlNotice').hidden=!fixed;updateMobileSetupSummary(); }
-function switchModeTab(mode, fromSelect) {
+function applyModeTabSwitch(mode) {
     ['NORMAL_CYCLIC','FIXED_TEMPERATURE','NATURAL_PLATEAU'].forEach(function(m){
         var tab=document.getElementById(m==='NORMAL_CYCLIC'?'tabNormal':m==='FIXED_TEMPERATURE'?'tabFixed':'tabPlateau');
         var panel=document.getElementById(m==='NORMAL_CYCLIC'?'panelNormal':m==='FIXED_TEMPERATURE'?'panelFixed':'panelPlateau');
         if(tab){tab.classList.toggle('active',m===mode);tab.setAttribute('aria-selected',String(m===mode));}
         if(panel)panel.classList.toggle('active',m===mode);
     });
+}
+function switchModeTab(mode, fromSelect) {
+    // Instant DOM swap; the incoming panel's CSS fade-in (mode-panel-in) provides
+    // the animation. The outgoing panel is display:none the same frame, so it
+    // cannot overlap the card above.
+    applyModeTabSwitch(mode);
     var sel=document.getElementById('experimentMode');
     if(sel&&sel.value!==mode){sel.value=mode;if(!fromSelect)updateModeFields();}
     renderModeHelp();
@@ -777,17 +953,25 @@ function switchModeTab(mode, fromSelect) {
     if(typeof updateMobileSetupSummary==='function')updateMobileSetupSummary();
     if(document&&typeof document.querySelector==='function'&&typeof setTimeout==='function')setTimeout(updateControlScrollHint,0);
 }
+function renderSeriesChips(mode) {
+    // Setpoint/tolerance/safety/plateau overlays only carry meaning in Fixed &
+    // Plateau runs. Hide that chip in Normal cyclic so the Series row shows only
+    // the channels that apply to the active mode.
+    var setpointChip=document.getElementById('toggleSetpoint');
+    if(setpointChip){var relevant=mode==='FIXED_TEMPERATURE'||mode==='NATURAL_PLATEAU';setpointChip.hidden=!relevant;}
+}
 function updateModeFields() {
     var mode=valueOf('experimentMode');
     document.getElementById('normalFields')?document.getElementById('normalFields').style.display=mode==='NORMAL_CYCLIC'?'block':'none':0;
     document.getElementById('fixedFields')?document.getElementById('fixedFields').style.display=mode==='FIXED_TEMPERATURE'?'block':'none':0;
     document.getElementById('plateauFields')?document.getElementById('plateauFields').style.display=mode==='NATURAL_PLATEAU'?'block':'none':0;
-    document.getElementById('modeSummary').textContent=mode==='NORMAL_CYCLIC'?'Run the existing heat/cool cycles.':mode==='FIXED_TEMPERATURE'?'Ramp to target, qualify within tolerance, then accumulate qualified hold time.':'Illuminate each sample while detecting its natural thermal plateau, confirm it, then hold.';
+    renderSeriesChips(mode);
     renderModeHelp();
     updateIlluminationFields();
     if(document&&typeof document.querySelector==='function'&&typeof setTimeout==='function')setTimeout(updateControlScrollHint,0);
 }
 function toggleSystemLog(forceOpen) { var card=document.getElementById('systemLogCard'),toggle=document.getElementById('systemLogToggle');if(!card||!toggle)return;card.dataset=card.dataset||{};var open=forceOpen===true||(forceOpen!==false&&card.dataset.collapsed==='true');card.dataset.collapsed=open?'false':'true';toggle.setAttribute('aria-expanded',String(open)); }
+function toggleChartOptions() { var body=document.getElementById('chartOptionsBody'),btn=document.getElementById('chartOptionsToggle');if(!body||!btn)return;var open=!body.classList.contains('open');body.classList.toggle('open',open);btn.setAttribute('aria-expanded',String(open)); }
 function toggleUtilitiesMenu(forceOpen) {
     var menu=document.getElementById('utilitiesMenu'),btn=document.getElementById('utilitiesMenuBtn');
     if(!menu||!btn)return;
@@ -1021,7 +1205,23 @@ function renderReadinessGate() {
         b.disabled=!model.startEnabled;
         b.title=model.hint;
     });
+    renderReadyChip(model);
     renderLogStatus();
+}
+function renderReadyChip(model){
+    var chip=document.getElementById('mobileReviewReady');
+    if(!chip)return;
+    // ESP32 gate first, then config validity, else ready.
+    var cls, txt;
+    if(!model.deviceReady){ cls='ready-blocked'; txt='⚠ ESP32 disconnected'; }
+    else {
+        var err=null;
+        try{ err=validateSetupValues(currentSetupValues()); }catch(e){ err=null; }
+        if(err){ cls='ready-warn'; txt='⚠ '+err; }
+        else { cls='ready-ok'; txt='✓ Ready to start'; }
+    }
+    chip.className='mobile-review-ready '+cls;
+    chip.textContent=txt;
 }
 function isUserRelevantLog(msg) {
     return !/^(syncing:|new data stream detected)/i.test(String(msg));
@@ -1050,6 +1250,25 @@ function renderPlannedTotalTime() {
     if(isRunning||terminalUiState)return;
     var box=document.getElementById('valTime');
     if(box)box.innerText=formatPlannedDuration(computePlannedDurationSeconds(currentSetupValues()));
+}
+function setDerived(id,html){var el=document.getElementById(id);if(el){var span=el.querySelector('span:last-child');if(span)span.innerHTML=html;}}
+function renderDerivedSummaries() {
+    // Normal: total run time = duration x cycles
+    var dur=numberOf('duration'), cyc=parseInt(valueOf('cycles'),10);
+    if(Number.isFinite(dur)&&Number.isFinite(cyc)&&dur>0&&cyc>0){
+        setDerived('normalDerived','Total run <strong>'+formatPlannedDuration(dur*cyc)+'</strong> ('+cyc+' × '+dur+'\u00A0s)');
+    } else setDerived('normalDerived','Enter duration and cycles to see total run time.');
+    // Fixed: ramp to target then hold
+    var tt=numberOf('targetTemperature'), rr=numberOf('rampRate'), hold=numberOf('qualifiedHoldMinutes');
+    if(Number.isFinite(tt)&&Number.isFinite(hold)){
+        var rrTxt=Number.isFinite(rr)&&rr>0?' at '+rr+'\u00A0°C/min':'';
+        setDerived('fixedDerived','Ramp to <strong>'+tt+'\u00A0°C</strong>'+rrTxt+', then hold <strong>'+hold+'\u00A0min</strong> qualified');
+    } else setDerived('fixedDerived','');
+    // Plateau: worst-case time budget = discovery + confirmation + hold
+    var disc=numberOf('maxDiscoveryTime'), conf=numberOf('confirmationDuration'), phold=numberOf('plateauHoldMinutes');
+    if(Number.isFinite(disc)&&Number.isFinite(conf)&&Number.isFinite(phold)){
+        setDerived('plateauDerived','Up to <strong>'+formatPlannedDuration(disc*60+conf+phold*60)+'</strong> worst case (discover + confirm + hold)');
+    } else setDerived('plateauDerived','');
 }
 function advanceTelemetryState(previous,sample,now) { var signature=sampleSignature(sample);return {signature:signature,lastTelemetryAt:signature!==previous.signature?now:previous.lastTelemetryAt}; }
 function getChannelHealth(backendOnline,ageSeconds,value) { return getHealthState(backendOnline,ageSeconds,value!==null&&value!==''&&Number.isFinite(Number(value))); }
@@ -1163,10 +1382,10 @@ function initChart() {
         options: {
             responsive: true, maintainAspectRatio: false, animation: false, 
             scales: { x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Time (s)' } }, y: { title: { display: true, text: 'Temperature (°C)' }, suggestedMin: 25, suggestedMax: 100 } },
-            plugins: { zoom: { pan: { enabled: true, mode: 'x', onPanComplete:function(){setChartZoomActive(true);} }, zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, pinch: { enabled: true }, mode: 'x', onZoomComplete:function(){setChartZoomActive(true);} } }, tooltip: { mode: 'index', intersect: false } }
+            plugins: { legend: { display: false }, zoom: { pan: { enabled: true, mode: 'x', onPanComplete:function(){setChartZoomActive(true);} }, zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, pinch: { enabled: true }, mode: 'x', onZoomComplete:function(){setChartZoomActive(true);} } }, tooltip: { mode: 'index', intersect: false } }
         }
     });
-    luxChart=new Chart(document.getElementById('luxChart').getContext('2d'),{type:'line',data:{datasets:[{label:'Lux',data:[],borderColor:'#b77900',pointRadius:0},{label:'Target lux',data:[],borderColor:'#745b00',borderDash:[6,4],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,animation:false,scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{min:0,title:{display:true,text:'Illuminance (lx)'}}}}});
+    luxChart=new Chart(document.getElementById('luxChart').getContext('2d'),{type:'line',data:{datasets:[{label:'Lux',data:[],borderColor:'#b77900',pointRadius:0},{label:'Target lux',data:[],borderColor:'#745b00',borderDash:[6,4],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{min:0,title:{display:true,text:'Illuminance (lx)'}}}}});
     applyChartTheme(currentTheme);
     applyChannelVisibility();
 }
@@ -1861,15 +2080,18 @@ function setUIState(state, clearTerminal) {
     document.querySelector('.dashboard-grid').setAttribute('data-ui-state',state);
     if(document.body&&document.body.classList)document.body.classList.toggle('mobile-review-visible',state==='IDLE');
 
+    var timeLabel=document.getElementById('timeLabel');
     if (state === 'IDLE') {
         isRunning = false;
         form.style.display = 'block'; stop.style.display = 'none'; done.style.display = 'none';
         renderStateBadge('IDLE','bg-idle');
+        if(timeLabel)timeLabel.textContent='Planned total';
         renderPlannedTotalTime();
     } else if (state === 'RUNNING' || state === 'STOPPING') {
         isRunning = true;
         form.style.display = 'none'; stop.style.display = 'block'; done.style.display = 'none';
         renderStateBadge(state,'bg-run');
+        if(timeLabel)timeLabel.textContent='Elapsed';
     } else if (state === 'DONE' || state === 'ABORTED') {
         terminalUiState=state;
         isRunning = false;
@@ -1884,13 +2106,13 @@ function setUIState(state, clearTerminal) {
 
 if(document.querySelectorAll){document.querySelectorAll('[data-view]').forEach(function(b){b.addEventListener('click',function(){setMonitoringView(b.dataset.view);});});document.querySelectorAll('[data-window]').forEach(function(b){b.addEventListener('click',function(){selectChartWindow(b.dataset.window);});});
 document.querySelectorAll('[data-channel]').forEach(function(b){b.addEventListener('click',function(){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));applyChannelVisibility();applyChartView();});});}
-document.getElementById('setupForm').addEventListener('input',function(){updateMobileSetupSummary();renderPlannedTotalTime();});document.getElementById('setupForm').addEventListener('change',function(e){updateMobileSetupSummary(e);if(!(e.target&&e.target.name==='illuminationMode'))updateModeFields();renderPlannedTotalTime();});if(window.matchMedia){var mobileSetupMedia=window.matchMedia('(max-width:600px)');if(mobileSetupMedia.addEventListener)mobileSetupMedia.addEventListener('change',syncMobileAdvancedVisibility);}
-updateModeFields(); initCustomSelects(); syncMobileAdvancedVisibility(); updateMobileSetupSummary(); if(document.body&&document.body.classList)document.body.classList.add('mobile-review-visible'); applyTheme(resolveInitialTheme(),false); initChart(); setMonitoringView('temperature'); renderPhaseStepper('NORMAL_CYCLIC',0); renderPhaseVisibility('IDLE'); renderHealth(true,null,null); renderMonitoringVisibility(false,'IDLE',true); renderReadinessGate(); renderPlannedTotalTime(); var controlCard=document.querySelector('.control-card');if(controlCard&&typeof controlCard.addEventListener==='function')controlCard.addEventListener('scroll',updateControlScrollHint);if(window&&typeof window.addEventListener==='function')window.addEventListener('resize',updateControlScrollHint);if(typeof setTimeout==='function')setTimeout(updateControlScrollHint,0); setInterval(updateStatus, 1000);
+document.getElementById('setupForm').addEventListener('input',function(){updateMobileSetupSummary();renderPlannedTotalTime();renderDerivedSummaries();});document.getElementById('setupForm').addEventListener('change',function(e){updateMobileSetupSummary(e);if(!(e.target&&e.target.name==='illuminationMode'))updateModeFields();renderPlannedTotalTime();renderDerivedSummaries();});if(window.matchMedia){var mobileSetupMedia=window.matchMedia('(max-width:600px)');if(mobileSetupMedia.addEventListener)mobileSetupMedia.addEventListener('change',syncMobileAdvancedVisibility);}
+updateModeFields(); initCustomSelects(); syncMobileAdvancedVisibility(); updateMobileSetupSummary(); renderDerivedSummaries(); if(document.body&&document.body.classList)document.body.classList.add('mobile-review-visible'); applyTheme(resolveInitialTheme(),false); initChart(); setMonitoringView('temperature'); renderPhaseStepper('NORMAL_CYCLIC',0); renderPhaseVisibility('IDLE'); renderHealth(true,null,null); renderMonitoringVisibility(false,'IDLE',true); renderReadinessGate(); renderPlannedTotalTime(); var controlCard=document.querySelector('.control-card');if(controlCard&&typeof controlCard.addEventListener==='function')controlCard.addEventListener('scroll',updateControlScrollHint);if(window&&typeof window.addEventListener==='function')window.addEventListener('resize',updateControlScrollHint);if(typeof setTimeout==='function')setTimeout(updateControlScrollHint,0); setInterval(updateStatus, 1000);
 
 // Load calibrated max lux hint on page load
 fetch('/api/get_config').then(function(r) { return r.json(); }).then(function(conf) {
     if (conf && conf.max_hardware_lux) {
-        document.getElementById('maxLuxHint').innerText = '(Max: ' + parseFloat(conf.max_hardware_lux).toFixed(0) + ' lx)';
+        document.getElementById('maxLuxHint').innerText = 'Max ' + parseFloat(conf.max_hardware_lux).toFixed(0) + ' lx (calibrated).';
         document.getElementById('targetLux').max = parseFloat(conf.max_hardware_lux);
     }
 }).catch(function() {});

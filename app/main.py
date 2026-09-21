@@ -222,6 +222,11 @@ def read_index():
 def read_history():
     return FileResponse('app/static/history.html')
 
+@app.get("/preview")
+@app.get("/device-preview")
+def read_preview():
+    return FileResponse('app/static/device-preview.html')
+
 @app.post("/api/start_experiment")
 def start_experiment(config: ExperimentConfig):
     global current_experiment_id, pending_command, recent_sensors_cache, last_device_telemetry_at
