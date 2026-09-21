@@ -321,6 +321,20 @@
     .mode-tab .mt-desc { display:none; }
     .mode-tab-panel { display:none; border:1px solid var(--line); border-top:0; border-radius:0 0 8px 8px; padding:12px; background:var(--surface); }
     .mode-tab-panel.active { display:block; }
+    /* Scope the View Transition to just the active panel so only it crossfades,
+       not the whole page. The old->new snapshot pair animates under this name. */
+    .mode-tab-panel.active { view-transition-name: mode-panel; }
+    @media (prefers-reduced-motion: no-preference) {
+      ::view-transition-old(mode-panel), ::view-transition-new(mode-panel) { animation-duration:200ms; animation-timing-function:cubic-bezier(.4,0,.2,1); }
+      ::view-transition-old(mode-panel) { animation-name: mp-fade-out; }
+      ::view-transition-new(mode-panel) { animation-name: mp-fade-in; }
+      @keyframes mp-fade-out { to { opacity:0; transform:translateY(-6px); } }
+      @keyframes mp-fade-in { from { opacity:0; transform:translateY(8px); } }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      /* No motion: instant swap even where the API runs. */
+      ::view-transition-group(mode-panel), ::view-transition-old(mode-panel), ::view-transition-new(mode-panel) { animation:none !important; }
+    }
     .mode-desc { font-size:.82rem; color:var(--muted); margin:0 0 10px; line-height:1.45; }
     .tabbed-layout { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:14px; }
     button:disabled { cursor:not-allowed; opacity:.48; }
@@ -524,8 +538,16 @@
       .control-card .mode-tabs { flex-direction:column; gap:8px; border:0; border-radius:0; overflow:visible; margin-bottom:4px; }
       .control-card .mode-tab { flex-direction:row; align-items:flex-start; gap:10px; text-align:left; padding:12px; min-height:auto;
         border:1.5px solid var(--line); border-radius:12px; background:var(--surface); }
+      .control-card .mode-tab { transition:background .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease; }
       .control-card .mode-tab.active { border-color:var(--accent); background:#f3f8ff; border-bottom-color:var(--accent); box-shadow:0 0 0 3px rgba(11,95,255,.12); }
       [data-theme="dark"] .control-card .mode-tab.active { background:#12233b; }
+      @media (prefers-reduced-motion: no-preference) {
+        /* Selected card gives a quick settle; icon fill eases in. */
+        .control-card .mode-tab.active { animation: card-settle .22s cubic-bezier(.34,1.4,.64,1); }
+        .control-card .mode-tab .mt-icon { transition:background .18s ease, border-color .18s ease, transform .18s ease; }
+        .control-card .mode-tab.active .mt-icon { transform:scale(1.06); }
+        @keyframes card-settle { 0%{transform:scale(.99);} 60%{transform:scale(1.012);} 100%{transform:scale(1);} }
+      }
       .control-card .mode-tab .mt-icon { display:grid; flex:0 0 auto; width:34px; height:34px; border-radius:9px; place-content:center; font-size:1.05rem;
         background:var(--surface-soft); border:1px solid var(--line); }
       .control-card .mode-tab.active .mt-icon { background:var(--accent); border-color:var(--accent); }
@@ -913,13 +935,23 @@ function toggleMobileAdvanced(id) { var fieldset=document.getElementById(id);if(
 function syncMobileAdvancedVisibility() { ['illuminationFieldset','safetyFieldset'].forEach(function(id){var fieldset=document.getElementById(id);if(fieldset){var expanded=fieldset.dataset&&fieldset.dataset.expanded==='true';setMobileAdvancedExpanded(fieldset,expanded);}}); }
 function updateMobileSetupSummary() { var mode=valueOf('experimentMode'),illum=mode==='FIXED_TEMPERATURE'?'TEMPERATURE_CONTROLLED':selectedIlluminationMode(),lux=numberOf('targetLux'),interval=valueOf('interval'),max=valueOf('maxTemp'),modeLabel=mode==='NORMAL_CYCLIC'?'Normal cyclic · '+valueOf('cycles')+' cycles':mode==='FIXED_TEMPERATURE'?'Fixed temperature · '+valueOf('targetTemperature')+' °C':'Natural plateau · '+valueOf('plateauHoldMinutes')+' min hold',illumLabel=illum==='MAX_OUTPUT'?'Maximum output':illum==='TEMPERATURE_CONTROLLED'?'Temperature controlled':'Target lux · '+(Number.isFinite(lux)?lux.toLocaleString():'—')+'\u00A0lx';document.getElementById('illuminationMobileSummary').textContent=illumLabel+' · log '+interval+' s';document.getElementById('safetyMobileSummary').textContent='Maximum · '+max+' °C';document.getElementById('mobileReviewTitle').textContent=modeLabel;var luxVal=(Number.isFinite(lux)?lux.toLocaleString():'—')+'\u00A0lx',safetyVal='safety\u00A0'+max+'\u00A0°C';document.getElementById('mobileReviewDetail').innerHTML='<span style="white-space:nowrap">'+illumLabel+'</span><span style="white-space:nowrap">\u00A0·\u00A0'+safetyVal+'</span>';if(typeof renderReadyChip==='function'&&typeof getReadinessModel==='function'){renderReadyChip(getReadinessModel(lastEsp32State));} }
 function updateIlluminationFields() { var fixed=valueOf('experimentMode')==='FIXED_TEMPERATURE',maximum=!fixed&&selectedIlluminationMode()==='MAX_OUTPUT';document.getElementById('illuminationModeControl').hidden=fixed;document.getElementById('targetLuxGroup').hidden=fixed||maximum;document.getElementById('maxOutputNotice').hidden=!maximum;document.getElementById('temperatureControlNotice').hidden=!fixed;updateMobileSetupSummary(); }
-function switchModeTab(mode, fromSelect) {
+function applyModeTabSwitch(mode) {
     ['NORMAL_CYCLIC','FIXED_TEMPERATURE','NATURAL_PLATEAU'].forEach(function(m){
         var tab=document.getElementById(m==='NORMAL_CYCLIC'?'tabNormal':m==='FIXED_TEMPERATURE'?'tabFixed':'tabPlateau');
         var panel=document.getElementById(m==='NORMAL_CYCLIC'?'panelNormal':m==='FIXED_TEMPERATURE'?'panelFixed':'panelPlateau');
         if(tab){tab.classList.toggle('active',m===mode);tab.setAttribute('aria-selected',String(m===mode));}
         if(panel)panel.classList.toggle('active',m===mode);
     });
+}
+function switchModeTab(mode, fromSelect) {
+    // Crossfade the panel swap via the View Transitions API when available and
+    // motion is allowed; otherwise mutate instantly (graceful, universal fallback).
+    var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(document.startViewTransition&&!reduce){
+        document.startViewTransition(function(){applyModeTabSwitch(mode);});
+    } else {
+        applyModeTabSwitch(mode);
+    }
     var sel=document.getElementById('experimentMode');
     if(sel&&sel.value!==mode){sel.value=mode;if(!fromSelect)updateModeFields();}
     renderModeHelp();
