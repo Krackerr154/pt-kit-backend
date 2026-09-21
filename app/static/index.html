@@ -325,11 +325,16 @@
        not the whole page. The old->new snapshot pair animates under this name. */
     .mode-tab-panel.active { view-transition-name: mode-panel; }
     @media (prefers-reduced-motion: no-preference) {
+      /* Opacity-only crossfade. Two guards against overlapping the card above:
+         (1) no transforms (slide/scale paint unclipped in the overlay);
+         (2) clip the group box so the taller old-panel snapshot cannot bleed
+         past the group bounds while the height morphs. */
+      ::view-transition-group(mode-panel) { overflow:clip; animation-duration:200ms; animation-timing-function:cubic-bezier(.4,0,.2,1); }
       ::view-transition-old(mode-panel), ::view-transition-new(mode-panel) { animation-duration:200ms; animation-timing-function:cubic-bezier(.4,0,.2,1); }
       ::view-transition-old(mode-panel) { animation-name: mp-fade-out; }
       ::view-transition-new(mode-panel) { animation-name: mp-fade-in; }
-      @keyframes mp-fade-out { to { opacity:0; transform:translateY(-6px); } }
-      @keyframes mp-fade-in { from { opacity:0; transform:translateY(8px); } }
+      @keyframes mp-fade-out { to { opacity:0; } }
+      @keyframes mp-fade-in { from { opacity:0; } }
     }
     @media (prefers-reduced-motion: reduce) {
       /* No motion: instant swap even where the API runs. */
