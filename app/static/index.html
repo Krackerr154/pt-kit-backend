@@ -326,8 +326,11 @@
        the card above (unlike a View Transition, whose old-panel snapshot paints
        in an unclipped overlay and bled over the card when heights differed). */
     @media (prefers-reduced-motion: no-preference) {
-      .mode-tab-panel.active { animation: mode-panel-in 200ms cubic-bezier(.4,0,.2,1) both; }
-      @keyframes mode-panel-in { from { opacity:0; } to { opacity:1; } }
+      /* Longer ease-out fade with a top-anchored settle. transform-origin:top +
+         scale 0.99->1 means the panel only ever occupies <= its own box, so it
+         cannot overlap the card above or content below. */
+      .mode-tab-panel.active { animation: mode-panel-in 360ms cubic-bezier(.22,.61,.36,1) both; transform-origin: top center; }
+      @keyframes mode-panel-in { from { opacity:0; transform:scale(.99); } to { opacity:1; transform:scale(1); } }
     }
     .mode-desc { font-size:.82rem; color:var(--muted); margin:0 0 10px; line-height:1.45; }
     .tabbed-layout { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:14px; }
